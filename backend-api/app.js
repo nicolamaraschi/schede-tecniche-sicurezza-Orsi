@@ -1,10 +1,13 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+const cors = require('cors'); // Importa il pacchetto cors
+
+const path = require('path');
 
 
 const authRoutes = require('./routes/auth');
-const documentRoutes = require('./routes/documents'); // Modifica qui il percorso
+const documentRoutes = require('./routes/documents');
 const productRoutes = require('./routes/products');
 
 // Carica le variabili d'ambiente
@@ -12,10 +15,15 @@ dotenv.config();
 
 const app = express();
 
+// Abilita il middleware CORS prima delle rotte
+app.use(cors({
+  origin: 'http://localhost:3000', // Permetti richieste solo da localhost:3000
+}));
+
 // Middleware per il parsing del corpo delle richieste
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Collega al database MongoDB
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
@@ -26,7 +34,7 @@ mongoose.connect(process.env.MONGO_URI, {
 
 // Usa le rotte
 app.use('/api/auth', authRoutes);
-app.use('/api/documents', documentRoutes); // Modifica qui il percorso
+app.use('/api/documents', documentRoutes);
 app.use('/api/products', productRoutes);
 
 // Gestione degli errori 404
