@@ -11,20 +11,27 @@ const ViewDocuments = () => {
   const [selectedDocumentCode, setSelectedDocumentCode] = useState('');
   const token = localStorage.getItem('token');
 
-  // Carica i documenti in base al codice prodotto
+  // Carica i documenti: Se non viene fornito alcun codice prodotto, carica tutte le schede
   const loadDocuments = useCallback(async () => {
     setLoading(true);
     setError('');
-
     try {
-      const data = await fetchDocuments(token, selectedProductCode);
-      if (data.length === 0) {
-        setError('Nessun documento trovato per il codice prodotto fornito.');
-      } else {
+      if (selectedProductCode === '') {
+        // Se non c'è codice prodotto, recupera tutte le schede
+        const data = await fetchDocuments(token);
         setDocuments(data);
+      } else {
+        // Se è presente un codice prodotto, cerca quel codice
+        const data = await fetchDocuments(token, selectedProductCode);
+        if (data.length === 0) {
+          setError('Nessun documento trovato per il codice prodotto fornito.');
+          setDocuments([]);
+        } else {
+          setDocuments(data);
+        }
       }
     } catch (error) {
-      setError(error.message.includes('404') ? 'Codice prodotto non trovato.' : 'Errore nel recupero dei documenti.');
+      setError(error.message.includes('404') ? 'Codice prodotto non trovato.' : '');
       console.error('Error fetching documents:', error);
     } finally {
       setLoading(false);
@@ -33,7 +40,11 @@ const ViewDocuments = () => {
 
   // Carica il documento in base al codice scheda
   const loadDocumentByCode = useCallback(async () => {
-    if (!selectedDocumentCode) return;
+    if (!selectedDocumentCode) {
+      setDocumentsByDocumentCode([]); // Non mostrare nulla se non c'è codice scheda
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -41,20 +52,33 @@ const ViewDocuments = () => {
       const data = await fetchDocumentByCode(token, selectedDocumentCode);
       setDocumentsByDocumentCode([data]); // Mostra solo il documento trovato
     } catch (error) {
-      setError(error.message.includes('404') ? 'Codice scheda non trovato.' : 'Errore nel recupero del documento.');
+     setError(error.message.includes('404') ? 'Codice scheda non trovato.' : '');
       console.error('Error fetching document by code:', error);
     } finally {
       setLoading(false);
     }
   }, [token, selectedDocumentCode]);
+  
 
-  useEffect(() => {
+  // Effettua la ricerca documenti quando cambia il codice prodotto
+useEffect(() => {
+  const delayDebounceFn = setTimeout(() => {
     loadDocuments();
-  }, [loadDocuments]);
+  }, 1000); // Ritardo di 1000 millisecondi
 
-  useEffect(() => {
+  return () => clearTimeout(delayDebounceFn); // Cancella il timeout se cambia il codice prodotto prima che termini
+}, [loadDocuments]);
+
+// Effettua la ricerca del documento per codice scheda quando il codice cambia
+useEffect(() => {
+  const delayDebounceFn = setTimeout(() => {
     loadDocumentByCode();
-  }, [loadDocumentByCode, selectedDocumentCode]);
+  }, 1000); // Ritardo di 1000 millisecondi
+
+  return () => clearTimeout(delayDebounceFn); // Cancella il timeout se cambia il codice scheda prima che termini
+}, [loadDocumentByCode, selectedDocumentCode]);
+
+
 
   const handleDelete = async (document) => {
     const confirmDelete = window.confirm('Sei sicuro di voler eliminare questo documento?');
