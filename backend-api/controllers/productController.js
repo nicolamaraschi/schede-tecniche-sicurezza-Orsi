@@ -1,4 +1,5 @@
 const Product = require('../models/product');
+const Document = require('../models/document');
 const fs = require('fs');
 const path = require('path');
 
@@ -42,6 +43,7 @@ exports.getProductByCode = async (req, res) => {
   }
 };
 
+/*
 // Funzione per eliminare un prodotto
 exports.deleteProduct = async (req, res) => {
   try {
@@ -59,47 +61,25 @@ exports.deleteProduct = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+*/
 
-/*
-PER ELIMINARE DOCUMENTO DA UPLOADS
-const fs = require('fs');
-const path = require('path');
-
-// Funzione per eliminare un documento
-exports.deleteDocument = async (req, res) => {
+exports.deleteProduct = async (req, res) => {
   try {
-    const { documentId } = req.params;
+    const { productCode, productName } = req.params; // Ottieni il codice e il nome del prodotto dai parametri
 
-    // Assicurati che documentId sia un valore valido
-    if (!documentId) {
-      return res.status(400).json({ message: 'Document ID is required' });
+    // Trova il prodotto in base al codice e al nome
+    const product = await Product.findOneAndDelete({ code: productCode, name: productName });
+
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
     }
 
-    // Trova il documento per ottenere il file associato
-    const document = await Document.findById(documentId);
-    
-    // Controlla se il documento esiste
-    if (!document) {
-      return res.status(404).json({ message: 'Document not found' });
-    }
+    // Elimina tutti i documenti associati al prodotto
+    await Document.deleteMany({ productId: product._id });
 
-    // Elimina il documento dalla base di dati
-    await Document.findByIdAndDelete(documentId);
-
-    // Elimina il file dalla cartella uploads
-    const filePath = path.join(__dirname, 'uploads', document.fileUrl); // Assicurati che fileUrl contenga solo il nome del file
-    fs.unlink(filePath, (err) => {
-      if (err) {
-        console.error('Error deleting file:', err);
-        return res.status(500).json({ message: 'Failed to delete the associated file' });
-      }
-      // Restituisce un messaggio di successo
-      res.status(200).json({ message: 'Document and associated file deleted successfully' });
-    });
+    res.status(200).json({ message: 'Product and associated documents deleted successfully' });
   } catch (error) {
-    // Restituisce un messaggio di errore in caso di eccezione
-    console.error('Error deleting document:', error); // Logga l'errore
-    res.status(500).json({ message: 'Internal server error' });
+    console.error('Error occurred:', error);
+    res.status(500).json({ message: error.message });
   }
 };
-*/
