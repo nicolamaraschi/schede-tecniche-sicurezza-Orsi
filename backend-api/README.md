@@ -32,15 +32,6 @@ Questo progetto consiste in un'API REST per la gestione di prodotti e documenti,
    npm install
    ```
 
-3. **Configura il file `.env`**
-   Crea un file `.env` nella root del progetto e aggiungi le seguenti variabili d'ambiente:
-
-   ```env
-   MONGO_URI=mongodb+srv://nicolamaraschi01:<db_password>@cluster0.8odxl.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
-   JWT_SECRET=il_tuo_jwt_secret
-   PORT=5002
-   NODE_ENV=development
-   ```
 
 4. **Imposta MongoDB Atlas**
    Vai alla sezione **Network Access** del tuo account MongoDB Atlas e aggiungi un IP whitelist di `0.0.0.0/0` per permettere l'accesso da qualsiasi indirizzo IP. A volte questa impostazione potrebbe disattivarsi, quindi assicurati di ricontrollarla se la connessione al database smette di funzionare.
