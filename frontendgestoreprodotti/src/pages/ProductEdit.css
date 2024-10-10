@@ -1,0 +1,94 @@
+.modal {
+    backdrop-filter: blur(10px); /* Maggiore sfocatura per un effetto più elegante */
+  }
+  
+  .card {
+    border: none;
+    border-radius: 12px; /* Aggiunta di un bordo più arrotondato */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15); /* Ombra per effetto di profondità */
+    transition: transform 0.3s; /* Transizione per l'effetto hover */
+  }
+  
+  .card:hover {
+    transform: translateY(-5px); /* Leggera elevazione al passaggio del mouse */
+  }
+  
+  .card-header {
+    background-color: #007bff; /* Colore di sfondo del header */
+    color: white;
+    border-top-left-radius: 12px; /* Bordo arrotondato per il header */
+    border-top-right-radius: 12px; /* Bordo arrotondato per il header */
+    padding: 1.5rem; /* Padding per un aspetto più elegante */
+    text-align: center; /* Allineamento del testo al centro */
+  }
+  
+  .close {
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    position: absolute; /* Posizione assoluta per il pulsante di chiusura */
+    right: 20px; /* Margine destro */
+    top: 15px; /* Margine alto */
+    transition: color 0.3s; /* Transizione per l'effetto hover */
+  }
+  
+  .close:hover {
+    color: #ffcccc; /* Colore al passaggio del mouse per un effetto di feedback */
+  }
+  
+  .card-body {
+    padding: 4rem; /* Padding generoso per il contenuto */
+    background-color: #f9f9f9; /* Colore di sfondo per il body della card */
+    border-radius: 0 0 12px 12px; /* Bordo arrotondato inferiore */
+  }
+  
+  .form-group {
+    margin-bottom: 2rem; /* Maggiore spazio tra i gruppi di input */
+  }
+  
+  label {
+    font-weight: bold; /* Testo delle etichette in grassetto */
+  }
+  
+  input, textarea {
+    border: 1px solid #ccc; /* Bordo per input e textarea */
+    border-radius: 8px; /* Bordo arrotondato per input e textarea */
+    transition: border-color 0.3s; /* Transizione per il bordo */
+    width: 80%; /* Imposta la larghezza al 100% del contenitore */
+    padding: 10px; /* Aggiungi padding interno per un aspetto più spazioso */
+    box-sizing: border-box; /* Assicurati che padding e border non influiscano sulla larghezza totale */
+    min-height: 50px; /* Imposta un'altezza minima per gli input */
+  }
+  
+  /* Specifico per textarea */
+  textarea {
+    min-height: 100px; /* Altezza minima per textarea */
+  }
+  
+  input:focus, textarea:focus {
+    border-color: #007bff; /* Colore del bordo al focus */
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5); /* Ombra al focus */
+  }
+  
+  .btn {
+    border-radius: 20px; /* Bordo arrotondato per i pulsanti */
+    padding: 0.5rem 1.5rem; /* Padding per pulsanti */
+    transition: background-color 0.3s; /* Transizione per il colore di sfondo */
+  }
+  
+  .btn-primary {
+    background-color: #007bff; /* Colore primario */
+  }
+  
+  .btn-primary:hover {
+    background-color: #0056b3; /* Colore al passaggio del mouse */
+  }
+  
+  .btn-secondary {
+    background-color: #6c757d; /* Colore secondario */
+  }
+  
+  .btn-secondary:hover {
+    background-color: #5a6268; /* Colore al passaggio del mouse */
+  }
+  

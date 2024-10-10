@@ -1,0 +1,57 @@
+/* Imposta la larghezza massima per garantire che le card siano responsivi */
+.container {
+    max-width: 1200px; /* Limita la larghezza massima del contenitore */
+  }
+  
+  /* Stile per le card */
+  .custom-card {
+    background-color: #f8f9fa; /* Colore di sfondo chiaro per le card */
+    border: 1px solid #dee2e6; /* Bordo leggero per le card */
+    border-radius: 0.5rem; /* Angoli arrotondati */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Ombra leggera per un effetto di profondità */
+    transition: transform 0.2s; /* Transizione per l'effetto di hover */
+  }
+  
+  /* Effetto di hover sulle card */
+  .custom-card:hover {
+    transform: scale(1.02); /* Aumenta leggermente la dimensione della card al passaggio del mouse */
+  }
+  
+  /* Stile per il titolo delle card */
+  .custom-card h3 {
+    color: #343a40; /* Colore del testo */
+    font-weight: bold; /* Grassetto per i titoli */
+  }
+  
+  /* Margini e padding per i moduli all'interno delle card */
+  .custom-card form {
+    margin-top: 1.5rem; /* Spazio sopra il modulo */
+  }
+  
+  /* Stile per i pulsanti */
+  .btn {
+    background-color: #007bff; /* Colore blu per i pulsanti */
+    color: white; /* Colore del testo bianco per i pulsanti */
+    border: none; /* Rimuove il bordo */
+    padding: 10px 15px; /* Padding per i pulsanti */
+    border-radius: 0.25rem; /* Angoli arrotondati per i pulsanti */
+    transition: background-color 0.2s; /* Transizione per il colore di sfondo */
+  }
+  
+  /* Effetto di hover sui pulsanti */
+  .btn:hover {
+    background-color: #0056b3; /* Colore di sfondo più scuro al passaggio del mouse */
+  }
+  
+  /* Stile responsivo per schermi piccoli */
+  @media (max-width: 768px) {
+    .row {
+      flex-direction: column; /* Cambia la direzione delle card in colonna su schermi piccoli */
+    }
+  
+    .col-md-6 {
+      width: 100%; /* Imposta la larghezza al 100% */
+      margin-bottom: 1rem; /* Spazio sotto le card */
+    }
+  }
+  

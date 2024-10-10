@@ -1,0 +1,29 @@
+/* Login.css */
+.card {
+  background-color: #ffffff; /* Sfondo bianco per la card */
+  border-radius: 10px; /* Bordo arrotondato */
+  border: none; /* Rimuove il bordo della card */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Ombra per un aspetto raffinato */
+  width: 50%;
+}
+
+.card h2 {
+  color: #333; /* Colore del titolo */
+}
+
+.card .form-label {
+  font-weight: bold; /* Grassetto per le etichette */
+}
+
+.btn-primary {
+  background-color: #007bff; /* Colore principale del pulsante */
+  border: none; /* Rimuove il bordo del pulsante */
+}
+
+.btn-primary:hover {
+  background-color: #0056b3; /* Colore al passaggio del mouse */
+}
+
+.alert {
+  margin-bottom: 1rem; /* Margine inferiore per l'alert */
+}
