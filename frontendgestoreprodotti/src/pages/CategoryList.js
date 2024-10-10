@@ -35,8 +35,7 @@ const CategoryList = () => {
       <table className="table table-striped">
         <thead>
           <tr>
-            <th>ID</th>
-            <th>Nome</th>
+            <th>Categoria</th>
             <th>Sottocategorie</th>
             <th>Azioni</th>
           </tr>
@@ -44,7 +43,6 @@ const CategoryList = () => {
         <tbody>
           {categories.map(category => (
             <tr key={category._id}>
-              <td>{category._id}</td>
               <td>{category.name}</td>
               <td>
                 {category.subcategories.map((sub, index) => (
