@@ -1,0 +1,44 @@
+.home {
+  background-color: #f8f9fa; /* Colore di sfondo chiaro */
+  min-height: 100vh; /* Altezza minima della vista */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  text-align: center; /* Allinea il testo al centro */
+}
+
+.home-content {
+  background: white; /* Sfondo bianco per il contenuto */
+  border-radius: 10px; /* Angoli arrotondati */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Ombra leggera */
+  padding: 40px; /* Padding per il contenuto */
+}
+
+h1 {
+  font-family: 'Georgia', serif; /* Font elegante per il titolo */
+  font-weight: bold; /* Grassetto per il titolo */
+}
+
+h2 {
+  font-family: 'Arial', sans-serif; /* Font per sottotitoli */
+  margin-top: 20px; /* Spazio sopra il sottotitolo */
+}
+
+p {
+  font-family: 'Arial', sans-serif; /* Font semplice per il paragrafo */
+  font-size: 1.2rem; /* Dimensione del font maggiore per il paragrafo */
+  color: #6c757d; /* Colore del testo grigio scuro */
+}
+
+.features-list {
+  list-style-type: none; /* Rimuove i puntini dalle liste */
+  padding: 0; /* Rimuove il padding predefinito */
+  margin: 20px 0; /* Margine sopra e sotto la lista */
+}
+
+.features-list li {
+  font-size: 1.1rem; /* Dimensione del font per gli elementi della lista */
+  color: #495057; /* Colore del testo grigio scuro */
+  margin-bottom: 10px; /* Spazio tra gli elementi della lista */
+}

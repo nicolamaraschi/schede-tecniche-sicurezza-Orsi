@@ -4,7 +4,8 @@
   border-radius: 10px; /* Bordo arrotondato */
   border: none; /* Rimuove il bordo della card */
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Ombra per un aspetto raffinato */
-  width: 50%;
+  width: 70%; /* Dimensione predefinita per schermi più grandi */
+  margin: auto; /* Centra la card */
 }
 
 .card h2 {
@@ -26,4 +27,26 @@
 
 .alert {
   margin-bottom: 1rem; /* Margine inferiore per l'alert */
+}
+
+/* Media query per dispositivi mobili */
+@media (max-width: 768px) {
+  .card {
+    width: 80%; /* Aumenta la larghezza della card su telefoni */
+  }
+}
+
+@media (max-width: 576px) {
+  .card {
+    width: 80%; /* Card quasi a tutta larghezza per schermi molto piccoli */
+  }
+
+  .card h2 {
+    font-size: 1.5rem; /* Riduci il titolo su schermi più piccoli */
+  }
+
+  .btn-primary {
+    width: 80%; /* Il pulsante occupa tutta la larghezza su dispositivi mobili */
+    padding: 10px; /* Aggiunge spazio per un pulsante più grande */
+  }
 }
