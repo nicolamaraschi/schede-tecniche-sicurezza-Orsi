@@ -20,7 +20,6 @@ const app = express();
 // Abilita il middleware CORS prima delle rotte
 app.use(cors({
   origin: 'http://localhost:3000', // Permetti richieste solo da localhost:3000
-
 }));
 
 // Middleware per il parsing del corpo delle richieste
@@ -46,6 +45,9 @@ app.use('/api/prodottiCatalogo', prodottoCatalogoRoutes);
 app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
+
+// Esporta l'app per i test
+module.exports = app;
 
 // Avvia il server
 const PORT = process.env.PORT || 5002;
