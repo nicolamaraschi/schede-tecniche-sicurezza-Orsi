@@ -121,7 +121,7 @@ export const fetchCategoryById = async (id) => {
 
 
 // Funzioni per le API di autenticazione
-export const registerUser = async (userData) => {
+export const registerUtente = async (userData) => {
   const response = await fetch(`http://localhost:5002/api/auth/register`, {
     method: 'POST',
     headers: {
@@ -135,7 +135,7 @@ export const registerUser = async (userData) => {
 
 
 
-export const loginUser = async (userData) => {
+export const loginUtente = async (userData) => {
   const response = await fetch(`http://localhost:5002/api/auth/login`, {
     method: 'POST',
     headers: {

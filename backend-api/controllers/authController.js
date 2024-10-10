@@ -4,7 +4,7 @@ const User = require('../models/user');
 
 // Registrazione di un nuovo utente
 exports.register = async (req, res) => {
-  try {
+  try {a
     const { username, password } = req.body;
     
     // Verifica se l'utente esiste già
