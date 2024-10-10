@@ -9,6 +9,7 @@ const path = require('path');
 const authRoutes = require('./routes/auth');
 const documentRoutes = require('./routes/documents');
 const productRoutes = require('./routes/products');
+const gestoreProdottiRoutes = require('./routes/gestoreProdotti');
 
 // Carica le variabili d'ambiente
 dotenv.config();
@@ -18,6 +19,7 @@ const app = express();
 // Abilita il middleware CORS prima delle rotte
 app.use(cors({
   origin: 'http://localhost:3000', // Permetti richieste solo da localhost:3000
+
 }));
 
 // Middleware per il parsing del corpo delle richieste
@@ -36,6 +38,7 @@ mongoose.connect(process.env.MONGO_URI, {
 app.use('/api/auth', authRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/gestoreProdotti', gestoreProdottiRoutes);
 
 // Gestione degli errori 404
 app.use((req, res) => {

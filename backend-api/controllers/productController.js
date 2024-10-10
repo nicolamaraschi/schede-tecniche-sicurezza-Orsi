@@ -43,26 +43,7 @@ exports.getProductByCode = async (req, res) => {
   }
 };
 
-/*
-// Funzione per eliminare un prodotto
-exports.deleteProduct = async (req, res) => {
-  try {
-    const { productCode, productName } = req.params; // Ottieni il codice e il nome del prodotto dai parametri
-
-    // Trova il prodotto in base al codice e al nome
-    const result = await Product.findOneAndDelete({ code: productCode, name: productName });
-
-    if (!result) {
-      return res.status(404).json({ message: 'Product not found' });
-    }
-
-    res.status(200).json({ message: 'Product deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-*/
-
+// elimina prodotti e tutte le schede associate a quel prodtto da eliminare
 exports.deleteProduct = async (req, res) => {
   try {
     const { productCode, productName } = req.params; // Ottieni il codice e il nome del prodotto dai parametri
