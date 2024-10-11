@@ -1,8 +1,0 @@
-/* ProductCreate.css */
-.custom-card {
-    max-width: 400px; /* Imposta una larghezza massima per la card */
-    margin: auto; /* Centra la card orizzontalmente */
-    padding: 1rem; /* Riduci il padding interno per rendere la card più piccola */
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Aggiungi un'ombra leggera per un look più raffinato */
-  }
-  
