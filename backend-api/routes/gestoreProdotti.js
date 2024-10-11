@@ -14,24 +14,26 @@ const {
 } = require('../controllers/gestoreProdottiController');
 
 const authMiddleware = require('../middlewares/authMiddleware');
+const upload = require('../middlewares/uploadGestoreProdotti'); // Importa il middleware per il caricamento delle immagini
+
 const router = express.Router();
 
 // Rotte per i Prodotti
 
 // Rotta per creare un prodotto
-router.post('/prodotti', createProduct);
+router.post('/prodotti', upload.array('images'), createProduct); // Usa upload.array() per gestire più immagini
 
 // Rotta per ottenere tutti i prodotti
 router.get('/prodotti', getAllProducts);
 
 // Rotta per ottenere un prodotto per ID
-router.get('/prodotti/:id',  getProductById);
+router.get('/prodotti/:id', getProductById);
 
 // Rotta per aggiornare un prodotto
-router.put('/prodotti/:id', updateProduct);
+router.put('/prodotti/:id', upload.array('images'), updateProduct); // Aggiungi upload.array() per gestire le immagini
 
 // Rotta per eliminare un prodotto
-router.delete('/prodotti/:id',  deleteProduct);
+router.delete('/prodotti/:id', deleteProduct); // Aggiungi authMiddleware per proteggere la rotta
 
 // Rotte per le Categorie
 

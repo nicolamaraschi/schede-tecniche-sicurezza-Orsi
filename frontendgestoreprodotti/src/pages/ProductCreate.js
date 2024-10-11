@@ -7,7 +7,7 @@ import './ProductCreate.css'; // Collega il file CSS personalizzato
 const ProductCreate = () => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [images, setImages] = useState('');
+  const [images, setImages] = useState([]); // Modificato per essere un array
   const [category, setCategory] = useState('');
   const [categories, setCategories] = useState([]); // Stato per le categorie
   const navigate = useNavigate();
@@ -26,12 +26,18 @@ const ProductCreate = () => {
     getCategories();
   }, []);
 
+  const handleImageChange = (e) => {
+    setImages(Array.from(e.target.files)); // Aggiorna lo stato con l'array di file
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const product = { name, description, images: images.split(','), category };
+    
+    // Crea un oggetto prodotto da inviare
+    const product = { name, description, category };
 
     try {
-      await createProduct(product);
+      await createProduct(product, images); // Invia anche le immagini
       navigate('/products');
     } catch (error) {
       console.error('Error creating product:', error);
@@ -62,12 +68,13 @@ const ProductCreate = () => {
           />
         </div>
         <div className="mb-3">
-          <label className="form-label">Immagini (URL separati da virgola):</label>
+          <label className="form-label">Immagini:</label>
           <input 
-            type="text" 
+            type="file" 
             className="form-control" 
-            value={images} 
-            onChange={(e) => setImages(e.target.value)} 
+            multiple 
+            onChange={handleImageChange} 
+            required
           />
         </div>
         <div className="mb-3">

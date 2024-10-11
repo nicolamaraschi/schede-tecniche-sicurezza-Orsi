@@ -7,26 +7,47 @@ export const fetchProducts = async () => {
   return response.json();
 };
 
-export const createProduct = async (product) => {
+export const createProduct = async (product, images) => {
+  const formData = new FormData();
+  
+  // Aggiungi i dati del prodotto a FormData
+  formData.append('name', product.name);
+  formData.append('description', product.description);
+  formData.append('category', product.category);
+
+  // Aggiungi le immagini a FormData
+  images.forEach((image) => {
+    formData.append('images', image); // 'images' deve corrispondere al nome dell'input nel middleware multer
+  });
+
   const response = await fetch(`${API_URL}/prodotti`, { // Corretto il percorso
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(product),
+    body: formData, // Usa FormData qui
   });
+  
   if (!response.ok) throw new Error('Error creating product');
   return response.json();
 };
 
-export const updateProduct = async (id, product) => {
+
+export const updateProduct = async (id, product, images) => {
+  const formData = new FormData();
+  
+  // Aggiungi i dati del prodotto a FormData
+  for (const key in product) {
+    formData.append(key, product[key]);
+  }
+
+  // Aggiungi le immagini a FormData
+  for (const image of images) {
+    formData.append('images', image); // 'images' deve corrispondere al nome del campo nel tuo middleware
+  }
+
   const response = await fetch(`${API_URL}/prodotti/${id}`, { // Corretto il percorso
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(product),
+    body: formData, // Invio il FormData direttamente
   });
+  
   if (!response.ok) throw new Error('Error updating product');
   return response.json();
 };
@@ -37,6 +58,7 @@ export const deleteProduct = async (id) => {
   });
   if (!response.ok) throw new Error('Error deleting product');
 };
+
 
 // Funzioni per le API delle categorie
 export const fetchCategories = async () => {

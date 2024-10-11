@@ -1,3 +1,6 @@
+// TODO: manca da implementare il testing delle api deslle dei prodotti e deidocumenti delle schede tecniche e di sicurezza
+
+
 const request = require('supertest');
 const bcrypt = require('bcrypt');
 const app = require('../app'); // importa la tua app Express
