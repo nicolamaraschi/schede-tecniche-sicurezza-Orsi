@@ -1,10 +1,18 @@
 const Product = require('../models/productManager'); // Modello del prodotto
 const Category = require('../models/category'); // Modello della categoria
+const fs = require('fs');
+const path = require('path');
 
-// Crea un nuovo prodotto
+// Crea un prodotto
 exports.createProduct = async (req, res) => {
     try {
-        const product = new Product(req.body);
+        const product = new Product({
+            name: req.body.name,
+            description: req.body.description,
+            category: req.body.category,
+            // Salva i percorsi delle immagini
+            images: req.files.map(file => file.path), // Usa req.files per ottenere i file caricati
+        });
         await product.save();
         res.status(201).json(product);
     } catch (error) {
@@ -38,7 +46,19 @@ exports.getProductById = async (req, res) => {
 // Aggiorna un prodotto
 exports.updateProduct = async (req, res) => {
     try {
-        const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true }).populate('category');
+        // Crea un oggetto aggiornato per il prodotto
+        const updateData = {
+            name: req.body.name,
+            description: req.body.description,
+            category: req.body.category,
+        };
+
+        // Se ci sono nuove immagini, aggiungile all'oggetto
+        if (req.files) {
+            updateData.images = req.files.map(file => file.path); // Salva i nuovi percorsi delle immagini
+        }
+
+        const product = await Product.findByIdAndUpdate(req.params.id, updateData, { new: true }).populate('category');
         if (!product) {
             return res.status(404).json({ message: 'Prodotto non trovato' });
         }
@@ -47,20 +67,52 @@ exports.updateProduct = async (req, res) => {
         res.status(400).json({ message: error.message });
     }
 };
-
-// Elimina un prodotto
+/*
+// Rimuovi un prodotto (non è stato fornito, ma è una funzione comune)
 exports.deleteProduct = async (req, res) => {
     try {
         const product = await Product.findByIdAndDelete(req.params.id);
         if (!product) {
             return res.status(404).json({ message: 'Prodotto non trovato' });
         }
-        res.status(200).json({ message: 'Prodotto eliminato con successo' });
+        res.status(204).send(); // 204 No Content
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
+*/
 
+
+// Rimuovi un prodotto e le sue immagini
+// Rimuovi un prodotto e le sue immagini
+exports.deleteProduct = async (req, res) => {
+    try {
+        // Trova il prodotto da eliminare
+        const product = await Product.findByIdAndDelete(req.params.id);
+        if (!product) {
+            return res.status(404).json({ message: 'Prodotto non trovato' });
+        }
+
+        // Elimina le immagini dalla directory uploads
+        if (product.images.length > 0) {
+            product.images.forEach(imagePath => {
+                const fullPath = path.join(__dirname, '../', imagePath); // Costruisci il percorso completo senza il doppio uploads
+                fs.unlink(fullPath, (err) => {
+                    if (err) {
+                        console.error(`Error deleting image: ${fullPath}`, err);
+                    } else {
+                        console.log(`Deleted image: ${fullPath}`); // Log dell'immagine eliminata
+                    }
+                });
+            });
+        }
+
+        res.status(204).send(); // 204 No Content
+    } catch (error) {
+        console.error('Error deleting product:', error);
+        res.status(500).json({ message: error.message });
+    }
+};
 
 
 // Crea una nuova categoria

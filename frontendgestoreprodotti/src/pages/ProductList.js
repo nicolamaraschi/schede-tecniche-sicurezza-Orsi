@@ -49,9 +49,23 @@ const ProductList = () => {
               <td>{product.name}</td>
               <td>{product.description}</td>
               <td>
-                {product.images.map((img, index) => (
-                  <img key={index} src={img} alt={product.name} style={{ width: '50px', height: '50px', marginRight: '5px' }} />
-                ))}
+                {product.images.length > 0 ? (
+                  product.images.map((img, index) => {
+                    // Costruisci l'URL completo per l'immagine
+                    const imageUrl = `http://localhost:5002/${img}`; // Modifica qui
+                    console.log(`Image URL: ${imageUrl}`); // Log dell'URL dell'immagine
+                    return (
+                      <img 
+                        key={index} 
+                        src={imageUrl} 
+                        alt={product.name} 
+                        style={{ width: '50px', height: '50px', marginRight: '5px', objectFit: 'cover' }} 
+                      />
+                    );
+                  })
+                ) : (
+                  <p>Nessuna immagine disponibile</p>
+                )}
               </td>
               <td>{product.category?.name}</td>
               <td>
