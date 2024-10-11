@@ -6,7 +6,7 @@
 .pnp.js
 
 # cache files
-backend-api/node_modules/.cache/  # Ignora la cache di mongodb-memory-server
+/node_modules/.cache/  # Ignora la cache di mongodb-memory-server
 
 # testing
 /coverage
