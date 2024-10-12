@@ -32,3 +32,6 @@ yarn-error.log*
 **/build
 **/.next
 **/.nuxt
+
+# Ignora tutti i file nella cartella uploads
+**/uploads/*
