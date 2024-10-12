@@ -2,9 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors'); // Importa il pacchetto cors
-
 const path = require('path');
-
 
 const authRoutes = require('./routes/auth');
 const documentRoutes = require('./routes/documents');
@@ -26,11 +24,9 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-// Collega al database MongoDB
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
+
+// Collega al database MongoDB senza opzioni deprecate
+mongoose.connect(process.env.MONGO_URI)
 .then(() => console.log('Connected to MongoDB'))
 .catch(err => console.error('Failed to connect to MongoDB:', err));
 
@@ -46,11 +42,11 @@ app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-// Esporta l'app per i test
-module.exports = app;
-
 // Avvia il server
 const PORT = process.env.PORT || 5002;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+// Esporta l'app per i test
+module.exports = app;
