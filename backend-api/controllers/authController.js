@@ -42,3 +42,37 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+exports.createAdmin = async (req, res) => {
+  const { username, password } = req.body;
+
+  // Verifica che il username e la password siano forniti
+  if (!username || !password) {
+    return res.status(400).json({ message: 'Username and password are required' });
+  }
+
+  try {
+    // Verifica se l'admin esiste già
+    const existingAdmin = await User.findOne({ username });
+    if (existingAdmin) {
+      return res.status(400).json({ message: 'Admin already exists' });
+    }
+
+    // Cifra la password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Crea un nuovo utente admin
+    const newUser = new User({
+      username,
+      password: hashedPassword,
+      role: 'admin' // Imposta il ruolo come admin
+    });
+
+    // Salva l'utente nel database
+    await newUser.save();
+    res.status(201).json({ message: 'Admin created successfully' });
+  } catch (error) {
+    console.error('Error creating admin:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};

@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 
 // Configurazione MongoDB
-const MONGO_URI = 'mongodb+srv://nicolamaraschi01:RljlRouD6KJOrIxV@cluster0.8odxl.mongodb.net/test?retryWrites=true&w=majority'; // Cambiato a 'test'
+const MONGO_URI = 'mongodb+srv://nicolamaraschi01:marase@cluster0.8odxl.mongodb.net/?retryWrites=true&w=majority';
 
 // Schema dell'utente
 const userSchema = new mongoose.Schema({
@@ -16,13 +16,10 @@ const User = mongoose.model('User', userSchema);
 // Funzione per creare un admin
 const createAdmin = async () => {
   try {
-    // Collegamento al database MongoDB
-    await mongoose.connect(MONGO_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    });
-
-    console.log('Connesso a MongoDB');
+    // Collegamento al database MongoDB senza opzioni deprecate
+    await mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 5000 })
+      .then(() => console.log('Connesso a MongoDB'))
+      .catch(err => console.error('Errore durante la connessione a MongoDB:', err));
 
     // Hash della password
     const saltRounds = 10;

@@ -57,14 +57,13 @@ exports.updateProduct = async (req, res) => {
             name: req.body.name,
             description: req.body.description,
             category: req.body.category,
+            images: product.images, // Mantieni le immagini esistenti per ora
         };
 
         // Se ci sono nuove immagini, aggiungile all'oggetto
         if (req.files && req.files.length > 0) {
             const newImages = req.files.map(file => file.path); // Salva i nuovi percorsi delle immagini
-            updateData.images = [...product.images, ...newImages]; // Aggiungi le nuove immagini a quelle esistenti
-        } else {
-            updateData.images = product.images; // Mantieni le immagini esistenti se non ce ne sono di nuove
+            updateData.images = [...updateData.images, ...newImages]; // Aggiungi le nuove immagini a quelle esistenti
         }
 
         // Se ci sono immagini da rimuovere, gestiscile
@@ -75,7 +74,11 @@ exports.updateProduct = async (req, res) => {
             imagesToRemove.forEach(image => {
                 updateData.images = updateData.images.filter(existingImg => existingImg !== image);
                 // Rimuovi il file fisicamente dal filesystem se necessario
-                fs.unlinkSync(image); // Assicurati che il percorso sia corretto
+                try {
+                    fs.unlinkSync(image); // Assicurati che il percorso sia corretto
+                } catch (err) {
+                    console.error(`Error removing file ${image}:`, err);
+                }
             });
         }
 
@@ -85,10 +88,10 @@ exports.updateProduct = async (req, res) => {
         // Risposta con il prodotto aggiornato
         res.status(200).json(updatedProduct);
     } catch (error) {
+        console.error('Error updating product:', error); // Logga l'errore per il debug
         res.status(400).json({ message: error.message });
     }
 };
-
 
 /*
 // Rimuovi un prodotto (non è stato fornito, ma è una funzione comune)

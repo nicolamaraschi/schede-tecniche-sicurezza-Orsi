@@ -1,12 +1,10 @@
 const express = require('express');
-const { register, login } = require('../controllers/authController');
-
+const { register, login, createAdmin } = require('../controllers/authController'); // Importa le funzioni
 const router = express.Router();
 
-// Rotta per la registrazione di un nuovo utente
-router.post('/register', register);
-
-// Rotta per il login dell'utente
-router.post('/login', login);
+// Rotte per autenticazione
+router.post('/register', register);      // Rotta per registrazione
+router.post('/login', login);            // Rotta per login
+router.post('/createAdmin', createAdmin); // Rotta per creazione admin
 
 module.exports = router;
