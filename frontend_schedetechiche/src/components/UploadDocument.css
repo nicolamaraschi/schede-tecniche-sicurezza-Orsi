@@ -1,0 +1,148 @@
+/* Card principale con design personalizzato */
+.upload-document-card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+  margin: 20px auto;
+  max-width: 600px;
+  text-align: center;
+  border: 1px solid #e0e0e0;
+  transition: box-shadow 0.3s ease;
+}
+
+.upload-document-card:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+}
+
+.upload-document-card h2 {
+  font-size: 1.8rem;
+  color: #2c3e50;
+  margin-bottom: 20px;
+  font-weight: 700;
+}
+
+/* Stili per i dropdown (select) */
+.upload-document-select {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  font-size: 1rem;
+  color: #333;
+  transition: border-color 0.3s ease;
+}
+
+.upload-document-select:focus {
+  border-color: #007bff;
+  outline: none;
+}
+
+/* Stile per l'input del codice documento */
+.upload-document-input {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  font-size: 1rem;
+  color: #333;
+  transition: border-color 0.3s ease;
+}
+
+.upload-document-input:focus {
+  border-color: #007bff;
+  outline: none;
+}
+
+/* Sezione di caricamento file */
+.upload-document-upload-section {
+  margin-top: 20px;
+}
+
+.upload-document-upload-section input[type="file"] {
+  display: block;
+  margin: 0 auto 15px auto;
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #fff;
+  cursor: pointer;
+}
+
+.upload-document-upload-section button {
+  background-color: #007bff;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.upload-document-upload-section button:hover {
+  background-color: #0056b3;
+}
+
+.upload-document-upload-section button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+
+
+
+
+/* Miglioramento dello stile del bottone */
+.upload-document-upload-section button {
+  background-color: #007bff; /* Colore di sfondo primario */
+  color: white; /* Colore del testo */
+  padding: 15px 30px; /* Padding per aumentare le dimensioni del bottone */
+  border: none; /* Rimuovi il bordo */
+  border-radius: 8px; /* Angoli arrotondati */
+  font-size: 1.1rem; /* Dimensione del font */
+  cursor: pointer; /* Cambia il cursore al passaggio del mouse */
+  transition: background-color 0.3s ease, transform 0.2s ease; /* Transizione per il colore di sfondo e trasformazione */
+}
+
+.upload-document-upload-section button:hover {
+  background-color: #0056b3; /* Colore di sfondo al passaggio del mouse */
+  transform: translateY(-2px); /* Effetto di sollevamento al passaggio del mouse */
+}
+
+.upload-document-upload-section button:disabled {
+  background-color: #6c757d; /* Colore di sfondo per il bottone disabilitato */
+  cursor: not-allowed; /* Cambia il cursore per il bottone disabilitato */
+}
+
+
+
+
+
+
+
+
+
+/* Layout responsivo */
+@media (max-width: 768px) {
+  .upload-document-card {
+    padding: 20px;
+    max-width: 90%;
+  }
+
+  .upload-document-card h2 {
+    font-size: 1.5rem;
+  }
+
+  .upload-document-upload-section input[type="file"] {
+    width: 100%;
+  }
+
+  .upload-document-upload-section button {
+    width: 100%;
+  }
+}

@@ -46,6 +46,12 @@ exports.getProductById = async (req, res) => {
 // Aggiorna un prodotto
 exports.updateProduct = async (req, res) => {
     try {
+        // Recupera il prodotto esistente dal database
+        const product = await Product.findById(req.params.id);
+        if (!product) {
+            return res.status(404).json({ message: 'Prodotto non trovato' });
+        }
+
         // Crea un oggetto aggiornato per il prodotto
         const updateData = {
             name: req.body.name,
@@ -54,19 +60,36 @@ exports.updateProduct = async (req, res) => {
         };
 
         // Se ci sono nuove immagini, aggiungile all'oggetto
-        if (req.files) {
-            updateData.images = req.files.map(file => file.path); // Salva i nuovi percorsi delle immagini
+        if (req.files && req.files.length > 0) {
+            const newImages = req.files.map(file => file.path); // Salva i nuovi percorsi delle immagini
+            updateData.images = [...product.images, ...newImages]; // Aggiungi le nuove immagini a quelle esistenti
+        } else {
+            updateData.images = product.images; // Mantieni le immagini esistenti se non ce ne sono di nuove
         }
 
-        const product = await Product.findByIdAndUpdate(req.params.id, updateData, { new: true }).populate('category');
-        if (!product) {
-            return res.status(404).json({ message: 'Prodotto non trovato' });
+        // Se ci sono immagini da rimuovere, gestiscile
+        if (req.body.removeImages) {
+            const imagesToRemove = Array.isArray(req.body.removeImages) ? req.body.removeImages : [req.body.removeImages];
+            
+            // Rimuovi le immagini specificate dall'array delle immagini
+            imagesToRemove.forEach(image => {
+                updateData.images = updateData.images.filter(existingImg => existingImg !== image);
+                // Rimuovi il file fisicamente dal filesystem se necessario
+                fs.unlinkSync(image); // Assicurati che il percorso sia corretto
+            });
         }
-        res.status(200).json(product);
+
+        // Aggiorna il prodotto con i dati modificati
+        const updatedProduct = await Product.findByIdAndUpdate(req.params.id, updateData, { new: true }).populate('category');
+
+        // Risposta con il prodotto aggiornato
+        res.status(200).json(updatedProduct);
     } catch (error) {
         res.status(400).json({ message: error.message });
     }
 };
+
+
 /*
 // Rimuovi un prodotto (non è stato fornito, ma è una funzione comune)
 exports.deleteProduct = async (req, res) => {

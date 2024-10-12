@@ -1,0 +1,70 @@
+.navbar {
+  background-color: #333;
+  padding: 10px;
+}
+
+.navbar-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.navbar-logo {
+  color: white;
+  text-decoration: none;
+  font-size: 24px;
+}
+
+.navbar-menu {
+  display: flex;
+  justify-content: center; /* Centra i link */
+  align-items: center;
+  flex-grow: 1; /* Permette al menu di occupare spazio disponibile */
+}
+
+.navbar-item {
+  color: white;
+  text-decoration: none;
+  margin-left: 20px;
+}
+
+.navbar-item:hover {
+  text-decoration: underline;
+}
+
+.hamburger {
+  display: none; /* Nascondi di default */
+  font-size: 24px;
+  color: white;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+  .navbar-menu {
+    flex-direction: column;
+    position: absolute;
+    top: 50px;
+    right: 0;
+    background-color: #333;
+    display: none; /* Inizialmente nascosto */
+    width: 100%; /* Occupare tutta la larghezza */
+    align-items: center; /* Centra i link in verticale */
+  }
+
+  .navbar-menu.active {
+    display: flex; /* Mostra quando attivo */
+  }
+
+  .navbar-item {
+    margin: 10px 0;
+    text-align: center; /* Centra i link in mobile */
+  }
+
+  .hamburger {
+    display: block; /* Mostra l'icona hamburger in mobile */
+  }
+}
