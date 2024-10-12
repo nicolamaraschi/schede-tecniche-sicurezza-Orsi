@@ -7,12 +7,14 @@ const ProductEdit = () => {
   const [loading, setLoading] = useState(true); // Stato di caricamento
   const [showModal, setShowModal] = useState(false); // Stato per il popup
   const [selectedProduct, setSelectedProduct] = useState(null); // Prodotto selezionato
+  const [imagesToRemove, setImagesToRemove] = useState([]); // Stato per le immagini da rimuovere
 
   useEffect(() => {
     const loadProductsList = async () => {
       try {
+       
         const data = await fetchProducts(); // Carica la lista dei prodotti
-        setProducts(data);
+        setProducts(data); // Imposta i prodotti nello stato
       } catch (error) {
         console.error("Error fetching products:", error);
       } finally {
@@ -31,48 +33,63 @@ const ProductEdit = () => {
   const handleCloseModal = () => {
     setShowModal(false); // Chiude il popup
     setSelectedProduct(null); // Resetta il prodotto selezionato
+    setImagesToRemove([]); // Resetta le immagini da rimuovere
   };
 
   const handleUpdateProduct = async (event) => {
     event.preventDefault(); // Previene il comportamento predefinito del modulo
-
+    
     if (!selectedProduct) return;
 
-    const updatedProduct = {
+    const name = event.target.name.value?.trim() || selectedProduct.name;
+    const description = event.target.description.value?.trim() || selectedProduct.description;
+    const categoryId = selectedProduct.category._id; // Assicurati di usare l'ID della categoria
+
+    if (!name || !description || !categoryId) {
+      console.error("Nome, descrizione e categoria non possono essere vuoti.");
+      return;
+    }
+
+    const updatedProductData = {
       ...selectedProduct,
-      name: event.target.name.value,
-      description: event.target.description.value,
-      category: {
-        ...selectedProduct.category,
-        name: event.target.category.value,
-        subcategories: selectedProduct.category.subcategories.map((sub, index) => ({
-          name: event.target[`subcategory-${index}`].value,
-        })),
-      },
+      name,
+      description,
+      category: categoryId,
+      subcategories: selectedProduct.category.subcategories.map((sub, index) => ({
+        name: event.target[`subcategory-${index}`]?.value?.trim() || sub.name,
+      })),
     };
 
-    const formData = new FormData();
-    formData.append('name', updatedProduct.name);
-    formData.append('description', updatedProduct.description);
-    formData.append('category', updatedProduct.category.name);
-    updatedProduct.category.subcategories.forEach((sub, index) => {
-      formData.append(`subcategory-${index}`, sub.name);
-    });
+    console.log('Dati modificati del prodotto:', updatedProductData);
+
+    const images = [];
+    const imagesToAdd = event.target.images?.files || [];
+    for (let i = 0; i < imagesToAdd.length; i++) {
+      images.push(imagesToAdd[i]);
+      console.log('Immagine da aggiungere:', imagesToAdd[i].name);
+    }
+
+    console.log('Immagini da rimuovere:', imagesToRemove);
 
     try {
-      await updateProduct(selectedProduct._id, formData);
-      handleCloseModal(); // Chiudi il popup
-      setProducts((prevProducts) =>
-        prevProducts.map((prod) =>
-          prod._id === updatedProduct._id ? updatedProduct : prod
-        )
-      ); // Aggiorna la lista dei prodotti
+      const response = await updateProduct(selectedProduct._id, updatedProductData, images, imagesToRemove);
+      const responseData = await response.json();
+      console.log('Server response:', responseData);
+
+      const updatedProducts = await fetchProducts();
+      setProducts(updatedProducts); // Aggiorna lo stato con i nuovi dati
+    
+      handleCloseModal(); // Chiude la modale dopo l'aggiornamento
+      // Forza il refresh della pagina
+      window.location.reload(); 
+
     } catch (error) {
       console.error("Error updating product:", error);
     }
   };
 
   const handleRemoveImage = (image) => {
+    setImagesToRemove((prev) => [...prev, image]); // Aggiunge l'immagine all'array delle immagini da rimuovere
     setSelectedProduct((prev) => ({
       ...prev,
       images: prev.images.filter((img) => img !== image),
@@ -124,7 +141,7 @@ const ProductEdit = () => {
               <td>
                 {product.images.length > 0 ? (
                   product.images.map((img, index) => {
-                    const imageUrl = `http://localhost:5002/${img}`; // Modifica qui se necessario
+                    const imageUrl = `http://localhost:5002/${img}`;
                     return (
                       <div key={index} style={{ display: 'flex', alignItems: 'center' }}>
                         <img 
@@ -132,7 +149,6 @@ const ProductEdit = () => {
                           alt={product.name} 
                           style={{ width: '50px', height: '50px', marginRight: '5px', objectFit: 'cover' }} 
                         />
-                      
                       </div>
                     );
                   })
@@ -207,28 +223,30 @@ const ProductEdit = () => {
                 {/* Sezione per le immagini */}
                 <div className="form-group">
                   <label htmlFor="images">Immagini</label>
-                  {selectedProduct.images.map((img, index) => (
-                    <div key={index} style={{ display: 'flex', alignItems: 'center' }}>
-                      <img 
-                        src={`http://localhost:5002/${img}`} 
-                        alt={img} 
-                        style={{ width: '50px', height: '50px', marginRight: '5px', objectFit: 'cover' }} 
-                      />
-                      <button type="button" onClick={() => handleRemoveImage(img)} className="btn btn-danger btn-sm">Rimuovi</button>
-                    </div>
-                  ))}
-                  <input
-                    type="file"
-                    id="images"
-                    name="images"
-                    accept="image/*"
-                    onChange={handleAddImages}
-                    multiple
-                  />
+                  {selectedProduct.images.length > 0 ? (
+                    selectedProduct.images.map((img, index) => (
+                      <div key={index} style={{ display: 'flex', alignItems: 'center' }}>
+                        <img 
+                          src={`http://localhost:5002/${img}`} 
+                          alt={`Image ${index}`} 
+                          style={{ width: '50px', height: '50px', marginRight: '5px', objectFit: 'cover' }} 
+                        />
+                        <button 
+                          type="button" 
+                          onClick={() => handleRemoveImage(img)} 
+                          aria-label={`Rimuovi immagine ${img}`}
+                        >
+                          Rimuovi
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <p>Nessuna immagine disponibile</p>
+                  )}
+                  <input type="file" name="images" multiple onChange={handleAddImages} />
                 </div>
 
-                <button type="submit" className="btn btn-primary">Aggiorna</button>
-                <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>Annulla</button>
+                <button type="submit" className="btn btn-success">Aggiorna Prodotto</button>
               </form>
             )}
           </div>

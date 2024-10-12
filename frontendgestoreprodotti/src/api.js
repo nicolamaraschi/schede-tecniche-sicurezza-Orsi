@@ -30,53 +30,84 @@ export const createProduct = async (product, images) => {
 };
 
 
-// Funzione per aggiornare un prodotto
 export const updateProduct = async (productId, updatedProductData, images, imagesToRemove) => {
   try {
-      // Crea un'istanza di FormData per gestire i dati e le immagini
       const formData = new FormData();
-      
-      // Aggiungi i dati del prodotto al FormData
+
+      // Verifica se updatedProductData è valido e contiene i dati necessari
+      if (!updatedProductData || !updatedProductData.name || !updatedProductData.description || !updatedProductData.category) {
+          console.error('Dati del prodotto non validi:', updatedProductData);
+          throw new Error('I dati del prodotto sono incompleti o non validi.');
+      }
+
+      // Aggiungi i dati del prodotto a FormData
       formData.append('name', updatedProductData.name);
       formData.append('description', updatedProductData.description);
-      formData.append('category', updatedProductData.category);
 
-      // Aggiungi le immagini se esistono
-      if (images && images.length > 0) {
-          images.forEach(image => {
-              formData.append('images', image); // Assicurati che il nome del campo corrisponda a quello gestito nel backend
-          });
+      // Aggiungi il nome della categoria al FormData, se esiste
+      if (typeof updatedProductData.category === 'string') {
+          formData.append('category', updatedProductData.category);
+      } else if (updatedProductData.category && updatedProductData.category.name) {
+          formData.append('category', updatedProductData.category.name);
+      } else {
+          console.error('Categoria non valida:', updatedProductData.category);
+          throw new Error('La categoria del prodotto non è valida.');
       }
 
-      // Aggiungi le immagini da rimuovere se esistono
-      if (imagesToRemove && imagesToRemove.length > 0) {
-          // Puoi scegliere di passare le immagini da rimuovere come un array
-          imagesToRemove.forEach(image => {
-              formData.append('removeImages', image); // Assicurati che il nome del campo corrisponda a quello gestito nel backend
-          });
-      }
-
-      // Effettua la richiesta fetch per aggiornare il prodotto
-      const response = await fetch(`/api/products/${productId}`, {
-          method: 'PUT',
-          body: formData, // Invia il form data
+      // Log dei dati aggiunti a FormData
+      console.log('Dati del prodotto aggiunti al FormData:', {
+          name: updatedProductData.name,
+          description: updatedProductData.description,
+          category: formData.get('category')
       });
 
-      // Logga la risposta completa del server per diagnosi
-      const responseData = await response.json();
-      console.log('Server response:', responseData);
+      // Immagini da aggiungere
+      if (images && images.length > 0) {
+          images.forEach(image => {
+              formData.append('images', image);
+              console.log('Immagine aggiunta al FormData:', image.name);
+          });
+      } else {
+          console.log('Nessuna immagine da aggiungere.');
+      }
 
-      // Verifica se la risposta è ok
+      // Immagini da rimuovere
+      if (imagesToRemove && imagesToRemove.length > 0) {
+          imagesToRemove.forEach(image => {
+              formData.append('removeImages', image);
+              console.log('Immagine da rimuovere aggiunta al FormData:', image);
+          });
+      } else {
+          console.log('Nessuna immagine da rimuovere.');
+      }
+
+      console.log('Invio richiesta per aggiornare il prodotto con ID:', productId);
+
+      // Invio della richiesta
+      const response = await fetch(`${API_URL}/prodotti/${productId}`, {
+          method: 'PUT',
+          body: formData,
+      });
+
+      // Controllo dello stato della risposta
       if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Errore nella risposta del server:', errorText);
           throw new Error('Errore durante l\'aggiornamento del prodotto');
       }
 
+      const responseData = await response.json();
+      console.log('Risposta del server:', responseData);
+
       return responseData;
   } catch (error) {
-      console.error('Error updating product:', error);
+      console.error('Errore durante l\'aggiornamento del prodotto:', error);
       throw error;
   }
 };
+
+
+
 
 
 export const deleteProduct = async (id) => {
