@@ -1,33 +1,66 @@
 const API_URL = 'http://localhost:5002/api/gestoreProdotti'; // Aggiorna questo se cambi l'endpoint
 
+
 // Funzioni per le API dei prodotti
 export const fetchProducts = async () => {
   const response = await fetch(`${API_URL}/prodotti`); // Corretto il percorso
   if (!response.ok) throw new Error('Error fetching products');
-  return response.json();
+  const products = await response.json();
+  console.log('Prodotti ricevuti:', products);
+  return products;
 };
 
+// Funzione per creare un prodotto
+// Funzione per creare un prodotto
 export const createProduct = async (product, images) => {
-  const formData = new FormData();
-  
+  const formData = new FormData(); // Crea un oggetto FormData
+
   // Aggiungi i dati del prodotto a FormData
   formData.append('name', product.name);
   formData.append('description', product.description);
   formData.append('category', product.category);
-
-  // Aggiungi le immagini a FormData
-  images.forEach((image) => {
-    formData.append('images', image); // 'images' deve corrispondere al nome dell'input nel middleware multer
-  });
-
-  const response = await fetch(`${API_URL}/prodotti`, { // Corretto il percorso
-    method: 'POST',
-    body: formData, // Usa FormData qui
-  });
   
-  if (!response.ok) throw new Error('Error creating product');
-  return response.json();
+  // Aggiungi subcategory come oggetto, non come stringa
+  formData.append('subcategory[id]', product.subcategory.id);
+  formData.append('subcategory[name]', product.subcategory.name);
+  
+  // Aggiungi le immagini a FormData
+  images.forEach(image => {
+    formData.append('images', image); // Aggiungi ogni immagine
+  });
+
+  // Logga il contenuto di FormData
+  console.log('Product data being sent:', product); // Logga i dati del prodotto
+
+  try {
+    const response = await fetch('http://localhost:5002/api/gestoreProdotti/prodotti', {
+      method: 'POST',
+      body: formData, // Invia FormData
+      // Non impostare Content-Type, il browser lo gestirà automaticamente
+    });
+
+    if (!response.ok) {
+      throw new Error('Error creating product: ' + response.statusText);
+    }
+
+    return await response.json(); // Restituisci il JSON della risposta
+  } catch (error) {
+    console.error('Error creating product:', error);
+    throw error; // Propaga l'errore
+  }
 };
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 export const updateProduct = async (productId, updatedProductData, images, imagesToRemove) => {
@@ -43,25 +76,17 @@ export const updateProduct = async (productId, updatedProductData, images, image
       // Aggiungi i dati del prodotto a FormData
       formData.append('name', updatedProductData.name);
       formData.append('description', updatedProductData.description);
-
-      // Aggiungi il nome della categoria al FormData, se esiste
-      if (typeof updatedProductData.category === 'string') {
-          formData.append('category', updatedProductData.category);
-      } else if (updatedProductData.category && updatedProductData.category.name) {
-          formData.append('category', updatedProductData.category.name);
-      } else {
-          console.error('Categoria non valida:', updatedProductData.category);
-          throw new Error('La categoria del prodotto non è valida.');
-      }
+      formData.append('category', updatedProductData.category);
 
       // Log dei dati aggiunti a FormData
       console.log('Dati del prodotto aggiunti al FormData:', {
           name: updatedProductData.name,
           description: updatedProductData.description,
-          category: formData.get('category')
+          category: updatedProductData.category,
+          images: images.map(img => img.name) // Nome delle immagini
       });
 
-      // Immagini da aggiungere
+      // Aggiungi le immagini a FormData
       if (images && images.length > 0) {
           images.forEach(image => {
               formData.append('images', image);
@@ -107,25 +132,35 @@ export const updateProduct = async (productId, updatedProductData, images, image
 };
 
 
+  export const fetchProductByCode = async (id) => {
+      const response = await fetch(`${API_URL}/prodotti/codice/${id}`); 
+      if (!response.ok) throw new Error('Error fetching product by code');
+      const product = await response.json();
+      console.log('Prodotto ricevuto per codice:', product);
+      return product;
+    };
 
-
-
-export const deleteProduct = async (id) => {
-  const response = await fetch(`${API_URL}/prodotti/${id}`, { // Corretto il percorso
-    method: 'DELETE',
-  });
-  if (!response.ok) throw new Error('Error deleting product');
-};
+    export const deleteProduct = async (id) => {
+      const response = await fetch(`${API_URL}/prodotti/${id}`, { // Corretto il percorso
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Error deleting product');
+      console.log('Prodotto eliminato con ID:', id);
+  };
 
 
 // Funzioni per le API delle categorie
 export const fetchCategories = async () => {
   const response = await fetch(`${API_URL}/categorie`); // Corretto il percorso
   if (!response.ok) throw new Error('Error fetching categories');
-  return response.json();
+  const categories = await response.json();
+  console.log('Categorie ricevute:', categories);
+  return categories;
 };
 
 export const createCategory = async (category) => {
+  console.log('Invio dati per la creazione della categoria:', category);
+  
   const response = await fetch(`${API_URL}/categorie`, {
     method: 'POST',
     headers: {
@@ -138,10 +173,14 @@ export const createCategory = async (category) => {
     throw new Error('Error creating category');
   }
   
-  return response.json();
+  const createdCategory = await response.json();
+  console.log('Categoria creata:', createdCategory);
+  return createdCategory;
 };
 
 export const addSubcategory = async (categoryId, subcategory) => {
+  console.log('Invio dati per aggiungere la sottocategoria:', subcategory);
+
   const response = await fetch(`${API_URL}/categorie/${categoryId}/sottocategorie`, {
       method: 'POST',
       headers: {
@@ -154,13 +193,14 @@ export const addSubcategory = async (categoryId, subcategory) => {
       throw new Error('Error adding subcategory');
   }
 
-  return response.json();
+  const addedSubcategory = await response.json();
+  console.log('Sottocategoria aggiunta:', addedSubcategory);
+  return addedSubcategory;
 };
 
-
-
-
 export const updateCategory = async (id, category) => {
+  console.log('Invio dati per aggiornare la categoria con ID:', id, category);
+
   const response = await fetch(`${API_URL}/categorie/${id}`, { // Corretto il percorso
     method: 'PUT',
     headers: {
@@ -168,34 +208,35 @@ export const updateCategory = async (id, category) => {
     },
     body: JSON.stringify(category),
   });
+  
   if (!response.ok) throw new Error('Error updating category');
-  return response.json(); // Aggiunto il ritorno della risposta
+  
+  const updatedCategory = await response.json();
+  console.log('Categoria aggiornata:', updatedCategory);
+  return updatedCategory; // Aggiunto il ritorno della risposta
 };
 
 export const deleteCategory = async (id) => {
+  console.log('Richiesta di eliminazione della categoria con ID:', id);
+
   const response = await fetch(`${API_URL}/categorie/${id}`, { // Corretto il percorso
     method: 'DELETE',
   });
+  
   if (!response.ok) throw new Error('Error deleting category');
-};
-
-
-
-
-// Funzione per ottenere un prodotto per codice
-export const fetchProductByCode = async (id) => {
-  const response = await fetch(`${API_URL}/prodotti/codice/${id}`); // Corretto il percorso
-  if (!response.ok) throw new Error('Error fetching product by code');
-  return response.json();
+  
+  console.log('Categoria eliminata con successo:', id);
 };
 
 // Funzione per ottenere una categoria per ID
 export const fetchCategoryById = async (id) => {
   const response = await fetch(`${API_URL}/categorie/${id}`); // Corretto il percorso
   if (!response.ok) throw new Error('Error fetching category by ID');
-  return response.json();
+  
+  const category = await response.json();
+  console.log('Categoria ricevuta per ID:', category);
+  return category;
 };
-
 
 
 

@@ -7,23 +7,30 @@ const mongoose = require('mongoose');
 // Crea un prodotto
 exports.createProduct = async (req, res) => {
     try {
+        // Logga il corpo della richiesta per il debug
+        console.log('Request Body:', req.body);
+        console.log('Uploaded Files:', req.files);
+
         const product = new Product({
             name: req.body.name,
             description: req.body.description,
             category: req.body.category, // ID della categoria
             subcategory: {                // Oggetto per la sottocategoria
-                id: req.body.subcategory.id, // ID della sottocategoria
-                name: req.body.subcategory.name // Nome della sottocategoria
+                id: req.body.subcategory?.id, // ID della sottocategoria
+                name: req.body.subcategory?.name // Nome della sottocategoria
             },
             // Salva i percorsi delle immagini
             images: req.files ? req.files.map(file => file.path) : [], // Usa req.files per ottenere i file caricati, o un array vuoto se non ci sono file
         });
+
         await product.save();
         res.status(201).json(product);
     } catch (error) {
+        console.error('Error saving product:', error); // Logga l'errore
         res.status(400).json({ message: error.message });
     }
 };
+
 
 
 // Ottieni tutti i prodotti
