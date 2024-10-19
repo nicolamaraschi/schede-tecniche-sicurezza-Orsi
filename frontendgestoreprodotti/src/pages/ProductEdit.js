@@ -1,32 +1,38 @@
 import React, { useEffect, useState } from 'react';
-import { fetchProducts, updateProduct, deleteProduct } from '../api'; // Importa le funzioni necessarie
+import { fetchProducts, updateProduct, deleteProduct, fetchCategories } from '../api'; // Importa la funzione fetchCategories
 import './ProductEdit.css'; // Importa gli stili per il componente
 
 const ProductEdit = () => {
   const [products, setProducts] = useState([]); // Stato per la lista dei prodotti
+  const [categories, setCategories] = useState([]); // Stato per la lista delle categorie
   const [loading, setLoading] = useState(true); // Stato di caricamento
   const [showModal, setShowModal] = useState(false); // Stato per il popup
   const [selectedProduct, setSelectedProduct] = useState(null); // Prodotto selezionato
   const [imagesToRemove, setImagesToRemove] = useState([]); // Stato per le immagini da rimuovere
+  const [selectedCategoryId, setSelectedCategoryId] = useState(''); // Stato per la categoria selezionata
+  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState(''); // Stato per la sottocategoria selezionata
 
   useEffect(() => {
-    const loadProductsList = async () => {
+    const loadInitialData = async () => {
       try {
-       
-        const data = await fetchProducts(); // Carica la lista dei prodotti
-        setProducts(data); // Imposta i prodotti nello stato
+        const productData = await fetchProducts(); // Carica la lista dei prodotti
+        const categoryData = await fetchCategories(); // Carica la lista delle categorie
+        setProducts(productData); // Imposta i prodotti nello stato
+        setCategories(categoryData); // Imposta le categorie nello stato
       } catch (error) {
-        console.error("Error fetching products:", error);
+        console.error("Error fetching products or categories:", error);
       } finally {
         setLoading(false); // Imposta il caricamento a false
       }
     };
 
-    loadProductsList(); // Chiama la funzione per caricare i prodotti
+    loadInitialData(); // Chiama la funzione per caricare i dati iniziali
   }, []);
 
   const handleEditClick = (product) => {
     setSelectedProduct(product); // Imposta il prodotto selezionato
+    setSelectedCategoryId(product.category._id); // Imposta la categoria selezionata
+    setSelectedSubcategoryId(product.subcategory?._id); // Imposta la sottocategoria selezionata
     setShowModal(true); // Mostra il popup
   };
 
@@ -38,14 +44,13 @@ const ProductEdit = () => {
 
   const handleUpdateProduct = async (event) => {
     event.preventDefault(); // Previene il comportamento predefinito del modulo
-    
+
     if (!selectedProduct) return;
 
     const name = event.target.name.value?.trim() || selectedProduct.name;
     const description = event.target.description.value?.trim() || selectedProduct.description;
-    const categoryId = selectedProduct.category._id; // Assicurati di usare l'ID della categoria
 
-    if (!name || !description || !categoryId) {
+    if (!name || !description || !selectedCategoryId) {
       console.error("Nome, descrizione e categoria non possono essere vuoti.");
       return;
     }
@@ -54,10 +59,11 @@ const ProductEdit = () => {
       ...selectedProduct,
       name,
       description,
-      category: categoryId,
-      subcategories: selectedProduct.category.subcategories.map((sub, index) => ({
-        name: event.target[`subcategory-${index}`]?.value?.trim() || sub.name,
-      })),
+      category: selectedCategoryId,
+      subcategory: {
+        id: selectedSubcategoryId,
+        name: categories.find(cat => cat._id === selectedCategoryId)?.subcategories.find(sub => sub._id === selectedSubcategoryId)?.name
+      },
     };
 
     console.log('Dati modificati del prodotto:', updatedProductData);
@@ -78,30 +84,21 @@ const ProductEdit = () => {
 
       const updatedProducts = await fetchProducts();
       setProducts(updatedProducts); // Aggiorna lo stato con i nuovi dati
-    
-      handleCloseModal(); // Chiude la modale dopo l'aggiornamento
-      // Forza il refresh della pagina
-      window.location.reload(); 
 
+      handleCloseModal(); // Chiude la modale dopo l'aggiornamento
+      window.location.reload(); // Forza il refresh della pagina
     } catch (error) {
       console.error("Error updating product:", error);
     }
   };
 
-  const handleRemoveImage = (image) => {
-    setImagesToRemove((prev) => [...prev, image]); // Aggiunge l'immagine all'array delle immagini da rimuovere
-    setSelectedProduct((prev) => ({
-      ...prev,
-      images: prev.images.filter((img) => img !== image),
-    }));
+  const handleCategoryChange = (event) => {
+    setSelectedCategoryId(event.target.value); // Aggiorna la categoria selezionata
+    setSelectedSubcategoryId(''); // Resetta la sottocategoria selezionata
   };
 
-  const handleAddImages = (event) => {
-    const files = Array.from(event.target.files);
-    setSelectedProduct((prev) => ({
-      ...prev,
-      images: [...prev.images, ...files.map(file => file.name)],
-    }));
+  const handleSubcategoryChange = (event) => {
+    setSelectedSubcategoryId(event.target.value); // Aggiorna la sottocategoria selezionata
   };
 
   const handleDeleteProduct = async (productId) => {
@@ -137,7 +134,7 @@ const ProductEdit = () => {
               <td>{product.name}</td>
               <td>{product.description}</td>
               <td>{product.category?.name}</td>
-              <td>{product.category?.subcategories.map(sub => sub.name).join(', ')}</td>
+              <td>{product.subcategory?.name}</td>
               <td>
                 {product.images.length > 0 ? (
                   product.images.map((img, index) => {
@@ -198,29 +195,28 @@ const ProductEdit = () => {
                 </div>
                 <div className="form-group">
                   <label htmlFor="category">Categoria</label>
-                  <input
-                    type="text"
-                    id="category"
-                    name="category"
-                    defaultValue={selectedProduct.category?.name}
-                    required
-                  />
+                  <select id="category" name="category" value={selectedCategoryId} onChange={handleCategoryChange} required>
+                    <option value="">Seleziona una categoria</option>
+                    {categories.map(category => (
+                      <option key={category._id} value={category._id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="form-group">
-                  <label>Sottocategorie</label>
-                  {selectedProduct.category?.subcategories.map((sub, index) => (
-                    <div key={index}>
-                      <input
-                        type="text"
-                        name={`subcategory-${index}`}
-                        defaultValue={sub.name}
-                        required
-                      />
-                    </div>
-                  ))}
+                  <label htmlFor="subcategory">Sottocategoria</label>
+                  <select id="subcategory" name="subcategory" value={selectedSubcategoryId} onChange={handleSubcategoryChange} required>
+                    <option value="">Seleziona una sottocategoria</option>
+                    {categories
+                      .find(category => category._id === selectedCategoryId)?.subcategories
+                      .map(sub => (
+                        <option key={sub._id} value={sub._id}>
+                          {sub.name}
+                        </option>
+                      ))}
+                  </select>
                 </div>
-
-                {/* Sezione per le immagini */}
                 <div className="form-group">
                   <label htmlFor="images">Immagini</label>
                   {selectedProduct.images.length > 0 ? (
@@ -228,13 +224,13 @@ const ProductEdit = () => {
                       <div key={index} style={{ display: 'flex', alignItems: 'center' }}>
                         <img 
                           src={`http://localhost:5002/${img}`} 
-                          alt={`Image ${index}`} 
+                          alt={selectedProduct.name} 
                           style={{ width: '50px', height: '50px', marginRight: '5px', objectFit: 'cover' }} 
                         />
-                        <button 
-                          type="button" 
-                          onClick={() => handleRemoveImage(img)} 
-                          aria-label={`Rimuovi immagine ${img}`}
+                        <button
+                          type="button"
+                          className="btn btn-danger btn-sm"
+                          onClick={() => setImagesToRemove([...imagesToRemove, img])}
                         >
                           Rimuovi
                         </button>
@@ -243,9 +239,8 @@ const ProductEdit = () => {
                   ) : (
                     <p>Nessuna immagine disponibile</p>
                   )}
-                  <input type="file" name="images" multiple onChange={handleAddImages} />
+                  <input type="file" name="images" multiple />
                 </div>
-
                 <button type="submit" className="btn btn-success">Aggiorna Prodotto</button>
               </form>
             )}
