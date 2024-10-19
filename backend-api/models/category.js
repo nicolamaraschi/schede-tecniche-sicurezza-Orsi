@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const categorySchema = new mongoose.Schema({
   name: { type: String, required: true }, // Nome della categoria (es: Bucato, Pulizie, etc.)
   subcategories: [{ 
-    name: { type: String, required: true } // Sottocategoria (es: Bucato Domestico, Bucato Professionale)
+    name: { type: String, required: true } // Nome della sottocategoria
   }]
 });
 

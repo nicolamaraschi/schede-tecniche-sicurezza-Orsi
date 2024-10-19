@@ -2,6 +2,7 @@ const Product = require('../models/productManager'); // Modello del prodotto
 const Category = require('../models/category'); // Modello della categoria
 const fs = require('fs');
 const path = require('path');
+const mongoose = require('mongoose');
 
 // Crea un prodotto
 exports.createProduct = async (req, res) => {
@@ -9,9 +10,13 @@ exports.createProduct = async (req, res) => {
         const product = new Product({
             name: req.body.name,
             description: req.body.description,
-            category: req.body.category,
+            category: req.body.category, // ID della categoria
+            subcategory: {                // Oggetto per la sottocategoria
+                id: req.body.subcategory.id, // ID della sottocategoria
+                name: req.body.subcategory.name // Nome della sottocategoria
+            },
             // Salva i percorsi delle immagini
-            images: req.files.map(file => file.path), // Usa req.files per ottenere i file caricati
+            images: req.files ? req.files.map(file => file.path) : [], // Usa req.files per ottenere i file caricati, o un array vuoto se non ci sono file
         });
         await product.save();
         res.status(201).json(product);
@@ -19,6 +24,7 @@ exports.createProduct = async (req, res) => {
         res.status(400).json({ message: error.message });
     }
 };
+
 
 // Ottieni tutti i prodotti
 exports.getAllProducts = async (req, res) => {
@@ -56,7 +62,11 @@ exports.updateProduct = async (req, res) => {
         const updateData = {
             name: req.body.name,
             description: req.body.description,
-            category: req.body.category,
+            category: req.body.category, // ID della categoria
+            subcategory: {                // Oggetto per la sottocategoria
+                id: req.body.subcategory.id, // ID della sottocategoria
+                name: req.body.subcategory.name // Nome della sottocategoria
+            },
             images: product.images, // Mantieni le immagini esistenti per ora
         };
 
@@ -93,23 +103,7 @@ exports.updateProduct = async (req, res) => {
     }
 };
 
-/*
-// Rimuovi un prodotto (non è stato fornito, ma è una funzione comune)
-exports.deleteProduct = async (req, res) => {
-    try {
-        const product = await Product.findByIdAndDelete(req.params.id);
-        if (!product) {
-            return res.status(404).json({ message: 'Prodotto non trovato' });
-        }
-        res.status(204).send(); // 204 No Content
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
-*/
 
-
-// Rimuovi un prodotto e le sue immagini
 // Rimuovi un prodotto e le sue immagini
 exports.deleteProduct = async (req, res) => {
     try {
@@ -120,9 +114,9 @@ exports.deleteProduct = async (req, res) => {
         }
 
         // Elimina le immagini dalla directory uploads
-        if (product.images.length > 0) {
+        if (product.images && product.images.length > 0) { // Verifica se esistono immagini
             product.images.forEach(imagePath => {
-                const fullPath = path.join(__dirname, '../', imagePath); // Costruisci il percorso completo senza il doppio uploads
+                const fullPath = path.join(__dirname, '../', imagePath); // Costruisci il percorso completo
                 fs.unlink(fullPath, (err) => {
                     if (err) {
                         console.error(`Error deleting image: ${fullPath}`, err);
@@ -149,7 +143,10 @@ exports.createCategory = async (req, res) => {
         // Se non ci sono sottocategorie fornite, inizializza come array vuoto
         const category = new Category({
             name,
-            subcategories: subcategories || [] // Se subcategories è undefined, lo inizializza come un array vuoto
+            subcategories: subcategories ? subcategories.map(sub => ({
+                id: new mongoose.Types.ObjectId(), // Genera un nuovo ID per la sottocategoria
+                name: sub.name // Nome della sottocategoria
+            })) : [] // Inizializza come array vuoto se non fornito
         });
 
         await category.save();
@@ -158,7 +155,6 @@ exports.createCategory = async (req, res) => {
         res.status(400).json({ message: error.message });
     }
 };
-
 
 // Aggiungi una sottocategoria a una categoria esistente
 exports.addSubcategory = async (req, res) => {
@@ -173,7 +169,10 @@ exports.addSubcategory = async (req, res) => {
         }
 
         // Aggiungi la sottocategoria all'array delle sottocategorie
-        category.subcategories.push({ name });
+        category.subcategories.push({
+            id: new mongoose.Types.ObjectId(), // Genera un nuovo ID per la sottocategoria
+            name
+        });
 
         // Salva le modifiche alla categoria
         await category.save();
@@ -183,8 +182,6 @@ exports.addSubcategory = async (req, res) => {
         res.status(400).json({ message: error.message });
     }
 };
-
-
 
 // Ottieni tutte le categorie
 exports.getAllCategories = async (req, res) => {
@@ -212,7 +209,8 @@ exports.getCategoryById = async (req, res) => {
 // Aggiorna una categoria
 exports.updateCategory = async (req, res) => {
     try {
-        const category = await Category.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const { name, subcategories } = req.body; // Destruttura name e subcategories
+        const category = await Category.findByIdAndUpdate(req.params.id, { name, subcategories }, { new: true });
         if (!category) {
             return res.status(404).json({ message: 'Categoria non trovata' });
         }
