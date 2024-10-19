@@ -59,6 +59,9 @@ exports.getProductById = async (req, res) => {
 // Aggiorna un prodotto
 exports.updateProduct = async (req, res) => {
     try {
+        // Stampa nel terminale cosa riceve la richiesta
+        console.log('Dati ricevuti per l\'aggiornamento del prodotto:', req.body);
+
         // Recupera il prodotto esistente dal database
         const product = await Product.findById(req.params.id);
         if (!product) {
@@ -109,6 +112,7 @@ exports.updateProduct = async (req, res) => {
         res.status(400).json({ message: error.message });
     }
 };
+
 
 
 // Rimuovi un prodotto e le sue immagini

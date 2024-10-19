@@ -7,6 +7,7 @@ const CategoryEdit = () => {
   const [loading, setLoading] = useState(true); // Stato di caricamento
   const [showModal, setShowModal] = useState(false); // Stato per il popup
   const [selectedCategory, setSelectedCategory] = useState(null); // Categoria selezionata per la modifica
+  const [notification, setNotification] = useState({ message: '', type: '' }); // Stato per le notifiche
 
   useEffect(() => {
     const loadCategoriesList = async () => {
@@ -31,6 +32,7 @@ const CategoryEdit = () => {
   const handleCloseModal = () => {
     setShowModal(false); // Chiude il popup
     setSelectedCategory(null); // Resetta la categoria selezionata
+    setNotification({ message: '', type: '' }); // Resetta la notifica
   };
 
   const handleUpdateCategory = async (event) => {
@@ -55,8 +57,10 @@ const CategoryEdit = () => {
           cat._id === updatedCategory._id ? updatedCategory : cat
         )
       ); // Aggiorna la lista delle categorie
+      setNotification({ message: 'Categoria aggiornata con successo!', type: 'success' }); // Mostra messaggio di successo
     } catch (error) {
       console.error("Error updating category:", error);
+      setNotification({ message: 'Errore durante l\'aggiornamento della categoria.', type: 'error' }); // Mostra messaggio di errore
     }
   };
 
@@ -67,6 +71,11 @@ const CategoryEdit = () => {
   return (
     <div className="container mt-4">
       <h2>Elenco delle Categorie</h2>
+      {notification.message && (
+        <div className={`notification ${notification.type}`}>
+          {notification.message}
+        </div>
+      )}
       <table className="table table-striped">
         <thead>
           <tr>
@@ -124,7 +133,7 @@ const CategoryEdit = () => {
                   ))}
                 </div>
                 <button type="submit" className="btn btn-primary">Aggiorna</button>
-                <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>Annulla</button>
+                <button type="button" className="btn btn-danger" onClick={handleCloseModal}>Esci senza modifiche</button>
               </form>
             )}
           </div>

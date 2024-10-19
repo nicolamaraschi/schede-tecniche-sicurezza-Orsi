@@ -68,7 +68,7 @@ export const updateProduct = async (productId, updatedProductData, images, image
       const formData = new FormData();
 
       // Verifica se updatedProductData è valido e contiene i dati necessari
-      if (!updatedProductData || !updatedProductData.name || !updatedProductData.description || !updatedProductData.category) {
+      if (!updatedProductData || !updatedProductData.name || !updatedProductData.description || !updatedProductData.category || !updatedProductData.subcategory) {
           console.error('Dati del prodotto non validi:', updatedProductData);
           throw new Error('I dati del prodotto sono incompleti o non validi.');
       }
@@ -78,11 +78,16 @@ export const updateProduct = async (productId, updatedProductData, images, image
       formData.append('description', updatedProductData.description);
       formData.append('category', updatedProductData.category);
 
+      // Invia subcategory come oggetto (senza JSON.stringify)
+      formData.append('subcategory[id]', updatedProductData.subcategory.id); // Aggiungi ID
+      formData.append('subcategory[name]', updatedProductData.subcategory.name); // Aggiungi nome
+
       // Log dei dati aggiunti a FormData
       console.log('Dati del prodotto aggiunti al FormData:', {
           name: updatedProductData.name,
           description: updatedProductData.description,
           category: updatedProductData.category,
+          subcategory: updatedProductData.subcategory, // Logga qui per vedere se è corretto
           images: images.map(img => img.name) // Nome delle immagini
       });
 
@@ -130,6 +135,10 @@ export const updateProduct = async (productId, updatedProductData, images, image
       throw error;
   }
 };
+
+
+
+
 
 
   export const fetchProductByCode = async (id) => {
