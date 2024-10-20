@@ -1,6 +1,6 @@
 const Product = require('../models/productManager'); // Modello del prodotto
 const Category = require('../models/category'); // Modello della categoria
-const fs = require('fs');
+const fs = require('fs').promises; 
 const path = require('path');
 const mongoose = require('mongoose');
 
@@ -114,7 +114,7 @@ exports.updateProduct = async (req, res) => {
 };
 
 
-
+/*
 // Rimuovi un prodotto e le sue immagini
 exports.deleteProduct = async (req, res) => {
     try {
@@ -141,6 +141,36 @@ exports.deleteProduct = async (req, res) => {
         res.status(204).send(); // 204 No Content
     } catch (error) {
         console.error('Error deleting product:', error);
+        res.status(500).json({ message: error.message });
+    }
+};
+*/
+// Rimuovi un prodotto e le sue immagini
+exports.deleteProduct = async (req, res) => {
+    try {
+        // Trova e elimina il prodotto da eliminare
+        const product = await Product.findByIdAndDelete(req.params.id);
+        if (!product) {
+            return res.status(404).json({ message: 'Prodotto non trovato' });
+        }
+
+        // Elimina le immagini dalla directory uploads
+        if (product.images && product.images.length > 0) { // Verifica se esistono immagini
+            product.images.forEach(imagePath => {
+                const fullPath = path.join(__dirname, '../', imagePath); // Costruisci il percorso completo
+                fs.unlink(fullPath, (err) => {
+                    if (err) {
+                        console.error(`Errore eliminando l'immagine: ${fullPath}`, err);
+                    } else {
+                        console.log(`Immagine eliminata: ${fullPath}`); // Log dell'immagine eliminata
+                    }
+                });
+            });
+        }
+
+        res.status(204).send(); // 204 No Content
+    } catch (error) {
+        console.error('Errore eliminando il prodotto:', error);
         res.status(500).json({ message: error.message });
     }
 };
