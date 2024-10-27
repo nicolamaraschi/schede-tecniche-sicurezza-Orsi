@@ -67,7 +67,7 @@ export const updateProduct = async (productId, updatedProductData, images, image
   try {
       const formData = new FormData();
 
-      // Verifica se updatedProductData è valido e contiene i dati necessari
+      // Verifica se updatedProductData è valido
       if (!updatedProductData || !updatedProductData.name || !updatedProductData.description || !updatedProductData.category || !updatedProductData.subcategory) {
           console.error('Dati del prodotto non validi:', updatedProductData);
           throw new Error('I dati del prodotto sono incompleti o non validi.');
@@ -77,53 +77,38 @@ export const updateProduct = async (productId, updatedProductData, images, image
       formData.append('name', updatedProductData.name);
       formData.append('description', updatedProductData.description);
       formData.append('category', updatedProductData.category);
+      formData.append('subcategory[id]', updatedProductData.subcategory.id);
+      formData.append('subcategory[name]', updatedProductData.subcategory.name);
 
-      // Invia subcategory come oggetto (senza JSON.stringify)
-      formData.append('subcategory[id]', updatedProductData.subcategory.id); // Aggiungi ID
-      formData.append('subcategory[name]', updatedProductData.subcategory.name); // Aggiungi nome
-
-      // Log dei dati aggiunti a FormData
-      console.log('Dati del prodotto aggiunti al FormData:', {
-          name: updatedProductData.name,
-          description: updatedProductData.description,
-          category: updatedProductData.category,
-          subcategory: updatedProductData.subcategory, // Logga qui per vedere se è corretto
-          images: images.map(img => img.name) // Nome delle immagini
-      });
-
-      // Aggiungi le immagini a FormData
+      // Aggiungi le immagini
       if (images && images.length > 0) {
           images.forEach(image => {
               formData.append('images', image);
               console.log('Immagine aggiunta al FormData:', image.name);
           });
-      } else {
-          console.log('Nessuna immagine da aggiungere.');
       }
 
-      // Immagini da rimuovere
+      // Aggiungi le immagini da rimuovere
       if (imagesToRemove && imagesToRemove.length > 0) {
           imagesToRemove.forEach(image => {
               formData.append('removeImages', image);
               console.log('Immagine da rimuovere aggiunta al FormData:', image);
           });
-      } else {
-          console.log('Nessuna immagine da rimuovere.');
       }
 
       console.log('Invio richiesta per aggiornare il prodotto con ID:', productId);
 
-      // Invio della richiesta
+      // Invia la richiesta
       const response = await fetch(`${API_URL}/prodotti/${productId}`, {
           method: 'PUT',
           body: formData,
       });
 
-      // Controllo dello stato della risposta
+      // Controllo della risposta
       if (!response.ok) {
           const errorText = await response.text();
           console.error('Errore nella risposta del server:', errorText);
-          throw new Error('Errore durante l\'aggiornamento del prodotto');
+          throw new Error(`Errore durante l'aggiornamento del prodotto: ${errorText}`);
       }
 
       const responseData = await response.json();
@@ -132,9 +117,10 @@ export const updateProduct = async (productId, updatedProductData, images, image
       return responseData;
   } catch (error) {
       console.error('Errore durante l\'aggiornamento del prodotto:', error);
-      throw error;
+      throw error; // Rilancia l'errore per il gestore chiamante
   }
 };
+
 
 
 

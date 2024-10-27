@@ -45,6 +45,7 @@ const ViewProducts = () => {
             <th>Unità</th>
             <th>Categoria</th>
             <th>Descrizione</th>
+            <th>Immagini</th> {/* Nuova colonna per le immagini */}
             <th>Azioni</th>
           </tr>
         </thead>
@@ -57,6 +58,16 @@ const ViewProducts = () => {
               <td>{product.unita}</td>
               <td>{product.categoria}</td>
               <td>{product.descrizione}</td>
+              <td>
+                {/* Mostra le immagini, se disponibili */}
+                {product.immagini && product.immagini.length > 0 ? (
+                  product.immagini.map((img, index) => (
+                    <img key={index} src={img} alt={`Immagine ${index + 1}`} style={{ width: '50px', height: 'auto', marginRight: '5px' }} />
+                  ))
+                ) : (
+                  <span>Nessuna immagine</span>
+                )}
+              </td>
               <td>
                 <Button onClick={() => handleDelete(product._id)} variant="danger" size="sm">
                   Elimina
