@@ -6,7 +6,8 @@ const prodottoCatalogoSchema = new mongoose.Schema({
   prezzo: { type: Number, required: true },
   unita: { type: String, required: true },  // €/PZ o €/KG
   categoria: { type: String, required: true },
-  descrizione: { type: String }
+  descrizione: { type: String },
+  immagini: [{ type: String }] // Aggiunto per le immagini
 });
 
 module.exports = mongoose.model('ProdottoCatalogo', prodottoCatalogoSchema);

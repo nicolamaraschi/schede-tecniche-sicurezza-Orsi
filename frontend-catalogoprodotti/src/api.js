@@ -2,14 +2,29 @@
 const API_URL = 'http://localhost:5002/api/prodottiCatalogo/prodotti'; // Modifica con l'URL corretto
 const AUTH_URL = 'http://localhost:5002/api/auth'; // URL per le API di autenticazione
 // Funzione per creare un nuovo prodotto
-export const createProdotto = async (prodotto) => {
+export const createProdotto = async (prodotto, immagini) => {
   try {
+    const formData = new FormData();
+    
+    // Aggiungi i dati del prodotto
+    for (const key in prodotto) {
+      formData.append(key, prodotto[key]);
+    }
+    
+    // Aggiungi le immagini
+    immagini.forEach((file) => {
+      formData.append('immagini', file);
+    });
+
+    // Debug: Stampa il contenuto di FormData
+    console.log('Contenuto di FormData:');
+    for (const [key, value] of formData.entries()) {
+      console.log(`${key}: ${value instanceof File ? value.name : value}`);
+    }
+
     const response = await fetch(API_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(prodotto),
+      body: formData, // Invia il FormData
     });
 
     if (!response.ok) {
@@ -23,6 +38,8 @@ export const createProdotto = async (prodotto) => {
   }
 };
 
+
+
 // Funzione per ottenere tutti i prodotti
 export const getAllProdotti = async () => {
   try {
@@ -30,12 +47,16 @@ export const getAllProdotti = async () => {
     if (!response.ok) {
       throw new Error('Errore durante il recupero dei prodotti');
     }
-    return await response.json();
+    
+    const data = await response.json();
+    console.log('Prodotti recuperati:', data); // Stampa il JSON dei prodotti
+    return data;
   } catch (error) {
     console.error(error);
     throw error;
   }
 };
+
 
 // Funzione per ottenere un prodotto per ID
 export const getProdottoById = async (id) => {
@@ -51,15 +72,23 @@ export const getProdottoById = async (id) => {
   }
 };
 
+
 // Funzione per aggiornare un prodotto
-export const updateProdotto = async (id, prodotto) => {
+export const updateProdotto = async (id, prodotto, immagini) => {
   try {
+    const formData = new FormData();
+    // Aggiungi i dati del prodotto
+    for (const key in prodotto) {
+      formData.append(key, prodotto[key]);
+    }
+    // Aggiungi le nuove immagini
+    immagini.forEach((file) => {
+      formData.append('immagini', file);
+    });
+
     const response = await fetch(`${API_URL}/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(prodotto),
+      body: formData, // Invia il FormData
     });
 
     if (!response.ok) {

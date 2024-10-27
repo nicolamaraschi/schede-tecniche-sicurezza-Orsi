@@ -3,22 +3,42 @@ services:
   backend:
     build: ./backend-api
     container_name: backend-api
-    environment:
-      - MONGO_URI=mongodb+srv://username:password@cluster0.mongodb.net/dbname?retryWrites=true&w=majority
+    env_file:
+      - ./backend-api/.env  # Carica le variabili d'ambiente dal file .env
     ports:
-      - "5002:5002" 
+      - "5002:5002"
     volumes:
       - ./backend-api:/usr/src/app
     networks:
       - app-network
 
-  frontend:
+  frontend_schedetechiche:
     build: ./frontend_schedetechiche
-    container_name: frontend-app
+    container_name: frontend-schedetechiche
     ports:
       - "3000:80"
     volumes:
       - ./frontend_schedetechiche:/usr/src/app
+    networks:
+      - app-network
+
+  frontend_catalogoprodotti:
+    build: ./frontend-catalogoprodotti
+    container_name: frontend-catalogoprodotti
+    ports:
+      - "3001:80"
+    volumes:
+      - ./frontend-catalogoprodotti:/usr/src/app
+    networks:
+      - app-network
+
+  frontend_gestoreprodotti:
+    build: ./frontendgestoreprodotti
+    container_name: frontend-gestoreprodotti
+    ports:
+      - "3002:80"
+    volumes:
+      - ./frontendgestoreprodotti:/usr/src/app
     networks:
       - app-network
 

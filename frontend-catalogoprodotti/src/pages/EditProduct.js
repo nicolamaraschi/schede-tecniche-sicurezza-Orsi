@@ -1,22 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import { getAllProdotti, updateProdotto } from '../api'; // Importa anche getAllProdotti
-import './EditProduct.css';
-import { FaEdit } from 'react-icons/fa'; // Icona per il pulsante Modifica
-import { Modal, Button } from 'react-bootstrap'; // Importa Modal e Button da react-bootstrap
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Modal, Button } from 'react-bootstrap';
+import { getAllProdotti, updateProdotto } from '../api'; // Assicurati di avere l'import corretto per le funzioni API
 
 const EditProduct = () => {
   const [products, setProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    nome: '',
+    tipo: '',
+    prezzo: 0,
+    unita: '',
+    categoria: '',
+    descrizione: ''
+  });
+  const [immagini, setImmagini] = useState([]); // Stato per le immagini
+  const [showModal, setShowModal] = useState(false); // Stato per gestire il popup
+  const navigate = useNavigate();
 
   useEffect(() => {
+    // Funzione per ottenere i prodotti dall'API
     const fetchProducts = async () => {
       try {
-        const data = await getAllProdotti();
-        setProducts(data);
+        const data = await getAllProdotti(); // Usa la funzione API
+        setProducts(data); // Assumi che data sia un array di prodotti
       } catch (error) {
-        console.error(error);
-        alert('Errore durante il recupero dei prodotti');
+        console.error('Errore nel recupero dei prodotti:', error);
       }
     };
 
@@ -25,105 +34,217 @@ const EditProduct = () => {
 
   const handleEditClick = (product) => {
     setSelectedProduct(product);
-    setIsModalOpen(true);
+    setFormData({
+      nome: product.nome,
+      tipo: product.tipo,
+      prezzo: product.prezzo,
+      unita: product.unita,
+      categoria: product.categoria,
+      descrizione: product.descrizione
+    });
+    setImmagini(product.immagini || []); // Imposta le immagini esistenti
+    setShowModal(true); // Mostra il popup
   };
 
-  const handleChange = (e) => {
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setSelectedProduct({ ...selectedProduct, [name]: value });
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleImageChange = (e) => {
+    setImmagini([...e.target.files]); // Aggiungi nuove immagini
+  };
+
+  const handleRemoveImage = (index) => {
+    const newImages = immagini.filter((_, i) => i !== index); // Rimuovi l'immagine selezionata
+    setImmagini(newImages);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
-      await updateProdotto(selectedProduct._id, selectedProduct);
-      alert('Prodotto aggiornato con successo!');
-      setIsModalOpen(false);
-      // Refresh the product list
-      const updatedProducts = products.map(product =>
-        product._id === selectedProduct._id ? selectedProduct : product
-      );
-      setProducts(updatedProducts);
+      await updateProdotto(selectedProduct._id, formData, immagini); // Usa la funzione API
+      alert('Prodotto modificato con successo!');
+      setShowModal(false); // Chiudi il popup
+      navigate('/view-products'); // Reindirizza alla pagina dei prodotti
     } catch (error) {
-      console.error(error);
-      alert('Errore durante l\'aggiornamento del prodotto');
+      console.error('Errore nella richiesta di modifica:', error);
+      alert('Errore nella modifica del prodotto.');
     }
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedProduct(null);
-  };
-
   return (
-    <div className="edit-product">
-      <h1>Modifica Prodotti</h1>
-      <table className="table">
-        <thead>
-          <tr>
-            <th>Nome</th>
-            <th>Tipo</th>
-            <th>Prezzo</th>
-            <th>Unità</th>
-            <th>Categoria</th>
-            <th>Descrizione</th>
-            <th>Azioni</th>
-          </tr>
-        </thead>
-        <tbody>
-          {products.map((product) => (
-            <tr key={product._id}>
-              <td>{product.nome}</td>
-              <td>{product.tipo}</td>
-              <td>{product.prezzo} €</td>
-              <td>{product.unita}</td>
-              <td>{product.categoria}</td>
-              <td>{product.descrizione}</td>
-              <td>
-                <Button onClick={() => handleEditClick(product)} variant="warning" size="sm">
-                  <FaEdit /> Modifica
-                </Button>
-              </td>
+    <div className="container">
+      <h1>Modifica Prodotto</h1>
+      <div className="product-list">
+        <h2>Lista Prodotti</h2>
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Tipo</th>
+              <th>Prezzo</th>
+              <th>Unità</th>
+              <th>Categoria</th>
+              <th>Descrizione</th>
+              <th>Immagini</th> {/* Nuova colonna per le immagini */}
+              <th>Azioni</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {products.map((product) => (
+              <tr key={product._id}>
+                <td>{product.nome}</td>
+                <td>{product.tipo}</td>
+                <td>{product.prezzo} €</td>
+                <td>{product.unita}</td>
+                <td>{product.categoria}</td>
+                <td>{product.descrizione}</td>
+                <td>
+                  {product.immagini && product.immagini.length > 0 && (
+                    <div className="image-preview">
+                      {product.immagini.map((img, index) => (
+                        <img 
+                          key={index} 
+                          src={img} 
+                          alt={`Immagine ${index}`} 
+                          style={{ width: '50px', height: 'auto', marginRight: '5px' }} 
+                        />
+                      ))}
+                    </div>
+                  )}
+                </td>
+                <td>
+                  <button className="btn btn-primary" onClick={() => handleEditClick(product)}>
+                    Modifica
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-      {/* Modal di Bootstrap per la modifica del prodotto */}
-      <Modal show={isModalOpen} onHide={handleCloseModal}>
+      {/* Popup form per la modifica del prodotto */}
+      <Modal show={showModal} onHide={() => setShowModal(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>Modifica Prodotto</Modal.Title>
+          <Modal.Title>Modifica {selectedProduct && selectedProduct.nome}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {selectedProduct && (
-            <form onSubmit={handleSubmit}>
-              <div className="mb-3">
-                <label className="form-label">Nome</label>
-                <input type="text" className="form-control" name="nome" value={selectedProduct.nome} onChange={handleChange} required />
+          <form onSubmit={handleSubmit}>
+            <div className="mb-3">
+              <label className="form-label">Nome</label>
+              <input
+                type="text"
+                name="nome"
+                className="form-control"
+                value={formData.nome}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="mb-3">
+              <label className="form-label">Tipo</label>
+              <input
+                type="text"
+                name="tipo"
+                className="form-control"
+                value={formData.tipo}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="mb-3">
+              <label className="form-label">Prezzo</label>
+              <input
+                type="number"
+                name="prezzo"
+                className="form-control"
+                value={formData.prezzo}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="mb-3">
+              <label className="form-label">Unità</label>
+              <input
+                type="text"
+                name="unita"
+                className="form-control"
+                value={formData.unita}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="mb-3">
+              <label className="form-label">Categoria</label>
+              <input
+                type="text"
+                name="categoria"
+                className="form-control"
+                value={formData.categoria}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="mb-3">
+              <label className="form-label">Descrizione</label>
+              <textarea
+                name="descrizione"
+                className="form-control"
+                value={formData.descrizione}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div className="mb-3">
+              <label className="form-label">Immagini</label>
+              <input
+                type="file"
+                className="form-control"
+                multiple
+                onChange={handleImageChange}
+              />
+              <div className="mt-2">
+                {immagini.length > 0 && (
+                  <ul className="list-group">
+                    {immagini.map((img, index) => (
+                      <li key={index} className="list-group-item d-flex justify-content-between align-items-center">
+                        {img.name}
+                        <button 
+                          className="btn btn-danger btn-sm"
+                          onClick={() => handleRemoveImage(index)}
+                        >
+                          Rimuovi
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
-              <div className="mb-3">
-                <label className="form-label">Tipo</label>
-                <input type="text" className="form-control" name="tipo" value={selectedProduct.tipo} onChange={handleChange} required />
-              </div>
-              <div className="mb-3">
-                <label className="form-label">Prezzo</label>
-                <input type="number" className="form-control" name="prezzo" value={selectedProduct.prezzo} onChange={handleChange} required />
-              </div>
-              <div className="mb-3">
-                <label className="form-label">Unità</label>
-                <input type="text" className="form-control" name="unita" value={selectedProduct.unita} onChange={handleChange} required />
-              </div>
-              <div className="mb-3">
-                <label className="form-label">Categoria</label>
-                <input type="text" className="form-control" name="categoria" value={selectedProduct.categoria} onChange={handleChange} required />
-              </div>
-              <div className="mb-3">
-                <label className="form-label">Descrizione</label>
-                <textarea className="form-control" name="descrizione" value={selectedProduct.descrizione} onChange={handleChange}></textarea>
-              </div>
-              <Button type="submit" variant="primary">Aggiorna Prodotto</Button>
-            </form>
-          )}
+              {/* Visualizza le immagini esistenti */}
+              {selectedProduct && selectedProduct.immagini && selectedProduct.immagini.length > 0 && (
+                <div className="mt-3">
+                  <h5>Immagini Esistenti</h5>
+                  <ul className="list-group">
+                    {selectedProduct.immagini.map((img, index) => (
+                      <li key={index} className="list-group-item">
+                        <img src={img} alt={`Immagine ${index}`} style={{ width: '50px', height: 'auto' }} />
+                        <button 
+                          className="btn btn-danger btn-sm ms-2"
+                          onClick={() => handleRemoveImage(index)}
+                        >
+                          Rimuovi
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+            <Button type="submit" className="btn btn-success">Salva Modifiche</Button>
+          </form>
         </Modal.Body>
       </Modal>
     </div>

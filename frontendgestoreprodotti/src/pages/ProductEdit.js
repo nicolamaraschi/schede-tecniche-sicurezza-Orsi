@@ -51,46 +51,61 @@ const ProductEdit = () => {
     const description = event.target.description.value?.trim() || selectedProduct.description;
 
     if (!name || !description || !selectedCategoryId) {
-      console.error("Nome, descrizione e categoria non possono essere vuoti.");
-      return;
+        window.alert("Nome, descrizione e categoria non possono essere vuoti.");
+        return;
     }
 
     const updatedProductData = {
-      ...selectedProduct,
-      name,
-      description,
-      category: selectedCategoryId,
-      subcategory: {
-        id: selectedSubcategoryId,
-        name: categories.find(cat => cat._id === selectedCategoryId)?.subcategories.find(sub => sub._id === selectedSubcategoryId)?.name
-      },
+        ...selectedProduct,
+        name,
+        description,
+        category: selectedCategoryId,
+        subcategory: {
+            id: selectedSubcategoryId,
+            name: categories.find(cat => cat._id === selectedCategoryId)?.subcategories.find(sub => sub._id === selectedSubcategoryId)?.name
+        },
     };
 
-    console.log('Dati modificati del prodotto:', updatedProductData);
-
+    // Definisci e popola images
     const images = [];
     const imagesToAdd = event.target.images?.files || [];
     for (let i = 0; i < imagesToAdd.length; i++) {
-      images.push(imagesToAdd[i]);
-      console.log('Immagine da aggiungere:', imagesToAdd[i].name);
+        images.push(imagesToAdd[i]);
+        console.log('Immagine da aggiungere:', imagesToAdd[i].name);
     }
 
     console.log('Immagini da rimuovere:', imagesToRemove);
 
     try {
       const response = await updateProduct(selectedProduct._id, updatedProductData, images, imagesToRemove);
-      const responseData = await response.json();
-      console.log('Server response:', responseData);
-
-      const updatedProducts = await fetchProducts();
-      setProducts(updatedProducts); // Aggiorna lo stato con i nuovi dati
-
-      handleCloseModal(); // Chiude la modale dopo l'aggiornamento
-      window.location.reload(); // Forza il refresh della pagina
-    } catch (error) {
+      
+      console.log('Response:', response);
+      console.log('Response status:', response.status); // Assicurati di controllare lo status
+  
+      if (response.ok) {
+          const responseData = await response.json();
+          console.log('Server response:', responseData);
+          
+          // Aggiorna la lista dei prodotti
+          const updatedProducts = await fetchProducts();
+          setProducts(updatedProducts);
+          
+          window.alert("Prodotto aggiornato con successo!");
+          handleCloseModal();
+      } else {
+          const errorResponse = await response.json();
+          console.error("Errore durante l'aggiornamento:", errorResponse);
+          window.alert("Errore durante l'aggiornamento del prodotto: " + errorResponse.message);
+      }
+  } catch (error) {
       console.error("Error updating product:", error);
-    }
-  };
+      window.alert("Errore durante l'aggiornamento del prodotto.");
+  }
+};
+
+
+
+
 
   const handleCategoryChange = (event) => {
     setSelectedCategoryId(event.target.value); // Aggiorna la categoria selezionata

@@ -1,5 +1,6 @@
 const Product = require('../models/productManager'); // Modello del prodotto
 const Category = require('../models/category'); // Modello della categoria
+
 const fs = require('fs').promises; 
 const path = require('path');
 const mongoose = require('mongoose');
@@ -106,10 +107,12 @@ exports.updateProduct = async (req, res) => {
         const updatedProduct = await Product.findByIdAndUpdate(req.params.id, updateData, { new: true }).populate('category');
 
         // Risposta con il prodotto aggiornato
-        res.status(200).json(updatedProduct);
+        res.setHeader('Content-Type', 'application/json'); // Imposta l'intestazione per forzare la risposta a JSON
+        return res.status(200).json(updatedProduct); // Restituisci il prodotto aggiornato come JSON
     } catch (error) {
         console.error('Error updating product:', error); // Logga l'errore per il debug
-        res.status(400).json({ message: error.message });
+        res.setHeader('Content-Type', 'application/json'); // Imposta l'intestazione per forzare la risposta a JSON
+        return res.status(400).json({ message: error.message }); // Restituisci l'errore come JSON
     }
 };
 

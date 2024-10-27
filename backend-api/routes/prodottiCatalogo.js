@@ -1,4 +1,5 @@
 const express = require('express');
+const upload = require('../middlewares/uploadCatalogo'); // Importa il middleware di upload
 const {
   createProdotto,
   getAllProdotti,
@@ -9,19 +10,15 @@ const {
 
 const router = express.Router();
 
-// Rotta per creare un nuovo prodotto
-router.post('/prodotti', createProdotto);
+// Rotta per creare un nuovo prodotto con immagini
+router.post('/prodotti', upload.array('immagini', 5), createProdotto); // Massimo 5 immagini
 
-// Rotta per ottenere tutti i prodotti
+// Rotta per aggiornare un prodotto con immagini
+router.put('/prodotti/:id', upload.array('immagini', 5), updateProdotto); // Massimo 5 immagini
+
+// Altre rotte rimangono invariate
 router.get('/prodotti', getAllProdotti);
-
-// Rotta per ottenere un prodotto per ID
 router.get('/prodotti/:id', getProdottoById);
-
-// Rotta per aggiornare un prodotto
-router.put('/prodotti/:id', updateProdotto);
-
-// Rotta per cancellare un prodotto
 router.delete('/prodotti/:id', deleteProdotto);
 
 module.exports = router;
