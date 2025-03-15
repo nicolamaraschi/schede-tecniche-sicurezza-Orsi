@@ -5,6 +5,8 @@ const {
     getProductById,
     updateProduct,
     deleteProduct,
+    getProductsByCategory,
+    getProductsBySubcategory,
     createCategory,
     getAllCategories,
     getCategoryById,
@@ -35,6 +37,12 @@ router.put('/prodotti/:id', upload.array('images'), updateProduct); // Aggiungi 
 // Rotta per eliminare un prodotto
 router.delete('/prodotti/:id', deleteProduct); // Aggiungi authMiddleware per proteggere la rotta
 
+// Rotta per ottenere prodotti per categoria
+router.get('/prodotti/categoria/:categoryId', getProductsByCategory);
+
+// routes/gestoreProdotti.js - Aggiungi questa route
+router.get('/prodotti/categoria/:categoryId/sottocategoria/:subcategoryId', getProductsBySubcategory);
+
 // Rotte per le Categorie
 
 // Rotta per creare una categoria
@@ -54,5 +62,7 @@ router.put('/categorie/:id', updateCategory);
 
 // Rotta per eliminare una categoria
 router.delete('/categorie/:id', deleteCategory);
+
+
 
 module.exports = router;

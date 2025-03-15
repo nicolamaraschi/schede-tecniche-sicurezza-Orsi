@@ -1,0 +1,12 @@
+{
+    "scripts": {
+        "start": "concurrently \"npm run start:backend\" \"npm run start:schede-tecniche\" \"npm run start:catalogo-prodotti\" \"npm run start:gestore-prodotti\"",
+        "start:backend": "cd backend-api && npm start",
+        "start:schede-tecniche": "cd frontend_schedetechiche && npm start",
+        "start:catalogo-prodotti": "cd frontend-catalogoprodotti && npm start",
+        "start:gestore-prodotti": "cd frontendgestoreprodotti && npm start"
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2"
+    }
+}

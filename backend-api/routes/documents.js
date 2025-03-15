@@ -5,7 +5,8 @@ const {
     getAllDocuments, 
     deleteDocument,
     getDocumentByProductCodeAndType,
-    getDocumentByCode // Importa il nuovo controller
+    getDocumentByCode,
+    getDocumentByCodePublic
   } = require('../controllers/documentController');
 
 const upload = require('../middlewares/uploadMiddleware'); // Import corretto
@@ -29,5 +30,8 @@ router.delete('/:documentId', authMiddleware, deleteDocument);
 
 // Rotta per ottenere un documento specifico per codice prodotto e tipo documento
 router.get('/:productCode/:documentType', authMiddleware, getDocumentByProductCodeAndType); // Aggiungi questa riga
+
+// Aggiungere questa nuova route pubblica
+router.get('/public/code/:documentCode', getDocumentByCodePublic);
 
 module.exports = router;
