@@ -288,7 +288,7 @@ exports.getProductsByCategory = async (req, res) => {
       }
   
       // Utilizzo il modello ProductManager invece di Product
-      const products = await ProductManager.find({ category: categoryId }).populate('category');
+      const products = await Product.find({ category: categoryId }).populate('category');
       
       if (!products.length) {
         return res.status(200).json([]); // Restituisci array vuoto se non ci sono prodotti
@@ -302,30 +302,43 @@ exports.getProductsByCategory = async (req, res) => {
   };
 
 
- // Funzione per ottenere prodotti per sottocategoria
-exports.getProductsBySubcategory = async (req, res) => {
+  exports.getProductsBySubcategory = async (req, res) => {
     try {
       const { categoryId, subcategoryId } = req.params;
       
+      console.log('Ricerca prodotti - Parametri ricevuti:', { categoryId, subcategoryId });
+      
       // Verifica che gli ID siano validi
       if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+        console.log('ID categoria non valido');
         return res.status(400).json({ message: 'ID categoria non valido' });
       }
   
       // Verifica separata per subcategoryId
       if (!mongoose.Types.ObjectId.isValid(subcategoryId)) {
+        console.log('ID sottocategoria non valido');
         return res.status(400).json({ message: 'ID sottocategoria non valido' });
       }
   
+      console.log('Ricerca prodotti con:', {
+        category: categoryId,
+        'subcategory.id': subcategoryId
+      });
+
       // Cerca i prodotti che corrispondono sia alla categoria che alla sottocategoria
-      const products = await ProductManager.find({
+      const products = await Product.find({
         category: categoryId,
         'subcategory.id': subcategoryId
       }).populate('category');
       
+      console.log('Prodotti trovati:', products.length);
+      
       res.status(200).json(products);
     } catch (error) {
-      console.error('Errore nel recupero dei prodotti per sottocategoria:', error);
-      res.status(500).json({ message: error.message });
+      console.error('Errore dettagliato nel recupero dei prodotti per sottocategoria:', error);
+      res.status(500).json({ 
+        message: error.message,
+        stack: error.stack 
+      });
     }
   };
