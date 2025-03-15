@@ -217,3 +217,41 @@ exports.getDocumentByProductCodeAndType = async (req, res) => {
   }
 };
 
+// Funzione pubblica per ottenere un documento per codice senza autenticazione
+exports.getDocumentByCodePublic = async (req, res) => {
+  try {
+    const { documentCode } = req.params;
+
+    if (!documentCode) {
+      return res.status(400).json({ message: 'Document code is required' });
+    }
+
+    const document = await Document.findOne({ documentCode });
+
+    if (!document) {
+      return res.status(404).json({ message: 'Document not found' });
+    }
+
+    // Recupera i dati del prodotto associato
+    const product = await Product.findById(document.productId);
+
+    // Controlla se il prodotto esiste
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    // Restituisci il documento con i dati del prodotto
+    return res.json({
+      idDocument: document._id,
+      documentCode: document.documentCode,
+      fileUrl: document.fileUrl,
+      type: document.type,
+      productName: product.name,
+      productCode: product.code,
+    });
+  } catch (error) {
+    console.error('Error occurred:', error);
+    return res.status(500).json({ message: error.message });
+  }
+};
+

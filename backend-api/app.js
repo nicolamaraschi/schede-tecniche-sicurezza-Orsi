@@ -1,7 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-const cors = require('cors'); // Importa il pacchetto cors
+const cors = require('cors');
 const path = require('path');
 
 const authRoutes = require('./routes/auth');
@@ -15,9 +15,20 @@ dotenv.config();
 
 const app = express();
 
-// Abilita il middleware CORS prima delle rotte
+// Configurazione CORS più permissiva per le porte 3000-3007
 app.use(cors({
-  origin: 'http://localhost:3000', // Permetti richieste solo da localhost:3000
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:3002',
+    'http://localhost:3003',
+    'http://localhost:3004',
+    'http://localhost:3005',
+    'http://localhost:3006',
+    'http://localhost:3007'
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // Middleware per il parsing del corpo delle richieste

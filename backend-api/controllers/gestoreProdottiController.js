@@ -276,3 +276,56 @@ exports.deleteCategory = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// Funzione per ottenere prodotti per categoria
+exports.getProductsByCategory = async (req, res) => {
+    try {
+      const { categoryId } = req.params;
+      
+      // Verifica che l'ID categoria sia valido
+      if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+        return res.status(400).json({ message: 'ID categoria non valido' });
+      }
+  
+      // Utilizzo il modello ProductManager invece di Product
+      const products = await ProductManager.find({ category: categoryId }).populate('category');
+      
+      if (!products.length) {
+        return res.status(200).json([]); // Restituisci array vuoto se non ci sono prodotti
+      }
+      
+      res.status(200).json(products);
+    } catch (error) {
+      console.error('Errore nel recupero dei prodotti per categoria:', error);
+      res.status(500).json({ message: error.message });
+    }
+  };
+
+
+ // Funzione per ottenere prodotti per sottocategoria
+exports.getProductsBySubcategory = async (req, res) => {
+    try {
+      const { categoryId, subcategoryId } = req.params;
+      
+      // Verifica che gli ID siano validi
+      if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+        return res.status(400).json({ message: 'ID categoria non valido' });
+      }
+  
+      // Verifica separata per subcategoryId
+      if (!mongoose.Types.ObjectId.isValid(subcategoryId)) {
+        return res.status(400).json({ message: 'ID sottocategoria non valido' });
+      }
+  
+      // Cerca i prodotti che corrispondono sia alla categoria che alla sottocategoria
+      const products = await ProductManager.find({
+        category: categoryId,
+        'subcategory.id': subcategoryId
+      }).populate('category');
+      
+      res.status(200).json(products);
+    } catch (error) {
+      console.error('Errore nel recupero dei prodotti per sottocategoria:', error);
+      res.status(500).json({ message: error.message });
+    }
+  };

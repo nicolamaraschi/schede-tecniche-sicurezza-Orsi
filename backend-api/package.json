@@ -4,6 +4,7 @@
   "description": "Questo progetto consiste in un'API REST per la gestione di prodotti e documenti, che include funzionalità di registrazione e autenticazione utenti tramite JWT. I prodotti possono avere associati documenti, come file PDF, che possono essere caricati e recuperati dall'API. Il database utilizzato è MongoDB e la connessione avviene tramite MongoDB Atlas.",
   "main": "app.js",
   "scripts": {
+    "start": "node app.js",
     "test": "jest"
   },
   "keywords": [],
