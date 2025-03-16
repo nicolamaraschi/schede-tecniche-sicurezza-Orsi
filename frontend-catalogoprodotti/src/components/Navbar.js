@@ -29,6 +29,7 @@ const NavigationBar = () => {
                 <Nav.Link as={Link} to="/add-product" className="mx-2">Aggiungi Prodotto</Nav.Link>
                 <Nav.Link as={Link} to="/view-products" className="mx-2">Visualizza Prodotti</Nav.Link>
                 <Nav.Link as={Link} to="/edit-product" className="mx-2">Modifica Prodotto</Nav.Link>
+                <Nav.Link as={Link} to="/categories" className="mx-2">Gestione Categorie</Nav.Link>
                 <Button 
                   variant="outline-danger" 
                   className="ms-auto"

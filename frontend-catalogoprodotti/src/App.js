@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import AddProduct from './pages/AddProduct';
 import ViewProducts from './pages/ViewProducts';
 import EditProduct from './pages/EditProduct';
+import CategoryManagement from './pages/SubcategoryManagement';
 import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
@@ -56,6 +57,15 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <EditProduct />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/categories" 
+            element={
+              <ProtectedRoute>
+                <CategoryManagement />
               </ProtectedRoute>
             } 
           />

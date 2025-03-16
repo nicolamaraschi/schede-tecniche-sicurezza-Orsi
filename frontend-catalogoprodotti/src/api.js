@@ -1,6 +1,7 @@
 // src/api.js
 const API_URL = 'http://localhost:5002/api/prodottiCatalogo/prodotti';
 const AUTH_URL = 'http://localhost:5002/api/auth';
+const CATEGORIES_URL = 'http://localhost:5002/api/gestoreProdotti/categorie';
 
 // Funzione di supporto per gestire gli errori di autenticazione
 const handleAuthError = (error) => {
@@ -64,6 +65,55 @@ export const createProdotto = async (prodotto, immagini) => {
     }
 
     return await response.json();
+  } catch (error) {
+    console.error(error);
+    handleAuthError(error);
+    throw error;
+  }
+};
+
+// Funzione per ottenere tutte le categorie
+export const getAllCategories = async () => {
+  try {
+    const token = getAuthToken();
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+    const response = await fetch(CATEGORIES_URL, { headers });
+    
+    if (response.status === 401) {
+      throw { response: { status: 401 } };
+    }
+    
+    if (!response.ok) {
+      throw new Error('Errore durante il recupero delle categorie');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error(error);
+    handleAuthError(error);
+    throw error;
+  }
+};
+
+// Funzione per ottenere le sottocategorie di una categoria
+export const getSubcategories = async (categoryId) => {
+  try {
+    const token = getAuthToken();
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+    const response = await fetch(`${CATEGORIES_URL}/${categoryId}`, { headers });
+    
+    if (response.status === 401) {
+      throw { response: { status: 401 } };
+    }
+    
+    if (!response.ok) {
+      throw new Error('Errore durante il recupero delle sottocategorie');
+    }
+    
+    const category = await response.json();
+    return category.subcategories || [];
   } catch (error) {
     console.error(error);
     handleAuthError(error);
@@ -178,6 +228,78 @@ export const deleteProdotto = async (id) => {
       throw new Error('Errore durante la cancellazione del prodotto');
     }
 
+    return await response.json();
+  } catch (error) {
+    console.error(error);
+    handleAuthError(error);
+    throw error;
+  }
+};
+
+// Funzione per ottenere prodotti per macro-categoria
+export const getProdottiByMacroCategoria = async (macroCategoria) => {
+  try {
+    const token = getAuthToken();
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+    const response = await fetch(`${API_URL}/macrocategoria/${macroCategoria}`, { headers });
+    
+    if (response.status === 401) {
+      throw { response: { status: 401 } };
+    }
+    
+    if (!response.ok) {
+      throw new Error('Errore durante il recupero dei prodotti per macro-categoria');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error(error);
+    handleAuthError(error);
+    throw error;
+  }
+};
+
+// Funzione per ottenere prodotti per categoria
+export const getProdottiByCategoria = async (categoriaId) => {
+  try {
+    const token = getAuthToken();
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+    const response = await fetch(`${API_URL}/categoria/${categoriaId}`, { headers });
+    
+    if (response.status === 401) {
+      throw { response: { status: 401 } };
+    }
+    
+    if (!response.ok) {
+      throw new Error('Errore durante il recupero dei prodotti per categoria');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error(error);
+    handleAuthError(error);
+    throw error;
+  }
+};
+
+// Funzione per ottenere prodotti per sottocategoria
+export const getProdottiBySottocategoria = async (categoriaId, sottocategoriaId) => {
+  try {
+    const token = getAuthToken();
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+    const response = await fetch(`${API_URL}/categoria/${categoriaId}/sottocategoria/${sottocategoriaId}`, { headers });
+    
+    if (response.status === 401) {
+      throw { response: { status: 401 } };
+    }
+    
+    if (!response.ok) {
+      throw new Error('Errore durante il recupero dei prodotti per sottocategoria');
+    }
+    
     return await response.json();
   } catch (error) {
     console.error(error);

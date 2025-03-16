@@ -1,6 +1,5 @@
 // backend-api/controllers/prodottiCatalogoController.js
 const ProdottoCatalogo = require('../models/ProdottoCatalogo');
-const Category = require('../models/category'); // Importa il modello Category
 const fs = require('fs');
 const path = require('path');
 
@@ -54,36 +53,9 @@ exports.createProdotto = async (req, res) => {
       if (!prodottoData.pezziPerEpal) prodottoData.pezziPerEpal = defaults.pezziPerEpal;
     }
     
-    // Verifica che la categoria esista se è stata fornita
-    if (prodottoData.categoria) {
-      const categoria = await Category.findById(prodottoData.categoria);
-      if (!categoria) {
-        return res.status(400).json({ message: 'Categoria non valida' });
-      }
-      
-      // Imposta la sottocategoria se fornita
-      if (prodottoData.sottocategoriaId) {
-        const sottocategoria = categoria.subcategories.find(
-          sub => sub.id.toString() === prodottoData.sottocategoriaId
-        );
-        
-        if (sottocategoria) {
-          prodottoData.sottocategoria = {
-            id: sottocategoria.id,
-            name: sottocategoria.name
-          };
-        } else {
-          return res.status(400).json({ message: 'Sottocategoria non valida per la categoria selezionata' });
-        }
-      }
-    }
-    
-    // Rimuovi il campo sottocategoriaId che non è nel modello
-    delete prodottoData.sottocategoriaId;
-    
-    // Verifica che la macroCategoria sia valida
-    if (prodottoData.macroCategoria && !['Linea Casa', 'Linea Industriale'].includes(prodottoData.macroCategoria)) {
-      return res.status(400).json({ message: 'Macro-categoria non valida' });
+    // Verifica che la categoria sia valida
+    if (!['Domestico', 'Industriale'].includes(prodottoData.categoria)) {
+      return res.status(400).json({ message: 'Categoria non valida. Deve essere "Domestico" o "Industriale"' });
     }
     
     // Converti i valori numerici
@@ -106,13 +78,13 @@ exports.createProdotto = async (req, res) => {
 // Ottieni tutti i prodotti
 exports.getAllProdotti = async (req, res) => {
   try {
-    // Opzionalmente filtra per macro-categoria se specificata nella query
+    // Opzionalmente filtra per categoria se specificata nella query
     const filter = {};
-    if (req.query.macroCategoria && ['Linea Casa', 'Linea Industriale'].includes(req.query.macroCategoria)) {
-      filter.macroCategoria = req.query.macroCategoria;
+    if (req.query.categoria && ['Domestico', 'Industriale'].includes(req.query.categoria)) {
+      filter.categoria = req.query.categoria;
     }
     
-    const prodotti = await ProdottoCatalogo.find(filter).populate('categoria');
+    const prodotti = await ProdottoCatalogo.find(filter);
     
     // Aggiungi l'URL base per le immagini
     const baseUrl = `${req.protocol}://${req.get('host')}/uploads/`;
@@ -120,8 +92,7 @@ exports.getAllProdotti = async (req, res) => {
       const prodottoObj = prodotto.toObject();
       return {
         ...prodottoObj,
-        immagini: prodotto.immagini.map(img => baseUrl + path.basename(img)),
-        categoriaName: prodottoObj.categoria ? prodottoObj.categoria.name : null
+        immagini: prodotto.immagini.map(img => baseUrl + path.basename(img))
       };
     });
     
@@ -135,7 +106,7 @@ exports.getAllProdotti = async (req, res) => {
 // Ottieni un prodotto per ID
 exports.getProdottoById = async (req, res) => {
   try {
-    const prodotto = await ProdottoCatalogo.findById(req.params.id).populate('categoria');
+    const prodotto = await ProdottoCatalogo.findById(req.params.id);
     if (!prodotto) {
       return res.status(404).json({ message: 'Prodotto non trovato' });
     }
@@ -145,8 +116,7 @@ exports.getProdottoById = async (req, res) => {
     const prodottoObj = prodotto.toObject();
     const prodottoConUrlImmagini = {
       ...prodottoObj,
-      immagini: prodotto.immagini.map(img => baseUrl + path.basename(img)),
-      categoriaName: prodottoObj.categoria ? prodottoObj.categoria.name : null
+      immagini: prodotto.immagini.map(img => baseUrl + path.basename(img))
     };
 
     res.json(prodottoConUrlImmagini);
@@ -172,7 +142,6 @@ exports.updateProdotto = async (req, res) => {
         if (index > -1) {
           prodotto.immagini.splice(index, 1);
           // Elimina fisicamente l'immagine dal server
-          // Nota: usa path.resolve per assicurare un percorso assoluto
           const fullPath = path.resolve(img);
           fs.unlink(fullPath, err => {
             if (err) console.error('Errore durante l\'eliminazione dell\'immagine:', err);
@@ -196,42 +165,13 @@ exports.updateProdotto = async (req, res) => {
       if (!req.body.pezziPerEpal) req.body.pezziPerEpal = defaults.pezziPerEpal;
     }
 
-    // Gestisci categoria e sottocategoria
-    if (req.body.categoria) {
-      const categoria = await Category.findById(req.body.categoria);
-      if (!categoria) {
-        return res.status(400).json({ message: 'Categoria non valida' });
-      }
-      
-      // Se è stata specificata una sottocategoria
-      if (req.body.sottocategoriaId) {
-        const sottocategoria = categoria.subcategories.find(
-          sub => sub.id.toString() === req.body.sottocategoriaId
-        );
-        
-        if (sottocategoria) {
-          req.body.sottocategoria = {
-            id: sottocategoria.id,
-            name: sottocategoria.name
-          };
-        } else {
-          return res.status(400).json({ message: 'Sottocategoria non valida per la categoria selezionata' });
-        }
-      } else {
-        // Se non è specificata, rimuovi la sottocategoria esistente
-        req.body.sottocategoria = undefined;
-      }
+    // Verifica che la categoria sia valida
+    if (req.body.categoria && !['Domestico', 'Industriale'].includes(req.body.categoria)) {
+      return res.status(400).json({ message: 'Categoria non valida. Deve essere "Domestico" o "Industriale"' });
     }
     
-    // Rimuovi il campo sottocategoriaId che non è nel modello
-    delete req.body.sottocategoriaId;
     // Rimuovi il campo immaginiToRemove che non è nel modello
     delete req.body.immaginiToRemove;
-    
-    // Verifica che la macroCategoria sia valida
-    if (req.body.macroCategoria && !['Linea Casa', 'Linea Industriale'].includes(req.body.macroCategoria)) {
-      return res.status(400).json({ message: 'Macro-categoria non valida' });
-    }
     
     // Converti i valori numerici
     if (req.body.pezziPerCartone) req.body.pezziPerCartone = Number(req.body.pezziPerCartone);
@@ -286,41 +226,16 @@ exports.deleteProdotto = async (req, res) => {
   }
 };
 
-// Ottieni prodotti per macro-categoria
-exports.getProdottiByMacroCategoria = async (req, res) => {
-  try {
-    const { macroCategoria } = req.params;
-    
-    if (!['Linea Casa', 'Linea Industriale'].includes(macroCategoria)) {
-      return res.status(400).json({ message: 'Macro-categoria non valida' });
-    }
-    
-    const prodotti = await ProdottoCatalogo.find({ macroCategoria }).populate('categoria');
-    
-    // Aggiungi l'URL base per le immagini
-    const baseUrl = `${req.protocol}://${req.get('host')}/uploads/`;
-    const prodottiConUrlImmagini = prodotti.map(prodotto => {
-      const prodottoObj = prodotto.toObject();
-      return {
-        ...prodottoObj,
-        immagini: prodotto.immagini.map(img => baseUrl + path.basename(img)),
-        categoriaName: prodottoObj.categoria ? prodottoObj.categoria.name : null
-      };
-    });
-    
-    res.json(prodottiConUrlImmagini);
-  } catch (error) {
-    console.error('Errore nel recupero dei prodotti per macro-categoria:', error);
-    res.status(500).json({ message: error.message });
-  }
-};
-
 // Ottieni prodotti per categoria
 exports.getProdottiByCategoria = async (req, res) => {
   try {
-    const { categoriaId } = req.params;
+    const { categoria } = req.params;
     
-    const prodotti = await ProdottoCatalogo.find({ categoria: categoriaId }).populate('categoria');
+    if (!['Domestico', 'Industriale'].includes(categoria)) {
+      return res.status(400).json({ message: 'Categoria non valida' });
+    }
+    
+    const prodotti = await ProdottoCatalogo.find({ categoria });
     
     // Aggiungi l'URL base per le immagini
     const baseUrl = `${req.protocol}://${req.get('host')}/uploads/`;
@@ -328,8 +243,7 @@ exports.getProdottiByCategoria = async (req, res) => {
       const prodottoObj = prodotto.toObject();
       return {
         ...prodottoObj,
-        immagini: prodotto.immagini.map(img => baseUrl + path.basename(img)),
-        categoriaName: prodottoObj.categoria ? prodottoObj.categoria.name : null
+        immagini: prodotto.immagini.map(img => baseUrl + path.basename(img))
       };
     });
     
@@ -343,12 +257,16 @@ exports.getProdottiByCategoria = async (req, res) => {
 // Ottieni prodotti per sottocategoria
 exports.getProdottiBySottocategoria = async (req, res) => {
   try {
-    const { categoriaId, sottocategoriaId } = req.params;
+    const { categoria, sottocategoria } = req.params;
+    
+    if (!['Domestico', 'Industriale'].includes(categoria)) {
+      return res.status(400).json({ message: 'Categoria non valida' });
+    }
     
     const prodotti = await ProdottoCatalogo.find({
-      categoria: categoriaId,
-      'sottocategoria.id': sottocategoriaId
-    }).populate('categoria');
+      categoria,
+      sottocategoria
+    });
     
     // Aggiungi l'URL base per le immagini
     const baseUrl = `${req.protocol}://${req.get('host')}/uploads/`;
@@ -356,14 +274,213 @@ exports.getProdottiBySottocategoria = async (req, res) => {
       const prodottoObj = prodotto.toObject();
       return {
         ...prodottoObj,
-        immagini: prodotto.immagini.map(img => baseUrl + path.basename(img)),
-        categoriaName: prodottoObj.categoria ? prodottoObj.categoria.name : null
+        immagini: prodotto.immagini.map(img => baseUrl + path.basename(img))
       };
     });
     
     res.json(prodottiConUrlImmagini);
   } catch (error) {
     console.error('Errore nel recupero dei prodotti per sottocategoria:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// FUNZIONI PER GESTIRE LE SOTTOCATEGORIE
+
+// Ottieni tutte le sottocategorie per entrambe le categorie
+exports.getAllSottocategorie = async (req, res) => {
+  try {
+    // Ottieni tutti i prodotti e estrai le sottocategorie uniche
+    const prodotti = await ProdottoCatalogo.find({}, 'categoria sottocategoria');
+    
+    // Crea un oggetto per tenere traccia delle sottocategorie per categoria
+    const sottocategorie = {
+      'Domestico': [],
+      'Industriale': []
+    };
+    
+    // Aggiungi le sottocategorie alle rispettive categorie
+    prodotti.forEach(prodotto => {
+      if (prodotto.sottocategoria && !sottocategorie[prodotto.categoria].includes(prodotto.sottocategoria)) {
+        sottocategorie[prodotto.categoria].push(prodotto.sottocategoria);
+      }
+    });
+    
+    res.status(200).json(sottocategorie);
+  } catch (error) {
+    console.error('Errore nel recupero delle sottocategorie:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Ottieni tutte le sottocategorie per una categoria specifica
+exports.getSottocategorieByCategoria = async (req, res) => {
+  try {
+    const { categoria } = req.params;
+    
+    if (!['Domestico', 'Industriale'].includes(categoria)) {
+      return res.status(400).json({ message: 'Categoria non valida' });
+    }
+    
+    // Ottieni tutti i prodotti della categoria e estrai le sottocategorie uniche
+    const prodotti = await ProdottoCatalogo.find({ categoria }, 'sottocategoria');
+    
+    // Crea un array di sottocategorie uniche
+    let sottocategorie = prodotti
+      .map(prodotto => prodotto.sottocategoria)
+      .filter((sottocategoria, index, self) => {
+        return sottocategoria && self.indexOf(sottocategoria) === index;
+      });
+    
+    res.status(200).json(sottocategorie);
+  } catch (error) {
+    console.error('Errore nel recupero delle sottocategorie per categoria:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Aggiungi una nuova sottocategoria
+exports.addSottocategoria = async (req, res) => {
+  try {
+    const { categoria } = req.params;
+    const { sottocategoria } = req.body;
+    
+    if (!['Domestico', 'Industriale'].includes(categoria)) {
+      return res.status(400).json({ message: 'Categoria non valida' });
+    }
+    
+    if (!sottocategoria) {
+      return res.status(400).json({ message: 'Il nome della sottocategoria è richiesto' });
+    }
+    
+    // Verifica se la sottocategoria esiste già per questa categoria
+    const esistente = await ProdottoCatalogo.findOne({ 
+      categoria, 
+      sottocategoria 
+    });
+    
+    if (esistente) {
+      return res.status(400).json({ message: 'Questa sottocategoria esiste già per questa categoria' });
+    }
+    
+    // Crea un prodotto "dummy" con questa sottocategoria per mantenere una traccia
+    // (questa è una soluzione temporanea, in un sistema reale dovresti avere un modello separato per le sottocategorie)
+    const dummyProdotto = new ProdottoCatalogo({
+      nome: `_sottocategoria_${sottocategoria}`,
+      codice: `_sottocategoria_${Date.now()}`,
+      tipo: 'DUMMY',
+      prezzo: 0,
+      unita: '€/PZ',
+      categoria,
+      sottocategoria,
+      tipoImballaggio: 'Barattolo 1kg',
+      pezziPerCartone: 1,
+      cartoniPerEpal: 1,
+      pezziPerEpal: 1,
+      descrizione: `Prodotto dummy per la sottocategoria ${sottocategoria}`,
+      immagini: []
+    });
+    
+    await dummyProdotto.save();
+    
+    // Ottieni tutte le sottocategorie aggiornate per questa categoria
+    const sottocategorie = await exports.getSottocategorieByCategoria(req, res);
+    
+    return sottocategorie;
+  } catch (error) {
+    console.error('Errore nell\'aggiunta della sottocategoria:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Elimina una sottocategoria
+exports.deleteSottocategoria = async (req, res) => {
+  try {
+    const { categoria, sottocategoria } = req.params;
+    
+    if (!['Domestico', 'Industriale'].includes(categoria)) {
+      return res.status(400).json({ message: 'Categoria non valida' });
+    }
+    
+    // Trova tutti i prodotti con questa categoria e sottocategoria
+    const prodotti = await ProdottoCatalogo.find({ 
+      categoria, 
+      sottocategoria 
+    });
+    
+    if (prodotti.length === 0) {
+      return res.status(404).json({ message: 'Sottocategoria non trovata' });
+    }
+    
+    // Elimina la sottocategoria da tutti i prodotti (impostando sottocategoria a null)
+    // Oppure elimina i prodotti "dummy" usati per tracciare le sottocategorie
+    const risultatoAggiornamento = await ProdottoCatalogo.updateMany(
+      { categoria, sottocategoria },
+      { $set: { sottocategoria: null } }
+    );
+    
+    // Elimina i prodotti "dummy" creati solo per tracciare le sottocategorie
+    await ProdottoCatalogo.deleteMany({
+      nome: { $regex: `^_sottocategoria_${sottocategoria}$` },
+      categoria
+    });
+    
+    res.status(200).json({ 
+      message: 'Sottocategoria eliminata con successo',
+      prodottiAggiornati: risultatoAggiornamento.modifiedCount
+    });
+  } catch (error) {
+    console.error('Errore nell\'eliminazione della sottocategoria:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Rinomina una sottocategoria
+exports.updateSottocategoria = async (req, res) => {
+  try {
+    const { categoria, sottocategoria } = req.params;
+    const { nuovoNome } = req.body;
+    
+    if (!['Domestico', 'Industriale'].includes(categoria)) {
+      return res.status(400).json({ message: 'Categoria non valida' });
+    }
+    
+    if (!nuovoNome) {
+      return res.status(400).json({ message: 'Il nuovo nome della sottocategoria è richiesto' });
+    }
+    
+    // Verifica se la sottocategoria esiste
+    const prodotti = await ProdottoCatalogo.find({ 
+      categoria, 
+      sottocategoria 
+    });
+    
+    if (prodotti.length === 0) {
+      return res.status(404).json({ message: 'Sottocategoria non trovata' });
+    }
+    
+    // Verifica se il nuovo nome della sottocategoria è già in uso
+    const esistente = await ProdottoCatalogo.findOne({ 
+      categoria, 
+      sottocategoria: nuovoNome 
+    });
+    
+    if (esistente) {
+      return res.status(400).json({ message: 'Il nuovo nome della sottocategoria è già in uso' });
+    }
+    
+    // Aggiorna tutti i prodotti con questa categoria e sottocategoria
+    const risultatoAggiornamento = await ProdottoCatalogo.updateMany(
+      { categoria, sottocategoria },
+      { $set: { sottocategoria: nuovoNome } }
+    );
+    
+    res.status(200).json({ 
+      message: 'Sottocategoria rinominata con successo',
+      prodottiAggiornati: risultatoAggiornamento.modifiedCount
+    });
+  } catch (error) {
+    console.error('Errore nell\'aggiornamento della sottocategoria:', error);
     res.status(500).json({ message: error.message });
   }
 };
