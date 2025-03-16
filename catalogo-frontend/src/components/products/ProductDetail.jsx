@@ -1,3 +1,4 @@
+// catalogo-frontend/src/components/products/ProductDetail.jsx
 import React, { useState } from 'react';
 import './ProductDetail.css';
 
@@ -8,7 +9,20 @@ const ProductDetail = ({ product }) => {
     return <div className="product-detail-loading">Caricamento...</div>;
   }
   
-  const { nome, tipo, prezzo, unita, categoria, descrizione, immagini } = product;
+  const { 
+    nome, 
+    tipo, 
+    prezzo, 
+    unita, 
+    categoria, 
+    descrizione, 
+    immagini, 
+    codice,
+    tipoImballaggio,
+    pezziPerCartone,
+    cartoniPerEpal,
+    pezziPerEpal
+  } = product;
   
   return (
     <div className="product-detail">
@@ -45,12 +59,45 @@ const ProductDetail = ({ product }) => {
       <div className="product-info">
         <div className="product-category">{categoria}</div>
         <h1 className="product-title">{nome}</h1>
+        {codice && <div className="product-code">Codice: {codice}</div>}
         <div className="product-type">{tipo}</div>
         
         <div className="product-price">
-          <span className="price">{prezzo.toFixed(2)} €</span>
+          <span className="price">{typeof prezzo === 'number' ? prezzo.toFixed(2) : '0.00'} €</span>
           <span className="unit">{unita}</span>
         </div>
+        
+        {tipoImballaggio && (
+          <div className="product-packaging">
+            <h3>Informazioni di Imballaggio</h3>
+            <table className="packaging-table">
+              <tbody>
+                <tr>
+                  <td>Tipo Imballaggio:</td>
+                  <td><strong>{tipoImballaggio}</strong></td>
+                </tr>
+                {pezziPerCartone && (
+                  <tr>
+                    <td>Pezzi per Cartone:</td>
+                    <td><strong>{pezziPerCartone}</strong></td>
+                  </tr>
+                )}
+                {cartoniPerEpal && (
+                  <tr>
+                    <td>Cartoni per Epal:</td>
+                    <td><strong>{cartoniPerEpal}</strong></td>
+                  </tr>
+                )}
+                {pezziPerEpal && (
+                  <tr>
+                    <td>Totale Pezzi per Epal:</td>
+                    <td><strong>{pezziPerEpal}</strong></td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
         
         <div className="product-description">
           <h3>Descrizione</h3>
