@@ -1,0 +1,58 @@
+.product-detail-page {
+  padding: var(--spacing-lg) 0;
+}
+
+.breadcrumb {
+  margin-bottom: var(--spacing-lg);
+  font-size: var(--font-size-sm);
+  color: var(--text-light);
+}
+
+.breadcrumb a {
+  color: var(--text-light);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.breadcrumb a:hover {
+  color: var(--primary-color);
+}
+
+.breadcrumb span {
+  color: var(--text-color);
+  font-weight: 500;
+}
+
+.error-message, .not-found-message {
+  text-align: center;
+  padding: var(--spacing-xl);
+  background-color: var(--card-background);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.error-message h2, .not-found-message h2 {
+  color: var(--error-color);
+  margin-bottom: var(--spacing-md);
+}
+
+.not-found-message h2 {
+  color: var(--text-color);
+}
+
+.back-button {
+  display: inline-block;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--border-radius-sm);
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: var(--spacing-md);
+  transition: background-color var(--transition-fast);
+}
+
+.back-button:hover {
+  background-color: var(--primary-dark);
+}

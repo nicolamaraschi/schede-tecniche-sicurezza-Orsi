@@ -1,183 +1,202 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
+import { fetchProducts, fetchDocuments } from '../api';
 import './Main.css';
-import { fetchProducts, fetchDocuments, uploadDocument, deleteDocument, createProduct } from '../api';
+// Import Font Awesome
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { 
+  faBoxes, 
+  faFilePdf, 
+  faPlusCircle, 
+  faUpload, 
+  faSearch, 
+  faInfoCircle 
+} from '@fortawesome/free-solid-svg-icons';
 
 const Main = () => {
-  const [documents, setDocuments] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [selectedProductName, setSelectedProductName] = useState(''); // Cambiato da selectedProductCode a selectedProductName
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [uploadType, setUploadType] = useState('Scheda Tecnica');
-  const [newProductName, setNewProductName] = useState('');
-  const [newProductCode, setNewProductCode] = useState('');
-  const [loading, setLoading] = useState(false); // Stato di caricamento
-
+  const [productsCount, setProductsCount] = useState(0);
+  const [documentsCount, setDocumentsCount] = useState(0);
+  const [recentDocuments, setRecentDocuments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  
   const token = localStorage.getItem('token');
 
-  const loadDocuments = useCallback(async () => {
-    if (!selectedProductName) return; // Non caricare documenti se non c'è un prodotto selezionato
+  const loadData = useCallback(async () => {
     try {
-      const data = await fetchDocuments(token, selectedProductName);
-      setDocuments(data);
-    } catch (error) {
-      console.error('Error fetching documents:', error);
-    }
-  }, [token, selectedProductName]);
-
-  const loadProducts = useCallback(async () => {
-    try {
-      const data = await fetchProducts(token);
-      setProducts(data);
-    } catch (error) {
-      console.error('Error fetching products:', error);
+      setLoading(true);
+      
+      // Fetch products count
+      const products = await fetchProducts(token);
+      setProductsCount(products.length);
+      
+      // Fetch documents and count
+      const documents = await fetchDocuments(token);
+      setDocumentsCount(documents.length);
+      
+      // Get the 5 most recent documents
+      const sortedDocuments = [...documents].sort((a, b) => {
+        // Ordina per ID documento, presumendo che ID più recenti siano più grandi
+        return b.idDocument?.localeCompare(a.idDocument);
+      }).slice(0, 5);
+      
+      setRecentDocuments(sortedDocuments);
+      setError('');
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      setError('Impossibile caricare i dati. Verifica la tua connessione e riprova.');
+    } finally {
+      setLoading(false);
     }
   }, [token]);
 
   useEffect(() => {
-    loadProducts();
-  }, [loadProducts]);
-
-  useEffect(() => {
-    loadDocuments();
-  }, [loadDocuments, selectedProductName]);
-
-  const handleFileChange = (event) => {
-    const file = event.target.files[0];
-    setSelectedFile(file);
-  };
-
-  const handleUpload = async () => {
-    if (!selectedFile || !selectedProductName) {
-      console.error('File or product name is missing.');
-      return;
-    }
-
-    if (selectedFile.type !== 'application/pdf') {
-      console.error('Please upload a valid PDF file.');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await uploadDocument(token, selectedFile, selectedProductName, uploadType); // Invia nome prodotto
-      await loadDocuments(); // Ricarica i documenti
-      setSelectedFile(null);
-      setUploadType('Scheda Tecnica');
-      setSelectedProductName(''); // Reset del nome prodotto dopo il caricamento
-    } catch (error) {
-      console.error('Error uploading document:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDelete = async (documentId) => {
-    try {
-      await deleteDocument(token, documentId);
-      setDocuments(documents.filter(doc => doc._id !== documentId));
-    } catch (error) {
-      console.error('Error deleting document:', error);
-    }
-  };
-
-  const handleCreateProduct = async () => {
-    if (!newProductName || !newProductCode) return;
-
-    try {
-      const createdProduct = await createProduct(token, newProductName, newProductCode);
-      setProducts(prevProducts => [...prevProducts, createdProduct]);
-      setNewProductName('');
-      setNewProductCode('');
-    } catch (error) {
-      console.error('Error creating product:', error);
-    }
-  };
+    loadData();
+  }, [loadData]);
 
   return (
     <div className="main-container">
-      <h1>Benvenuti nella Pagina Principale</h1>
+      <section className="hero-section">
+        <div className="hero-content">
+          <h1>Sistema di Gestione Schede Tecniche e di Sicurezza</h1>
+          <p>Gestisci, organizza e condividi facilmente le schede tecniche e di sicurezza dei tuoi prodotti</p>
+        </div>
+      </section>
 
-      <div className="card">
-        <h2>Crea Nuovo Prodotto</h2>
-        <input 
-          type="text" 
-          placeholder="Nome Prodotto" 
-          value={newProductName} 
-          onChange={(e) => setNewProductName(e.target.value)} 
-        />
-        <input 
-          type="text" 
-          placeholder="Codice Prodotto" 
-          value={newProductCode} 
-          onChange={(e) => setNewProductCode(e.target.value)} 
-        />
-        <button onClick={handleCreateProduct}>Crea Prodotto</button>
-      </div>
-
-      <div className="card">
-        <h2>Carica Schede Tecniche e di Sicurezza</h2>
-        <select onChange={(e) => setSelectedProductName(e.target.value)} value={selectedProductName}>
-          <option value="">Seleziona un Prodotto</option>
-          {products.map(product => (
-            <option key={product.id} value={product.name}>{product.name}</option> // Usa product.name
-          ))}
-        </select>
-
-        <select onChange={(e) => setUploadType(e.target.value)} value={uploadType}>
-          <option value="Scheda Tecnica">Scheda Tecnica</option>
-          <option value="Scheda di Sicurezza">Scheda di Sicurezza</option>
-        </select>
-        <div className="upload-section">
-          <input type="file" accept=".pdf" onChange={handleFileChange} />
-          <button onClick={handleUpload} disabled={loading}>
-            {loading ? 'Caricamento...' : 'Carica Scheda'}
+      {loading ? (
+        <div className="loading-container">
+          <div className="spinner"></div>
+          <p>Caricamento in corso...</p>
+        </div>
+      ) : error ? (
+        <div className="error-container">
+          <p className="error-message">{error}</p>
+          <button onClick={loadData} className="retry-button">
+            Riprova
           </button>
         </div>
-      </div>
+      ) : (
+        <>
+          <section className="stats-section">
+            <div className="stat-card">
+              <div className="stat-icon products-icon">
+                <FontAwesomeIcon icon={faBoxes} />
+              </div>
+              <div className="stat-content">
+                <h2>{productsCount}</h2>
+                <p>Prodotti Totali</p>
+              </div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon documents-icon">
+                <FontAwesomeIcon icon={faFilePdf} />
+              </div>
+              <div className="stat-content">
+                <h2>{documentsCount}</h2>
+                <p>Schede Gestite</p>
+              </div>
+            </div>
+          </section>
 
-      <div className="card">
-        <h2>Visualizza Schede Tecniche e di Sicurezza</h2>
-        <input
-          type="text"
-          placeholder="Nome Prodotto"
-          value={selectedProductName}
-          onChange={(e) => setSelectedProductName(e.target.value)}
-        />
-        <ul>
-          {documents.length > 0 ? (
-            documents.map(doc => (
-              <li key={doc._id}>
-                <div>
-                  <strong>Tipo di Scheda:</strong> {doc.type} <br />
-                  <strong>Prodotto:</strong> {doc.productName} <br />
-                  <strong>Codice Prodotto:</strong> {doc.productCode} <br />
-                  <a href={`http://localhost:5002/${doc.fileUrl}`} target="_blank" rel="noopener noreferrer">
-                    {doc.fileUrl}
-                  </a>
-                  <button className="delete-button" onClick={() => handleDelete(doc._id)}>Elimina</button>
+          <section className="features-section">
+            <h2>Funzionalità Principali</h2>
+            <div className="features-grid">
+              <Link to="/create-product" className="feature-card">
+                <div className="feature-icon">
+                  <FontAwesomeIcon icon={faPlusCircle} />
                 </div>
-              </li>
-            ))
-          ) : (
-            <li>Nessuna scheda trovata.</li>
-          )}
-        </ul>
-      </div>
+                <h3>Crea Prodotto</h3>
+                <p>Aggiungi nuovi prodotti e assegna loro un codice identificativo univoco</p>
+              </Link>
+              <Link to="/upload-document" className="feature-card">
+                <div className="feature-icon">
+                  <FontAwesomeIcon icon={faUpload} />
+                </div>
+                <h3>Carica Schede</h3>
+                <p>Carica e associa schede tecniche e di sicurezza ai prodotti esistenti</p>
+              </Link>
+              <Link to="/view-documents" className="feature-card">
+                <div className="feature-icon">
+                  <FontAwesomeIcon icon={faSearch} />
+                </div>
+                <h3>Visualizza Schede</h3>
+                <p>Cerca e visualizza tutte le schede archiviate per prodotto o codice scheda</p>
+              </Link>
+              <Link to="/product-info" className="feature-card">
+                <div className="feature-icon">
+                  <FontAwesomeIcon icon={faInfoCircle} />
+                </div>
+                <h3>Gestione Prodotti</h3>
+                <p>Visualizza, modifica o elimina i prodotti presenti nel sistema</p>
+              </Link>
+            </div>
+          </section>
 
-      <div className="card">
-        <h2>Info Codice Prodotto</h2>
-        <ul>
-          {products.length > 0 ? (
-            products.map(product => (
-              <li key={product.code}>
-                {product.name} - {product.code}
-              </li>
-            ))
-          ) : (
-            <li>Nessun prodotto trovato.</li>
-          )}
-        </ul>
-      </div>
+          <section className="recent-documents-section">
+            <h2>Schede Recenti</h2>
+            {recentDocuments.length > 0 ? (
+              <div className="documents-table-container">
+                <table className="documents-table">
+                  <thead>
+                    <tr>
+                      <th>Prodotto</th>
+                      <th>Codice Prodotto</th>
+                      <th>Tipo Scheda</th>
+                      <th>Codice Scheda</th>
+                      <th>Azioni</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentDocuments.map((doc) => (
+                      <tr key={doc.idDocument}>
+                        <td>{doc.productName}</td>
+                        <td>{doc.productCode}</td>
+                        <td>{doc.documentType}</td>
+                        <td>{doc.documentCode}</td>
+                        <td>
+                          <a 
+                            href={`http://localhost:5002/${doc.fileUrl}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="view-button"
+                          >
+                            Visualizza
+                          </a>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="no-documents">Nessuna scheda disponibile. Inizia caricando una scheda tecnica o di sicurezza.</p>
+            )}
+            <div className="view-all-container">
+              <Link to="/view-documents" className="view-all-button">
+                Visualizza tutte le schede
+              </Link>
+            </div>
+          </section>
+
+          <section className="help-section">
+            <h2>Guida Rapida</h2>
+            <div className="help-cards">
+              <div className="help-card">
+                <h3>1. Crea un Prodotto</h3>
+                <p>Inizia creando un prodotto e assegnandogli un codice univoco.</p>
+              </div>
+              <div className="help-card">
+                <h3>2. Carica una Scheda</h3>
+                <p>Carica una scheda tecnica o di sicurezza (PDF) e associala a un prodotto.</p>
+              </div>
+              <div className="help-card">
+                <h3>3. Gestisci le Schede</h3>
+                <p>Visualizza, cerca, condividi o elimina le schede in base alle tue necessità.</p>
+              </div>
+            </div>
+          </section>
+        </>
+      )}
     </div>
   );
 };
