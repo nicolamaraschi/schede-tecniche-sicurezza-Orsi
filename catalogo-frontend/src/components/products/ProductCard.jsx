@@ -1,10 +1,12 @@
-// catalogo-frontend/src/components/products/ProductCard.jsx
 import React from 'react';
 import { Link } from 'react-router-dom';
 import './ProductCard.css';
 
 const ProductCard = ({ product }) => {
+  console.log("ProductCard rendering with product:", product);
+  
   if (!product) {
+    console.log("ProductCard received null/undefined product");
     return (
       <div className="product-card product-card-empty">
         <div className="product-info">
@@ -22,6 +24,7 @@ const ProductCard = ({ product }) => {
     unita, 
     immagini, 
     categoria,
+    sottocategoria,
     codice,
     tipoImballaggio
   } = product;
@@ -36,6 +39,8 @@ const ProductCard = ({ product }) => {
     ? immagini[0] 
     : '/placeholder-product.jpg';
 
+  console.log("ProductCard image:", mainImage);
+
   return (
     <div className="product-card">
       <div className="product-image">
@@ -48,6 +53,9 @@ const ProductCard = ({ product }) => {
       </div>
       <div className="product-info">
         <div className="product-category-tag">{categoria || 'Categoria non specificata'}</div>
+        {sottocategoria && (
+          <div className="product-subcategory-tag">{sottocategoria}</div>
+        )}
         <h3 className="product-title">{nome || 'Prodotto senza nome'}</h3>
         {codice && <div className="product-code">Cod: {codice}</div>}
         <p className="product-type">{tipo || 'Tipo non specificato'}</p>

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import productService from '../services/productService';
-import categoryService from '../services/categoryService';
+import axios from 'axios';
 import ProductList from '../components/products/ProductList';
 import CategoryMenu from '../components/products/CategoryMenu';
 import ProductFilter from '../components/products/ProductFilter';
@@ -11,76 +10,66 @@ const CategoryPage = () => {
   const navigate = useNavigate();
   const { categoryId, subcategoryId } = useParams();
   const [products, setProducts] = useState([]);
-  const [category, setCategory] = useState(null);
-  const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState({
     search: '',
-    sort: 'name-asc',
-    priceRange: [0, 1000]
+    sort: 'name-asc'
   });
   
-  // Creazione stabile della funzione handleFilterChange
+  // Funzione stabile per gestire i cambiamenti nei filtri
   const handleFilterChange = useCallback((newFilters) => {
-    setFilters(prevFilters => {
-      // Verifica che i nuovi filtri siano effettivamente diversi
-      const hasChanges = Object.keys(newFilters).some(
-        key => prevFilters[key] !== newFilters[key]
-      );
-      
-      // Se non ci sono cambiamenti, restituisci lo stato precedente invariato
-      if (!hasChanges) return prevFilters;
-      
-      // Altrimenti, aggiorna i filtri
-      return { ...prevFilters, ...newFilters };
-    });
+    setFilters(prevFilters => ({...prevFilters, ...newFilters}));
   }, []);
 
-  // Fetch data con protezione da errori
+  // Carica i prodotti e le sottocategorie
   useEffect(() => {
-    let isMounted = true;
-    let controller = new AbortController();
-    
     const fetchData = async () => {
       try {
-        if (!isMounted) return;
         setLoading(true);
+        let productsEndpoint;
+        let subcategoriesEndpoint;
         
-        // Fetch categories
-        let categoriesPromise = categoryService.getAllCategories();
-        
-        // Fetch current category if needed
-        let categoryPromise = categoryId 
-          ? categoryService.getCategoryById(categoryId)
-          : Promise.resolve(null);
-        
-        // Fetch products
-        let productsPromise;
+        // Determina gli endpoint in base ai parametri URL
         if (subcategoryId && categoryId) {
-          productsPromise = productService.getProductsBySubcategory(categoryId, subcategoryId);
+          // Codifica correttamente i parametri nell'URL
+          const encodedCategory = encodeURIComponent(categoryId);
+          const encodedSubcategory = encodeURIComponent(subcategoryId);
+          
+          productsEndpoint = `http://localhost:5002/api/prodottiCatalogo/categoria/${encodedCategory}/sottocategoria/${encodedSubcategory}`;
+          subcategoriesEndpoint = `http://localhost:5002/api/prodottiCatalogo/categoria/${encodedCategory}/sottocategorie`;
         } else if (categoryId) {
-          productsPromise = productService.getProductsByCategory(categoryId);
+          const encodedCategory = encodeURIComponent(categoryId);
+          productsEndpoint = `http://localhost:5002/api/prodottiCatalogo/categoria/${encodedCategory}`;
+          subcategoriesEndpoint = `http://localhost:5002/api/prodottiCatalogo/categoria/${encodedCategory}/sottocategorie`;
         } else {
-          productsPromise = productService.getAllProducts();
+          productsEndpoint = 'http://localhost:5002/api/prodottiCatalogo/prodotti';
         }
         
-        // Wait for all promises to resolve
-        const [categoriesData, categoryData, productsData] = await Promise.all([
-          categoriesPromise,
-          categoryPromise,
-          productsPromise
-        ]);
+        console.log("Fetching products from:", productsEndpoint);
         
-        if (!isMounted) return;
+        // Carica prodotti
+        const productsResponse = await axios.get(productsEndpoint);
+        console.log("Products response:", productsResponse.data);
         
-        // Update state with fetched data
-        setCategories(Array.isArray(categoriesData) ? categoriesData : []);
-        setCategory(categoryData);
-        setProducts(Array.isArray(productsData) ? productsData : []);
+        if (Array.isArray(productsResponse.data)) {
+          setProducts(productsResponse.data);
+        } else {
+          console.error("API non ha restituito un array:", productsResponse.data);
+          setProducts([]);
+        }
+        
+        // Carica sottocategorie se necessario
+        if (subcategoriesEndpoint) {
+          console.log("Fetching subcategories from:", subcategoriesEndpoint);
+          const subcategoriesResponse = await axios.get(subcategoriesEndpoint);
+          console.log("Subcategories response:", subcategoriesResponse.data);
+          setSubcategories(Array.isArray(subcategoriesResponse.data) ? subcategoriesResponse.data : []);
+        }
+        
         setLoading(false);
       } catch (err) {
-        if (!isMounted) return;
         console.error('Error fetching category data:', err);
         setError(err);
         setLoading(false);
@@ -88,72 +77,49 @@ const CategoryPage = () => {
     };
     
     fetchData();
-    
-    return () => {
-      isMounted = false;
-      controller.abort();
-    };
   }, [categoryId, subcategoryId]);
 
-  // Applicazione dei filtri (memoizzata per prevenire calcoli ripetuti)
+  // Applicazione dei filtri di ricerca e ordinamento
   const filteredProducts = useMemo(() => {
+    console.log("Filtering products, total:", products.length);
+    
     if (!Array.isArray(products) || products.length === 0) {
       return [];
     }
     
-    return products
-      .filter(product => {
-        if (!product) return false;
-        
-        // Filtra per testo di ricerca
-        if (filters.search && typeof filters.search === 'string' && filters.search.trim() !== '') {
-          const searchTerm = filters.search.toLowerCase();
-          const productName = typeof product.nome === 'string' ? product.nome.toLowerCase() : '';
-          
-          if (!productName.includes(searchTerm)) {
-            return false;
-          }
-        }
-        
-        // Filtra per range di prezzo
-        if (Array.isArray(filters.priceRange) && filters.priceRange.length === 2) {
-          const [minPrice, maxPrice] = filters.priceRange;
-          const productPrice = typeof product.prezzo === 'number' ? product.prezzo : 0;
-          
-          if (productPrice < minPrice || productPrice > maxPrice) {
-            return false;
-          }
-        }
-        
-        return true;
-      })
-      .sort((a, b) => {
-        if (!a || !b) return 0;
-        
-        // Ordina in base al criterio selezionato
-        switch (filters.sort) {
-          case 'name-asc':
-            return (a.nome || '').localeCompare(b.nome || '');
-          case 'name-desc':
-            return (b.nome || '').localeCompare(a.nome || '');
-          case 'price-asc':
-            return (a.prezzo || 0) - (b.prezzo || 0);
-          case 'price-desc':
-            return (b.prezzo || 0) - (a.prezzo || 0);
-          default:
-            return 0;
-        }
-      });
-  }, [products, filters.search, filters.priceRange, filters.sort]);
-
-  // Trova la sottocategoria corrente
-  const currentSubcategory = useMemo(() => {
-    if (!subcategoryId || !category || !Array.isArray(category.subcategories)) {
-      return null;
-    }
+    // Filtro solo per ricerca testuale
+    const filtered = products.filter(product => {
+      if (!product) return false;
+      
+      if (filters.search && filters.search.trim() !== '') {
+        const searchTerm = filters.search.toLowerCase();
+        const productName = (product.nome || '').toLowerCase();
+        const productCode = (product.codice || '').toLowerCase();
+        return productName.includes(searchTerm) || productCode.includes(searchTerm);
+      }
+      
+      return true;
+    });
     
-    return category.subcategories.find(sub => sub && sub.id === subcategoryId) || null;
-  }, [subcategoryId, category]);
+    // Ordinamento
+    filtered.sort((a, b) => {
+      switch (filters.sort) {
+        case 'name-asc':
+          return (a.nome || '').localeCompare(b.nome || '');
+        case 'name-desc':
+          return (b.nome || '').localeCompare(a.nome || '');
+        case 'price-asc':
+          return (a.prezzo || 0) - (b.prezzo || 0);
+        case 'price-desc':
+          return (b.prezzo || 0) - (a.prezzo || 0);
+        default:
+          return 0;
+      }
+    });
+    
+    console.log("Filtered products result:", filtered.length);
+    return filtered;
+  }, [products, filters.search, filters.sort]);
 
   // Gestisci errori fatali
   if (error && !loading) {
@@ -162,10 +128,7 @@ const CategoryPage = () => {
         <div className="container">
           <h2>Si è verificato un errore</h2>
           <p>{error.message || 'Errore durante il caricamento dei dati.'}</p>
-          <button 
-            onClick={() => navigate('/catalogo')} 
-            className="button button-primary"
-          >
+          <button onClick={() => navigate('/catalogo')} className="button button-primary">
             Torna al catalogo
           </button>
         </div>
@@ -173,45 +136,57 @@ const CategoryPage = () => {
     );
   }
 
+  console.log("Rendering CategoryPage with:", {
+    categoryId,
+    subcategoryId,
+    productsCount: filteredProducts.length,
+    subcategoriesCount: subcategories.length,
+    loading
+  });
+
+  // Funzione per codificare in modo sicuro i parametri nell'URL
+  const encodeUrlParam = (param) => {
+    return encodeURIComponent(param);
+  };
+
   return (
     <div className="category-page">
       <div className="container">
         <div className="breadcrumb">
           <Link to="/">Home</Link> / 
           <Link to="/catalogo">Catalogo</Link>
-          {category && (
+          {categoryId && (
             <>
               {' / '}
-              <Link to={`/catalogo/categoria/${categoryId}`}>{category.name}</Link>
+              <Link to={`/catalogo/categoria/${encodeUrlParam(categoryId)}`}>{categoryId}</Link>
             </>
           )}
-          {currentSubcategory && (
+          {subcategoryId && (
             <>
               {' / '}
-              <span>{currentSubcategory.name}</span>
+              <span>{subcategoryId}</span>
             </>
           )}
         </div>
         
         <div className="category-header">
           <h1>
-            {currentSubcategory 
-              ? currentSubcategory.name
-              : category 
-                ? category.name
+            {subcategoryId 
+              ? subcategoryId
+              : categoryId 
+                ? categoryId
                 : 'Tutti i Prodotti'}
           </h1>
           
-          {category && !currentSubcategory && category.subcategories && 
-           Array.isArray(category.subcategories) && category.subcategories.length > 0 && (
+          {categoryId && subcategories && subcategories.length > 0 && !subcategoryId && (
             <div className="subcategories-list">
-              {category.subcategories.map((sub) => sub && (
+              {subcategories.map(subcategory => (
                 <Link 
-                  key={sub.id || `subcategory-${Math.random().toString(36).substr(2, 9)}`} 
-                  to={`/catalogo/categoria/${categoryId}/sottocategoria/${sub.id}`}
+                  key={`subcategory-${subcategory}`} 
+                  to={`/catalogo/categoria/${encodeUrlParam(categoryId)}/sottocategoria/${encodeUrlParam(subcategory)}`}
                   className="subcategory-link"
                 >
-                  {sub.name}
+                  {subcategory}
                 </Link>
               ))}
             </div>
@@ -221,9 +196,9 @@ const CategoryPage = () => {
         <div className="catalog-layout">
           <aside className="catalog-sidebar">
             <CategoryMenu 
-              categories={categories} 
               loading={loading}
-              activeId={categoryId}
+              activeCategory={categoryId}
+              activeSubcategory={subcategoryId}
             />
           </aside>
           

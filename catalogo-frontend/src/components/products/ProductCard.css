@@ -1,4 +1,3 @@
-/* catalogo-frontend/src/components/products/ProductCard.css */
 .product-card {
   background-color: var(--card-background);
   border-radius: var(--border-radius-md);
@@ -85,6 +84,17 @@
   display: inline-block;
   background-color: rgba(63, 81, 181, 0.1);
   color: var(--primary-color);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  font-size: calc(var(--font-size-xs) * 0.9);
+  margin-bottom: var(--spacing-xs);
+  align-self: flex-start;
+}
+
+.product-subcategory-tag {
+  display: inline-block;
+  background-color: rgba(245, 0, 87, 0.1);
+  color: var(--secondary-color);
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--border-radius-sm);
   font-size: calc(var(--font-size-xs) * 0.9);

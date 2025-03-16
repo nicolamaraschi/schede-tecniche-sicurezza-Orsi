@@ -1,4 +1,3 @@
-/* catalogo-frontend/src/components/products/ProductDetail.css */
 .product-detail {
   display: flex;
   flex-direction: column;
@@ -96,6 +95,36 @@
   font-size: var(--font-size-xs);
   font-weight: 500;
   margin-bottom: var(--spacing-sm);
+}
+
+.product-category a {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+.product-category a:hover {
+  text-decoration: underline;
+}
+
+.product-subcategory {
+  display: inline-block;
+  background-color: rgba(245, 0, 87, 0.1);
+  color: var(--secondary-color);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  margin-left: var(--spacing-xs);
+  margin-bottom: var(--spacing-sm);
+}
+
+.product-subcategory a {
+  color: var(--secondary-color);
+  text-decoration: none;
+}
+
+.product-subcategory a:hover {
+  text-decoration: underline;
 }
 
 .product-title {

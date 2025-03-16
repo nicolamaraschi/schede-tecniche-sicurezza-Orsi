@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './ProductFilter.css';
 
-// Versione completamente ridisegnata per interrompere il loop infinito
+// Versione semplificata senza filtro di prezzo
 const ProductFilter = React.memo(({ filters, onFilterChange, totalProducts }) => {
   const [localSearch, setLocalSearch] = useState(filters.search || '');
   const isInitialMount = useRef(true);

@@ -9,6 +9,7 @@ const CatalogContext = createContext();
 export const CatalogProvider = ({ children }) => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState({
@@ -26,13 +27,15 @@ export const CatalogProvider = ({ children }) => {
         setLoading(true);
         
         // Fetch products and categories in parallel
-        const [productsData, categoriesData] = await Promise.all([
+        const [productsData, categoriesData, subcategoriesData] = await Promise.all([
           productService.getAllProducts(),
-          categoryService.getAllCategories()
+          categoryService.getAllCategories(),
+          categoryService.getAllSubcategories()
         ]);
         
         setProducts(productsData);
         setCategories(categoriesData);
+        setSubcategories(subcategoriesData);
         setLoading(false);
       } catch (err) {
         console.error('Error fetching catalog data:', err);
@@ -136,6 +139,38 @@ export const CatalogProvider = ({ children }) => {
     }
   };
 
+  // Get subcategories for a category
+  const getSubcategoriesByCategory = async (category) => {
+    try {
+      const data = await categoryService.getSubcategoriesByCategory(category);
+      // Update subcategories state
+      setSubcategories(prev => ({
+        ...prev,
+        [category]: data
+      }));
+      return data;
+    } catch (err) {
+      console.error(`Error fetching subcategories for category ${category}:`, err);
+      return [];
+    }
+  };
+
+  // Add a new subcategory
+  const addSubcategory = async (category, subcategoryName) => {
+    try {
+      const data = await categoryService.addSubcategory(category, subcategoryName);
+      // Update subcategories state
+      setSubcategories(prev => ({
+        ...prev,
+        [category]: data
+      }));
+      return data;
+    } catch (err) {
+      console.error(`Error adding subcategory to category ${category}:`, err);
+      throw err;
+    }
+  };
+
   // Clear all filters
   const clearFilters = () => {
     setFilters({
@@ -151,12 +186,15 @@ export const CatalogProvider = ({ children }) => {
   const value = {
     products: filteredProducts,
     categories,
+    subcategories,
     loading,
     error,
     filters,
     updateFilters,
     getProductById,
     getCategoryById,
+    getSubcategoriesByCategory,
+    addSubcategory,
     clearFilters
   };
 
