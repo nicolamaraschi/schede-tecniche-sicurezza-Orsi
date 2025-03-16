@@ -1,5 +1,5 @@
-// catalogo-frontend/src/components/products/ProductDetail.jsx
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import './ProductDetail.css';
 
 const ProductDetail = ({ product }) => {
@@ -14,7 +14,8 @@ const ProductDetail = ({ product }) => {
     tipo, 
     prezzo, 
     unita, 
-    categoria, 
+    categoria,
+    sottocategoria, 
     descrizione, 
     immagini, 
     codice,
@@ -57,7 +58,18 @@ const ProductDetail = ({ product }) => {
       </div>
       
       <div className="product-info">
-        <div className="product-category">{categoria}</div>
+        <div className="product-category">
+          <Link to={`/catalogo/categoria/${categoria}`}>{categoria}</Link>
+        </div>
+        
+        {sottocategoria && (
+          <div className="product-subcategory">
+            <Link to={`/catalogo/categoria/${categoria}/sottocategoria/${sottocategoria}`}>
+              {sottocategoria}
+            </Link>
+          </div>
+        )}
+        
         <h1 className="product-title">{nome}</h1>
         {codice && <div className="product-code">Codice: {codice}</div>}
         <div className="product-type">{tipo}</div>

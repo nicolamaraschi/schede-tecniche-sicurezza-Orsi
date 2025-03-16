@@ -1,50 +1,68 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import axios from 'axios';
 import './CategoryMenu.css';
 
-const CategoryMenu = ({ categories = [], loading = false, activeId = null }) => {
+const CategoryMenu = ({ loading = false, activeCategory = null, activeSubcategory = null }) => {
   const [expandedCategories, setExpandedCategories] = useState({});
+  const [categories] = useState(['Domestico', 'Industriale']); // Categorie fisse
+  const [subcategories, setSubcategories] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
   const location = useLocation();
 
-  // Determina la categoria attiva basandosi sull'URL o sul prop
+  // Fetch sottocategorie all'avvio
   useEffect(() => {
-    // Se activeId è fornito, utilizzalo
-    if (activeId) {
-      setExpandedCategories(prev => ({
-        ...prev,
-        [activeId]: true
-      }));
-      return;
-    }
-    
-    // Altrimenti, estrai l'ID dalla URL
+    const fetchAllSubcategories = async () => {
+      try {
+        setIsLoading(true);
+        // Chiama l'endpoint che restituisce tutte le sottocategorie per categoria
+        const response = await axios.get('http://localhost:5002/api/prodottiCatalogo/sottocategorie');
+        console.log("All subcategories response:", response.data);
+        setSubcategories(response.data || {});
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Errore nel recupero delle sottocategorie:', error);
+        setIsLoading(false);
+      }
+    };
+
+    fetchAllSubcategories();
+  }, []);
+
+  // Determina la categoria attiva in base all'URL
+  useEffect(() => {
+    // Estrai la categoria dall'URL
     const pathParts = location.pathname.split('/');
     const categoryIndex = pathParts.indexOf('categoria');
     
     if (categoryIndex !== -1 && pathParts[categoryIndex + 1]) {
-      const categoryId = pathParts[categoryIndex + 1];
-      setExpandedCategories(prev => ({
-        ...prev,
-        [categoryId]: true
-      }));
+      const categoryFromUrl = decodeURIComponent(pathParts[categoryIndex + 1]);
+      
+      // Se è una delle nostre categorie principali, espandila
+      if (categories.includes(categoryFromUrl)) {
+        setExpandedCategories(prev => ({
+          ...prev,
+          [categoryFromUrl]: true
+        }));
+      }
     }
-  }, [location.pathname, activeId]);
+  }, [location.pathname, categories]);
 
   // Gestisce l'espansione/contrazione di una categoria
-  const toggleCategory = (categoryId, event) => {
-    if (event) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
-    
+  const toggleCategory = (category) => {
     setExpandedCategories(prev => ({
       ...prev,
-      [categoryId]: !prev[categoryId]
+      [category]: !prev[category]
     }));
   };
 
+  // Funzione per codificare in modo sicuro i parametri nell'URL
+  const encodeUrlParam = (param) => {
+    return encodeURIComponent(param);
+  };
+
   // Renderizzazione durante il caricamento
-  if (loading) {
+  if (loading || isLoading) {
     return (
       <div className="category-menu">
         <div className="category-menu-loading">
@@ -56,50 +74,32 @@ const CategoryMenu = ({ categories = [], loading = false, activeId = null }) => 
     );
   }
 
-  // Renderizzazione senza categorie
-  if (!Array.isArray(categories) || categories.length === 0) {
-    return (
-      <div className="category-menu">
-        <h2 className="category-menu-title">Categorie</h2>
-        <p className="empty-message">Nessuna categoria disponibile</p>
-      </div>
-    );
-  }
-
   return (
     <div className="category-menu">
       <h2 className="category-menu-title">Categorie</h2>
       
       <ul className="category-list">
-        <li key="all-products" className={!activeId ? 'active' : ''}>
+        <li key="all-products" className={!activeCategory ? 'active' : ''}>
           <Link to="/catalogo">Tutti i Prodotti</Link>
         </li>
         
         {categories.map(category => {
-          if (!category || !category._id) {
-            return null; // Salta categorie non valide
-          }
-          
-          const isActive = category._id === activeId;
-          const hasSubcategories = category.subcategories && 
-                                  Array.isArray(category.subcategories) && 
-                                  category.subcategories.length > 0;
-          const isExpanded = !!expandedCategories[category._id];
-          
-          // Genera un ID univoco per la categoria
-          const categoryKey = `category-${category._id || Math.random().toString(36).substr(2, 9)}`;
+          const isActive = category === activeCategory;
+          const categorySubcategories = subcategories[category] || [];
+          const hasSubcategories = categorySubcategories.length > 0;
+          const isExpanded = !!expandedCategories[category];
           
           return (
-            <li key={categoryKey} className={isActive ? 'active' : ''}>
+            <li key={`category-${category}`} className={isActive ? 'active' : ''}>
               <div className="category-item">
-                <Link to={`/catalogo/categoria/${category._id}`}>
-                  {category.name || 'Categoria senza nome'}
+                <Link to={`/catalogo/categoria/${encodeUrlParam(category)}`}>
+                  {category}
                 </Link>
                 
                 {hasSubcategories && (
                   <button 
                     className={`toggle-button ${isExpanded ? 'expanded' : ''}`}
-                    onClick={(e) => toggleCategory(category._id, e)}
+                    onClick={() => toggleCategory(category)}
                     aria-label={isExpanded ? 'Nascondi sottocategorie' : 'Mostra sottocategorie'}
                     type="button"
                   >
@@ -110,20 +110,16 @@ const CategoryMenu = ({ categories = [], loading = false, activeId = null }) => 
               
               {hasSubcategories && (
                 <ul className={`subcategory-list ${isExpanded ? 'expanded' : ''}`}>
-                  {category.subcategories.map(subcategory => {
-                    if (!subcategory) return null;
-                    
-                    // Genera un ID univoco per la sottocategoria
-                    const subcategoryKey = `subcategory-${subcategory.id || Math.random().toString(36).substr(2, 9)}`;
-                    
-                    return (
-                      <li key={subcategoryKey}>
-                        <Link to={`/catalogo/categoria/${category._id}/sottocategoria/${subcategory.id}`}>
-                          {subcategory.name || 'Sottocategoria senza nome'}
-                        </Link>
-                      </li>
-                    );
-                  })}
+                  {categorySubcategories.map(subcategory => (
+                    <li 
+                      key={`subcategory-${subcategory}`}
+                      className={subcategory === activeSubcategory ? 'active' : ''}
+                    >
+                      <Link to={`/catalogo/categoria/${encodeUrlParam(category)}/sottocategoria/${encodeUrlParam(subcategory)}`}>
+                        {subcategory}
+                      </Link>
+                    </li>
+                  ))}
                 </ul>
               )}
             </li>
