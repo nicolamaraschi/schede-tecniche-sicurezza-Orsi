@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Modal, Button } from 'react-bootstrap';
-import { getAllProdotti, updateProdotto } from '../api'; // Assicurati di avere l'import corretto per le funzioni API
+import { getAllProdotti, updateProdotto } from '../api';
 
 const EditProduct = () => {
   const [products, setProducts] = useState([]);
@@ -17,6 +17,18 @@ const EditProduct = () => {
   const [immagini, setImmagini] = useState([]); // Stato per le immagini
   const [showModal, setShowModal] = useState(false); // Stato per gestire il popup
   const navigate = useNavigate();
+
+  // Array di opzioni per "tipo" e "unità"
+  const tipiProdotto = [
+    'BULK', 
+    'BARATTOLO', 
+    'SECCHIO', 
+    'ASTUCCIO VUOTO', 
+    'ASTUCCIO PERSONALIZZATO', 
+    'MONODOSE CARTA'
+  ];
+  
+  const unitaMisura = ['KG', 'PZ'];
 
   useEffect(() => {
     // Funzione per ottenere i prodotti dall'API
@@ -88,7 +100,7 @@ const EditProduct = () => {
               <th>Unità</th>
               <th>Categoria</th>
               <th>Descrizione</th>
-              <th>Immagini</th> {/* Nuova colonna per le immagini */}
+              <th>Immagini</th>
               <th>Azioni</th>
             </tr>
           </thead>
@@ -146,14 +158,20 @@ const EditProduct = () => {
             </div>
             <div className="mb-3">
               <label className="form-label">Tipo</label>
-              <input
-                type="text"
+              <select
                 name="tipo"
                 className="form-control"
                 value={formData.tipo}
                 onChange={handleInputChange}
                 required
-              />
+              >
+                <option value="">Seleziona Tipo</option>
+                {tipiProdotto.map((tipo) => (
+                  <option key={tipo} value={tipo}>
+                    {tipo}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="mb-3">
               <label className="form-label">Prezzo</label>
@@ -168,14 +186,20 @@ const EditProduct = () => {
             </div>
             <div className="mb-3">
               <label className="form-label">Unità</label>
-              <input
-                type="text"
+              <select
                 name="unita"
                 className="form-control"
                 value={formData.unita}
                 onChange={handleInputChange}
                 required
-              />
+              >
+                <option value="">Seleziona Unità</option>
+                {unitaMisura.map((unita) => (
+                  <option key={unita} value={unita}>
+                    {unita}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="mb-3">
               <label className="form-label">Categoria</label>
