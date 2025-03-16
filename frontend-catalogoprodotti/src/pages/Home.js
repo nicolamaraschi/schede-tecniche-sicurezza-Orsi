@@ -1,70 +1,133 @@
 // src/pages/Home.js
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Container, Row, Col, Card, Button } from 'react-bootstrap';
+import { FaPlus, FaList, FaEdit, FaTags } from 'react-icons/fa';
 
 const Home = () => {
   return (
-    <div className="container mt-5">
-      <div className="row justify-content-center">
-        <div className="col-md-10">
-          <div className="text-center mb-5">
-            <h1 className="display-4 fw-bold">Benvenuto nel Catalogo Prodotti</h1>
-            <p className="lead">
-              Gestisci facilmente il tuo catalogo con questo strumento semplice e intuitivo.
-            </p>
-          </div>
+    <Container className="mt-5">
+      <Row className="justify-content-center mb-5">
+        <Col md={10} className="text-center">
+          <h1 className="display-4 fw-bold">Gestione Catalogo Prodotti</h1>
+          <p className="lead text-muted">
+            Sistema di gestione completo per i prodotti delle categorie Domestico e Industriale
+          </p>
+        </Col>
+      </Row>
 
-          <div className="row mt-5">
-            <div className="col-md-4 mb-4">
-              <div className="card h-100 shadow-sm">
-                <div className="card-body text-center">
-                  <i className="bi bi-plus-circle text-primary" style={{ fontSize: '3rem' }}></i>
-                  <h3 className="mt-3">Aggiungi Prodotti</h3>
-                  <p>Inserisci nuovi prodotti nel catalogo con tutti i dettagli necessari.</p>
-                  <Link to="/add-product" className="btn btn-primary mt-2">
-                    Aggiungi Prodotto
-                  </Link>
-                </div>
+      <Row className="mb-5">
+        <Col md={3} className="mb-4">
+          <Card className="h-100 shadow-sm hover-card">
+            <Card.Body className="d-flex flex-column">
+              <div className="text-center mb-4">
+                <FaPlus className="text-primary" style={{ fontSize: '3rem' }} />
               </div>
-            </div>
-
-            <div className="col-md-4 mb-4">
-              <div className="card h-100 shadow-sm">
-                <div className="card-body text-center">
-                  <i className="bi bi-list-ul text-success" style={{ fontSize: '3rem' }}></i>
-                  <h3 className="mt-3">Visualizza Prodotti</h3>
-                  <p>Visualizza tutti i prodotti presenti nel catalogo.</p>
-                  <Link to="/view-products" className="btn btn-success mt-2">
-                    Visualizza Catalogo
-                  </Link>
-                </div>
+              <Card.Title className="text-center">Aggiungi Prodotto</Card.Title>
+              <Card.Text className="text-muted">
+                Inserisci un nuovo prodotto nel catalogo con tutti i dettagli e le immagini.
+              </Card.Text>
+              <div className="mt-auto text-center">
+                <Button as={Link} to="/add-product" variant="outline-primary">
+                  Aggiungi Prodotto
+                </Button>
               </div>
-            </div>
+            </Card.Body>
+          </Card>
+        </Col>
 
-            <div className="col-md-4 mb-4">
-              <div className="card h-100 shadow-sm">
-                <div className="card-body text-center">
-                  <i className="bi bi-pencil-square text-warning" style={{ fontSize: '3rem' }}></i>
-                  <h3 className="mt-3">Modifica Prodotti</h3>
-                  <p>Aggiorna le informazioni dei prodotti già esistenti.</p>
-                  <Link to="/edit-product" className="btn btn-warning mt-2">
-                    Modifica Prodotti
-                  </Link>
-                </div>
+        <Col md={3} className="mb-4">
+          <Card className="h-100 shadow-sm hover-card">
+            <Card.Body className="d-flex flex-column">
+              <div className="text-center mb-4">
+                <FaList className="text-success" style={{ fontSize: '3rem' }} />
               </div>
-            </div>
-          </div>
+              <Card.Title className="text-center">Visualizza Prodotti</Card.Title>
+              <Card.Text className="text-muted">
+                Consulta l'intero catalogo prodotti con possibilità di filtrare per categoria e sottocategoria.
+              </Card.Text>
+              <div className="mt-auto text-center">
+                <Button as={Link} to="/view-products" variant="outline-success">
+                  Visualizza Catalogo
+                </Button>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
 
-          <div className="mt-5 p-4 bg-light rounded text-center">
-            <h2>Inizia Subito</h2>
-            <p>Esplora le funzionalità e gestisci il tuo catalogo prodotti in modo semplice ed efficiente.</p>
-            <Link to="/view-products" className="btn btn-primary btn-lg">
-              Vai al Catalogo
-            </Link>
-          </div>
-        </div>
-      </div>
-    </div>
+        <Col md={3} className="mb-4">
+          <Card className="h-100 shadow-sm hover-card">
+            <Card.Body className="d-flex flex-column">
+              <div className="text-center mb-4">
+                <FaEdit className="text-warning" style={{ fontSize: '3rem' }} />
+              </div>
+              <Card.Title className="text-center">Modifica Prodotti</Card.Title>
+              <Card.Text className="text-muted">
+                Aggiorna le informazioni dei prodotti esistenti, cambia immagini e dettagli.
+              </Card.Text>
+              <div className="mt-auto text-center">
+                <Button as={Link} to="/edit-product" variant="outline-warning">
+                  Modifica Prodotti
+                </Button>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+
+        <Col md={3} className="mb-4">
+          <Card className="h-100 shadow-sm hover-card">
+            <Card.Body className="d-flex flex-column">
+              <div className="text-center mb-4">
+                <FaTags className="text-info" style={{ fontSize: '3rem' }} />
+              </div>
+              <Card.Title className="text-center">Gestione Sottocategorie</Card.Title>
+              <Card.Text className="text-muted">
+                Aggiungi, modifica o elimina le sottocategorie per le categorie Domestico e Industriale.
+              </Card.Text>
+              <div className="mt-auto text-center">
+                <Button as={Link} to="/categories" variant="outline-info">
+                  Gestisci Sottocategorie
+                </Button>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+
+      <Row>
+        <Col className="text-center">
+          <Card className="bg-light">
+            <Card.Body>
+              <h2 className="h4 mb-3">Struttura del Catalogo</h2>
+              <Row>
+                <Col md={6} className="mb-3 mb-md-0">
+                  <div className="border rounded p-3">
+                    <h3 className="h5 text-primary">Domestico</h3>
+                    <p className="text-muted small">Prodotti per uso domestico e civile</p>
+                    <div className="d-flex justify-content-center">
+                      <Link to="/categories" className="btn btn-sm btn-outline-primary">
+                        Gestisci Sottocategorie
+                      </Link>
+                    </div>
+                  </div>
+                </Col>
+                <Col md={6}>
+                  <div className="border rounded p-3">
+                    <h3 className="h5 text-success">Industriale</h3>
+                    <p className="text-muted small">Prodotti per uso professionale e industriale</p>
+                    <div className="d-flex justify-content-center">
+                      <Link to="/categories" className="btn btn-sm btn-outline-success">
+                        Gestisci Sottocategorie
+                      </Link>
+                    </div>
+                  </div>
+                </Col>
+              </Row>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+    </Container>
   );
 };
 
