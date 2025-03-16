@@ -1,30 +1,40 @@
+// frontend-catalogoprodotti/src/pages/ViewProducts.js
 import React, { useEffect, useState } from 'react';
-import { getAllProdotti, deleteProdotto } from '../api'; // Assicurati di importare deleteProdotto
+import { getAllProdotti, deleteProdotto } from '../api';
 import './ViewProducts.css';
-import { Button } from 'react-bootstrap'; // Importa Button da react-bootstrap
+import { Button, Form, Card, Row, Col, Badge, Accordion } from 'react-bootstrap';
 
 const ViewProducts = () => {
   const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterMacroCategoria, setFilterMacroCategoria] = useState('');
 
+  // Carica i prodotti dal backend
   useEffect(() => {
     const fetchProducts = async () => {
       try {
+        setLoading(true);
         const data = await getAllProdotti();
         setProducts(data);
+        setLoading(false);
       } catch (error) {
         console.error(error);
-        alert('Errore durante il recupero dei prodotti');
+        setError('Errore durante il recupero dei prodotti');
+        setLoading(false);
       }
     };
 
     fetchProducts();
   }, []);
 
+  // Gestisce la cancellazione di un prodotto
   const handleDelete = async (id) => {
     if (window.confirm('Sei sicuro di voler eliminare questo prodotto?')) {
       try {
         await deleteProdotto(id);
-        setProducts(products.filter((product) => product._id !== id)); // Rimuovi il prodotto dalla lista
+        setProducts(products.filter((product) => product._id !== id));
         alert('Prodotto eliminato con successo!');
       } catch (error) {
         console.error(error);
@@ -33,50 +43,182 @@ const ViewProducts = () => {
     }
   };
 
+  // Filtra i prodotti in base a ricerca e macro-categoria
+  const filteredProducts = products.filter((product) => {
+    // Filtra per termine di ricerca
+    const matchesSearch = 
+      !searchTerm || 
+      (product.nome && product.nome.toLowerCase().includes(searchTerm.toLowerCase())) || 
+      (product.codice && product.codice.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    // Filtra per macro-categoria
+    const matchesMacroCategoria = !filterMacroCategoria || product.macroCategoria === filterMacroCategoria;
+    
+    return matchesSearch && matchesMacroCategoria;
+  });
+
+  // Raggruppa i prodotti per macro-categoria
+  const groupedProducts = filteredProducts.reduce((acc, product) => {
+    const macroCategoria = product.macroCategoria || 'Altra categoria';
+    if (!acc[macroCategoria]) {
+      acc[macroCategoria] = [];
+    }
+    acc[macroCategoria].push(product);
+    return acc;
+  }, {});
+
+  // Formatta il tipo di unità di imballaggio per la visualizzazione
+  const formatPackagingInfo = (product) => {
+    if (!product.tipoImballaggio) return 'N/A';
+    
+    return `${product.tipoImballaggio} (${product.pezziPerCartone} pz/cartone, ${product.cartoniPerEpal} cart/epal, ${product.pezziPerEpal} pz/epal)`;
+  };
+
+  if (loading) {
+    return <div className="container mt-4 text-center">Caricamento prodotti...</div>;
+  }
+
+  if (error) {
+    return <div className="container mt-4 alert alert-danger">{error}</div>;
+  }
+
   return (
-    <div className="view-products">
-      <h1>Visualizza Prodotti</h1>
-      <table className="table">
-        <thead>
-          <tr>
-            <th>Nome</th>
-            <th>Tipo</th>
-            <th>Prezzo</th>
-            <th>Unità</th>
-            <th>Categoria</th>
-            <th>Descrizione</th>
-            <th>Immagini</th> {/* Nuova colonna per le immagini */}
-            <th>Azioni</th>
-          </tr>
-        </thead>
-        <tbody>
-          {products.map((product) => (
-            <tr key={product._id}>
-              <td>{product.nome}</td>
-              <td>{product.tipo}</td>
-              <td>{product.prezzo} €</td>
-              <td>{product.unita}</td>
-              <td>{product.categoria}</td>
-              <td>{product.descrizione}</td>
-              <td>
-                {/* Mostra le immagini, se disponibili */}
-                {product.immagini && product.immagini.length > 0 ? (
-                  product.immagini.map((img, index) => (
-                    <img key={index} src={img} alt={`Immagine ${index + 1}`} style={{ width: '50px', height: 'auto', marginRight: '5px' }} />
-                  ))
-                ) : (
-                  <span>Nessuna immagine</span>
-                )}
-              </td>
-              <td>
-                <Button onClick={() => handleDelete(product._id)} variant="danger" size="sm">
-                  Elimina
-                </Button>
-              </td>
-            </tr>
+    <div className="container mt-4">
+      <h1 className="mb-4">Catalogo Prodotti</h1>
+      
+      {/* Filtri */}
+      <Card className="mb-4">
+        <Card.Body>
+          <Row>
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label>Cerca prodotto</Form.Label>
+                <Form.Control 
+                  type="text" 
+                  placeholder="Cerca per nome o codice" 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </Form.Group>
+            </Col>
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label>Filtra per macro-categoria</Form.Label>
+                <Form.Select
+                  value={filterMacroCategoria}
+                  onChange={(e) => setFilterMacroCategoria(e.target.value)}
+                >
+                  <option value="">Tutte le categorie</option>
+                  <option value="Linea Casa">Linea Casa</option>
+                  <option value="Linea Industriale">Linea Industriale</option>
+                </Form.Select>
+              </Form.Group>
+            </Col>
+          </Row>
+        </Card.Body>
+      </Card>
+      
+      {/* Visualizzazione prodotti raggruppati */}
+      {Object.keys(groupedProducts).length === 0 ? (
+        <div className="alert alert-info">Nessun prodotto trovato</div>
+      ) : (
+        <Accordion defaultActiveKey="0" alwaysOpen className="mb-4">
+          {Object.entries(groupedProducts).map(([macroCategoria, products], index) => (
+            <Accordion.Item eventKey={String(index)} key={macroCategoria}>
+              <Accordion.Header>
+                <span className="fw-bold">{macroCategoria}</span>
+                <Badge bg="secondary" className="ms-2">{products.length} prodotti</Badge>
+              </Accordion.Header>
+              <Accordion.Body>
+                <div className="table-responsive">
+                  <table className="table table-striped table-hover">
+                    <thead>
+                      <tr>
+                        <th>Codice</th>
+                        <th>Nome</th>
+                        <th>Categoria</th>
+                        <th>Sottocategoria</th>
+                        <th>Prezzo</th>
+                        <th>Imballaggio</th>
+                        <th>Immagini</th>
+                        <th>Azioni</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {products.map((product) => (
+                        <tr key={product._id}>
+                          <td>{product.codice || 'N/A'}</td>
+                          <td>{product.nome}</td>
+                          <td>{product.categoriaName || 'N/A'}</td>
+                          <td>{product.sottocategoria?.name || 'N/A'}</td>
+                          <td>{product.prezzo} €/{product.unita}</td>
+                          <td>{formatPackagingInfo(product)}</td>
+                          <td>
+                            {product.immagini && product.immagini.length > 0 ? (
+                              <div className="d-flex align-items-center">
+                                {product.immagini.slice(0, 3).map((img, index) => (
+                                  <img 
+                                    key={index} 
+                                    src={img} 
+                                    alt={`${product.nome} - ${index + 1}`} 
+                                    className="img-thumbnail me-1" 
+                                    style={{ width: '50px', height: '50px', objectFit: 'cover' }} 
+                                  />
+                                ))}
+                                {product.immagini.length > 3 && (
+                                  <span className="badge bg-secondary">+{product.immagini.length - 3}</span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-muted">Nessuna immagine</span>
+                            )}
+                          </td>
+                          <td>
+                            <Button 
+                              variant="danger" 
+                              size="sm" 
+                              onClick={() => handleDelete(product._id)}
+                            >
+                              Elimina
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Accordion.Body>
+            </Accordion.Item>
           ))}
-        </tbody>
-      </table>
+        </Accordion>
+      )}
+
+      {/* Statistiche */}
+      <div className="card mt-4">
+        <div className="card-header bg-light">
+          <h5 className="mb-0">Riepilogo Catalogo</h5>
+        </div>
+        <div className="card-body">
+          <Row>
+            <Col md={4} className="text-center border-end">
+              <h6>Totale Prodotti</h6>
+              <div className="fs-3">{products.length}</div>
+            </Col>
+            <Col md={4} className="text-center border-end">
+              <h6>Linea Casa</h6>
+              <div className="fs-3">
+                {products.filter(p => p.macroCategoria === 'Linea Casa').length}
+              </div>
+            </Col>
+            <Col md={4} className="text-center">
+              <h6>Linea Industriale</h6>
+              <div className="fs-3">
+                {products.filter(p => p.macroCategoria === 'Linea Industriale').length}
+              </div>
+            </Col>
+          </Row>
+        </div>
+      </div>
     </div>
   );
 };

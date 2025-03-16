@@ -1,3 +1,4 @@
+// catalogo-frontend/src/components/products/ProductCard.jsx
 import React from 'react';
 import { Link } from 'react-router-dom';
 import './ProductCard.css';
@@ -13,7 +14,17 @@ const ProductCard = ({ product }) => {
     );
   }
   
-  const { _id, nome, tipo, prezzo, unita, immagini } = product;
+  const { 
+    _id, 
+    nome, 
+    tipo, 
+    prezzo, 
+    unita, 
+    immagini, 
+    categoria,
+    codice,
+    tipoImballaggio
+  } = product;
   
   // Gestisci il caso in cui il prezzo sia undefined o non sia un numero
   const formattedPrice = typeof prezzo === 'number' 
@@ -36,8 +47,11 @@ const ProductCard = ({ product }) => {
         </div>
       </div>
       <div className="product-info">
+        <div className="product-category-tag">{categoria || 'Categoria non specificata'}</div>
         <h3 className="product-title">{nome || 'Prodotto senza nome'}</h3>
+        {codice && <div className="product-code">Cod: {codice}</div>}
         <p className="product-type">{tipo || 'Tipo non specificato'}</p>
+        {tipoImballaggio && <p className="product-packaging">{tipoImballaggio}</p>}
         <div className="product-price">
           <span className="price">{formattedPrice} €</span>
           <span className="unit">{unita || 'PZ'}</span>

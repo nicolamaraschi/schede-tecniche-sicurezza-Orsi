@@ -1,3 +1,4 @@
+/* catalogo-frontend/src/components/products/ProductDetail.css */
 .product-detail {
   display: flex;
   flex-direction: column;
@@ -104,6 +105,13 @@
   margin-bottom: var(--spacing-xs);
 }
 
+.product-code {
+  font-size: var(--font-size-sm);
+  color: var(--text-light);
+  margin-bottom: var(--spacing-xs);
+  font-weight: 500;
+}
+
 .product-type {
   font-size: var(--font-size-md);
   color: var(--text-light);
@@ -114,7 +122,7 @@
   display: flex;
   align-items: baseline;
   gap: var(--spacing-xs);
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
 }
 
 .price {
@@ -126,6 +134,34 @@
 .unit {
   font-size: var(--font-size-md);
   color: var(--text-light);
+}
+
+.product-packaging {
+  margin-bottom: var(--spacing-lg);
+  background-color: rgba(63, 81, 181, 0.05);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-md);
+}
+
+.product-packaging h3 {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  margin-bottom: var(--spacing-sm);
+  color: var(--text-color);
+}
+
+.packaging-table {
+  width: 100%;
+}
+
+.packaging-table td {
+  padding: var(--spacing-xs);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.packaging-table td:first-child {
+  color: var(--text-light);
+  width: 40%;
 }
 
 .product-description {

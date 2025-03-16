@@ -1,3 +1,4 @@
+/* catalogo-frontend/src/components/products/ProductCard.css */
 .product-card {
   background-color: var(--card-background);
   border-radius: var(--border-radius-md);
@@ -80,6 +81,17 @@
   flex-direction: column;
 }
 
+.product-category-tag {
+  display: inline-block;
+  background-color: rgba(63, 81, 181, 0.1);
+  color: var(--primary-color);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  font-size: calc(var(--font-size-xs) * 0.9);
+  margin-bottom: var(--spacing-xs);
+  align-self: flex-start;
+}
+
 .product-title {
   font-size: var(--font-size-md);
   font-weight: 600;
@@ -87,10 +99,23 @@
   color: var(--text-color);
 }
 
+.product-code {
+  font-size: var(--font-size-xs);
+  color: var(--text-light);
+  margin-bottom: var(--spacing-xs);
+}
+
 .product-type {
   font-size: var(--font-size-sm);
   color: var(--text-light);
+  margin-bottom: var(--spacing-xs);
+}
+
+.product-packaging {
+  font-size: var(--font-size-xs);
+  color: var(--text-light);
   margin-bottom: var(--spacing-sm);
+  font-style: italic;
 }
 
 .product-price {
