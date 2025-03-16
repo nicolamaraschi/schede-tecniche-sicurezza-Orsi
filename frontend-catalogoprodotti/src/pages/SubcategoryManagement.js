@@ -32,7 +32,7 @@ const SubcategoryManagement = () => {
     try {
       setLoading(true);
       const response = await axios.get(`${API_URL}/categoria/${selectedCategory}/sottocategorie`);
-      setSubcategories(response.data);
+      setSubcategories(response.data || []);
       setLoading(false);
     } catch (error) {
       console.error('Errore nel caricamento delle sottocategorie:', error);

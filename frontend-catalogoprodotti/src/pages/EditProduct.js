@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Modal, Button, Form, Row, Col, Table, Alert, Container } from 'react-bootstrap';
-import { getAllProdotti, updateProdotto, deleteProdotto } from '../api';
+import { getAllProdotti, updateProdotto, deleteProdotto, getSubcategoriesByCategory } from '../api';
 
 const EditProduct = () => {
   const [products, setProducts] = useState([]);
@@ -14,7 +14,7 @@ const EditProduct = () => {
     prezzo: 0,
     unita: '',
     categoria: '',
-    sottocategoriaId: '',
+    sottocategoria: '',
     tipoImballaggio: '',
     pezziPerCartone: '',
     cartoniPerEpal: '',
@@ -22,8 +22,7 @@ const EditProduct = () => {
     descrizione: ''
   });
   
-  // Stato per le categorie e sottocategorie
-  const [categories, setCategories] = useState([]);
+  // Stato per le sottocategorie
   const [subcategories, setSubcategories] = useState([]);
   
   const [newImages, setNewImages] = useState([]);
@@ -105,90 +104,45 @@ const EditProduct = () => {
     'Cartone 400tabs': { pezziPerCartone: 1, cartoniPerEpal: 60, pezziPerEpal: 60 }
   };
 
-  // Funzione per caricare le categorie
-  const fetchCategories = async () => {
-    try {
-      const response = await fetch('http://localhost:5002/api/gestoreProdotti/categorie');
-      if (!response.ok) {
-        throw new Error(`Errore HTTP! Status: ${response.status}`);
-      }
-      const data = await response.json();
-      
-      // Filtra solo per categorie Domestico e Industriale
-      const categoriesFiltrate = data.filter(cat => 
-        cat.name === 'Domestico' || cat.name === 'Industriale'
-      );
-      
-      setCategories(categoriesFiltrate);
-      return categoriesFiltrate;
-    } catch (error) {
-      console.error('Errore nel caricamento delle categorie:', error);
-      throw error;
-    }
-  };
-
-  // Carica prodotti e categorie all'avvio
+  // Carica prodotti all'avvio
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchProducts = async () => {
       try {
         setIsLoading(true);
-        // Carica prodotti e categorie in parallelo
-        const categoriesData = await fetchCategories();
-        const productsData = await getAllProdotti();
-        
-        // Arricchisci i prodotti con i nomi delle categorie e sottocategorie
-        const enrichedProducts = productsData.map(product => {
-          const categoria = categoriesData.find(c => c._id === product.categoria);
-          const categoriaName = categoria ? categoria.name : 'N/A';
-          
-          // Trova il nome della sottocategoria se possibile
-          let sottocategoriaName = 'N/A';
-          if (categoria && product.sottocategoria && product.sottocategoria.id) {
-            const sottocategoria = categoria.subcategories.find(
-              s => s.id === product.sottocategoria.id
-            );
-            if (sottocategoria) {
-              sottocategoriaName = sottocategoria.name;
-            }
-          }
-          
-          return {
-            ...product,
-            categoriaName,
-            sottocategoriaName
-          };
-        });
-        
-        setProducts(enrichedProducts);
+        const data = await getAllProdotti();
+        setProducts(data);
         setIsLoading(false);
       } catch (error) {
-        console.error('Errore nel recupero dei dati:', error);
+        console.error('Errore nel recupero dei prodotti:', error);
         setErrorMessage('Errore nel caricamento dei dati. Riprova più tardi.');
         setIsLoading(false);
       }
     };
 
-    fetchData();
+    fetchProducts();
   }, []);
 
   // Aggiorna le sottocategorie quando cambia la categoria
   useEffect(() => {
-    if (formData.categoria) {
-      const selectedCategory = categories.find(cat => cat._id === formData.categoria);
-      if (selectedCategory && selectedCategory.subcategories) {
-        setSubcategories(selectedCategory.subcategories);
-        
-        // Se la sottocategoria selezionata non appartiene alla categoria corrente, resettala
-        if (formData.sottocategoriaId && !selectedCategory.subcategories.some(sub => sub.id === formData.sottocategoriaId)) {
-          setFormData(prev => ({ ...prev, sottocategoriaId: '' }));
+    const fetchSubcategories = async () => {
+      if (formData.categoria) {
+        try {
+          setIsLoading(true);
+          const data = await getSubcategoriesByCategory(formData.categoria);
+          setSubcategories(data || []);
+          setIsLoading(false);
+        } catch (error) {
+          console.error('Errore nel caricamento delle sottocategorie:', error);
+          setErrorMessage('Impossibile caricare le sottocategorie');
+          setIsLoading(false);
         }
       } else {
         setSubcategories([]);
       }
-    } else {
-      setSubcategories([]);
-    }
-  }, [formData.categoria, categories]);
+    };
+    
+    fetchSubcategories();
+  }, [formData.categoria]);
 
   // Aggiorna pezziPerEpal quando cambiano i valori
   useEffect(() => {
@@ -217,12 +171,6 @@ const EditProduct = () => {
   const handleEditClick = (product) => {
     setSelectedProduct(product);
     
-    // Trova la sottocategoria ID dalla sottocategoria dell'oggetto (se esiste)
-    let sottocategoriaId = '';
-    if (product.sottocategoria && product.sottocategoria.id) {
-      sottocategoriaId = product.sottocategoria.id;
-    }
-    
     // Inizializza il form con i dati del prodotto selezionato
     setFormData({
       nome: product.nome || '',
@@ -231,7 +179,7 @@ const EditProduct = () => {
       prezzo: product.prezzo || 0,
       unita: product.unita || '',
       categoria: product.categoria || '',
-      sottocategoriaId: sottocategoriaId,
+      sottocategoria: product.sottocategoria || '',
       tipoImballaggio: product.tipoImballaggio || '',
       pezziPerCartone: product.pezziPerCartone || '',
       cartoniPerEpal: product.cartoniPerEpal || '',
@@ -300,47 +248,11 @@ const EditProduct = () => {
         immaginiToRemove: imagesToRemove
       };
 
-      // Aggiungi la sottocategoria corretta se selezionata
-      if (formData.sottocategoriaId) {
-        const selectedSubcat = subcategories.find(s => s.id === formData.sottocategoriaId);
-        if (selectedSubcat) {
-          updateData.sottocategoria = {
-            id: selectedSubcat.id,
-            name: selectedSubcat.name
-          };
-        }
-      }
-
       await updateProdotto(selectedProduct._id, updateData, newImages);
       
       // Aggiorna la lista dei prodotti
-      const updatedCategories = await fetchCategories();
       const updatedProducts = await getAllProdotti();
-      
-      // Arricchisci i prodotti con i nomi delle categorie
-      const enrichedProducts = updatedProducts.map(product => {
-        const categoria = updatedCategories.find(c => c._id === product.categoria);
-        const categoriaName = categoria ? categoria.name : 'N/A';
-        
-        // Trova il nome della sottocategoria se possibile
-        let sottocategoriaName = 'N/A';
-        if (categoria && product.sottocategoria && product.sottocategoria.id) {
-          const sottocategoria = categoria.subcategories.find(
-            s => s.id === product.sottocategoria.id
-          );
-          if (sottocategoria) {
-            sottocategoriaName = sottocategoria.name;
-          }
-        }
-        
-        return {
-          ...product,
-          categoriaName,
-          sottocategoriaName
-        };
-      });
-      
-      setProducts(enrichedProducts);
+      setProducts(updatedProducts);
       
       // Chiudi il popup e resetta gli stati
       setShowModal(false);
@@ -414,8 +326,8 @@ const EditProduct = () => {
               <tr key={product._id}>
                 <td>{product.codice || 'N/A'}</td>
                 <td>{product.nome}</td>
-                <td>{product.categoriaName || 'N/A'}</td>
-                <td>{product.sottocategoriaName || 'N/A'}</td>
+                <td>{product.categoria || 'N/A'}</td>
+                <td>{product.sottocategoria || 'N/A'}</td>
                 <td>{product.prezzo} {product.unita}</td>
                 <td>{product.tipoImballaggio || 'N/A'}</td>
                 <td>
@@ -528,8 +440,8 @@ const EditProduct = () => {
                     required
                   >
                     <option value="">Seleziona categoria</option>
-                    {categories.map((cat) => (
-                      <option key={cat._id} value={cat._id}>{cat.name}</option>
+                    {categoriePrincipali.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
                     ))}
                   </Form.Select>
                 </Form.Group>
@@ -541,15 +453,15 @@ const EditProduct = () => {
                 <Form.Group className="mb-3">
                   <Form.Label>Sottocategoria</Form.Label>
                   <Form.Select
-                    name="sottocategoriaId"
-                    value={formData.sottocategoriaId}
+                    name="sottocategoria"
+                    value={formData.sottocategoria}
                     onChange={handleInputChange}
                     disabled={!formData.categoria || subcategories.length === 0}
                   >
                     <option value="">Seleziona sottocategoria</option>
                     {subcategories.map((subcat) => (
-                      <option key={subcat.id} value={subcat.id}>
-                        {subcat.name}
+                      <option key={subcat} value={subcat}>
+                        {subcat}
                       </option>
                     ))}
                   </Form.Select>

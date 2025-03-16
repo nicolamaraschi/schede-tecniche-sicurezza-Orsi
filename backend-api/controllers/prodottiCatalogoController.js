@@ -84,6 +84,9 @@ exports.getAllProdotti = async (req, res) => {
       filter.categoria = req.query.categoria;
     }
     
+    // Escludi i prodotti "dummy" che iniziano con "_sottocategoria_"
+    filter.nome = { $not: { $regex: /^_sottocategoria_/ } };
+    
     const prodotti = await ProdottoCatalogo.find(filter);
     
     // Aggiungi l'URL base per le immagini
@@ -235,7 +238,11 @@ exports.getProdottiByCategoria = async (req, res) => {
       return res.status(400).json({ message: 'Categoria non valida' });
     }
     
-    const prodotti = await ProdottoCatalogo.find({ categoria });
+    // Escludi i prodotti "dummy" che iniziano con "_sottocategoria_"
+    const prodotti = await ProdottoCatalogo.find({ 
+      categoria,
+      nome: { $not: { $regex: /^_sottocategoria_/ } }
+    });
     
     // Aggiungi l'URL base per le immagini
     const baseUrl = `${req.protocol}://${req.get('host')}/uploads/`;
@@ -263,9 +270,11 @@ exports.getProdottiBySottocategoria = async (req, res) => {
       return res.status(400).json({ message: 'Categoria non valida' });
     }
     
+    // Escludi i prodotti "dummy" che iniziano con "_sottocategoria_"
     const prodotti = await ProdottoCatalogo.find({
       categoria,
-      sottocategoria
+      sottocategoria,
+      nome: { $not: { $regex: /^_sottocategoria_/ } }
     });
     
     // Aggiungi l'URL base per le immagini
@@ -290,8 +299,12 @@ exports.getProdottiBySottocategoria = async (req, res) => {
 // Ottieni tutte le sottocategorie per entrambe le categorie
 exports.getAllSottocategorie = async (req, res) => {
   try {
-    // Ottieni tutti i prodotti e estrai le sottocategorie uniche
-    const prodotti = await ProdottoCatalogo.find({}, 'categoria sottocategoria');
+    // Ottieni i prodotti per trovare tutte le sottocategorie uniche
+    const prodotti = await ProdottoCatalogo.find(
+      // Includi solo i documenti con nome che inizia con "_sottocategoria_" per ottenere solo le sottocategorie
+      { nome: { $regex: /^_sottocategoria_/ } }, 
+      'categoria sottocategoria'
+    );
     
     // Crea un oggetto per tenere traccia delle sottocategorie per categoria
     const sottocategorie = {
@@ -322,15 +335,17 @@ exports.getSottocategorieByCategoria = async (req, res) => {
       return res.status(400).json({ message: 'Categoria non valida' });
     }
     
-    // Ottieni tutti i prodotti della categoria e estrai le sottocategorie uniche
-    const prodotti = await ProdottoCatalogo.find({ categoria }, 'sottocategoria');
+    // Ottieni tutti i prodotti della categoria con nome che inizia con "_sottocategoria_"
+    const prodotti = await ProdottoCatalogo.find(
+      { 
+        categoria, 
+        nome: { $regex: /^_sottocategoria_/ } 
+      }, 
+      'sottocategoria'
+    );
     
     // Crea un array di sottocategorie uniche
-    let sottocategorie = prodotti
-      .map(prodotto => prodotto.sottocategoria)
-      .filter((sottocategoria, index, self) => {
-        return sottocategoria && self.indexOf(sottocategoria) === index;
-      });
+    const sottocategorie = [...new Set(prodotti.map(prodotto => prodotto.sottocategoria))].filter(Boolean);
     
     res.status(200).json(sottocategorie);
   } catch (error) {
@@ -356,7 +371,8 @@ exports.addSottocategoria = async (req, res) => {
     // Verifica se la sottocategoria esiste già per questa categoria
     const esistente = await ProdottoCatalogo.findOne({ 
       categoria, 
-      sottocategoria 
+      sottocategoria,
+      nome: { $regex: /^_sottocategoria_/ } 
     });
     
     if (esistente) {
@@ -364,7 +380,7 @@ exports.addSottocategoria = async (req, res) => {
     }
     
     // Crea un prodotto "dummy" con questa sottocategoria per mantenere una traccia
-    // (questa è una soluzione temporanea, in un sistema reale dovresti avere un modello separato per le sottocategorie)
+    // ma lo contrassegnamo in modo che possa essere facilmente filtrato nelle query
     const dummyProdotto = new ProdottoCatalogo({
       nome: `_sottocategoria_${sottocategoria}`,
       codice: `_sottocategoria_${Date.now()}`,
@@ -384,9 +400,19 @@ exports.addSottocategoria = async (req, res) => {
     await dummyProdotto.save();
     
     // Ottieni tutte le sottocategorie aggiornate per questa categoria
-    const sottocategorie = await exports.getSottocategorieByCategoria(req, res);
+    // Ottieni tutti i prodotti della categoria
+    const prodotti = await ProdottoCatalogo.find(
+      { 
+        categoria, 
+        nome: { $regex: /^_sottocategoria_/ } 
+      }, 
+      'sottocategoria'
+    );
     
-    return sottocategorie;
+    // Crea un array di sottocategorie uniche
+    const sottocategorieAggiornate = [...new Set(prodotti.map(prodotto => prodotto.sottocategoria))].filter(Boolean);
+    
+    res.status(201).json(sottocategorieAggiornate);
   } catch (error) {
     console.error('Errore nell\'aggiunta della sottocategoria:', error);
     res.status(500).json({ message: error.message });
@@ -402,28 +428,33 @@ exports.deleteSottocategoria = async (req, res) => {
       return res.status(400).json({ message: 'Categoria non valida' });
     }
     
-    // Trova tutti i prodotti con questa categoria e sottocategoria
-    const prodotti = await ProdottoCatalogo.find({ 
+    // Trova tutti i prodotti "dummy" per questa sottocategoria
+    const prodottiDummy = await ProdottoCatalogo.find({ 
       categoria, 
-      sottocategoria 
+      sottocategoria,
+      nome: { $regex: /^_sottocategoria_/ }
     });
     
-    if (prodotti.length === 0) {
+    if (prodottiDummy.length === 0) {
       return res.status(404).json({ message: 'Sottocategoria non trovata' });
     }
     
-    // Elimina la sottocategoria da tutti i prodotti (impostando sottocategoria a null)
-    // Oppure elimina i prodotti "dummy" usati per tracciare le sottocategorie
+    // Elimina tutti i prodotti "dummy" per questa sottocategoria
+    await ProdottoCatalogo.deleteMany({ 
+      categoria, 
+      sottocategoria,
+      nome: { $regex: /^_sottocategoria_/ }
+    });
+    
+    // Aggiorna tutti i prodotti reali per rimuovere la sottocategoria
     const risultatoAggiornamento = await ProdottoCatalogo.updateMany(
-      { categoria, sottocategoria },
+      { 
+        categoria, 
+        sottocategoria,
+        nome: { $not: { $regex: /^_sottocategoria_/ } }
+      },
       { $set: { sottocategoria: null } }
     );
-    
-    // Elimina i prodotti "dummy" creati solo per tracciare le sottocategorie
-    await ProdottoCatalogo.deleteMany({
-      nome: { $regex: `^_sottocategoria_${sottocategoria}$` },
-      categoria
-    });
     
     res.status(200).json({ 
       message: 'Sottocategoria eliminata con successo',
@@ -450,28 +481,50 @@ exports.updateSottocategoria = async (req, res) => {
     }
     
     // Verifica se la sottocategoria esiste
-    const prodotti = await ProdottoCatalogo.find({ 
+    const prodottiDummy = await ProdottoCatalogo.find({ 
       categoria, 
-      sottocategoria 
+      sottocategoria,
+      nome: { $regex: /^_sottocategoria_/ }
     });
     
-    if (prodotti.length === 0) {
+    if (prodottiDummy.length === 0) {
       return res.status(404).json({ message: 'Sottocategoria non trovata' });
     }
     
     // Verifica se il nuovo nome della sottocategoria è già in uso
     const esistente = await ProdottoCatalogo.findOne({ 
       categoria, 
-      sottocategoria: nuovoNome 
+      sottocategoria: nuovoNome,
+      nome: { $regex: /^_sottocategoria_/ }
     });
     
     if (esistente) {
       return res.status(400).json({ message: 'Il nuovo nome della sottocategoria è già in uso' });
     }
     
-    // Aggiorna tutti i prodotti con questa categoria e sottocategoria
+    // Aggiorna i prodotti "dummy" con il nuovo nome della sottocategoria
+    await ProdottoCatalogo.updateMany(
+      { 
+        categoria, 
+        sottocategoria,
+        nome: { $regex: /^_sottocategoria_/ }
+      },
+      { 
+        $set: { 
+          sottocategoria: nuovoNome,
+          nome: `_sottocategoria_${nuovoNome}`,
+          descrizione: `Prodotto dummy per la sottocategoria ${nuovoNome}`
+        } 
+      }
+    );
+    
+    // Aggiorna tutti i prodotti reali con il nuovo nome della sottocategoria
     const risultatoAggiornamento = await ProdottoCatalogo.updateMany(
-      { categoria, sottocategoria },
+      { 
+        categoria, 
+        sottocategoria,
+        nome: { $not: { $regex: /^_sottocategoria_/ } }
+      },
       { $set: { sottocategoria: nuovoNome } }
     );
     

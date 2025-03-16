@@ -1,7 +1,8 @@
 // src/api.js
 const API_URL = 'http://localhost:5002/api/prodottiCatalogo/prodotti';
 const AUTH_URL = 'http://localhost:5002/api/auth';
-const CATEGORIES_URL = 'http://localhost:5002/api/gestoreProdotti/categorie';
+const CATEGORIES_URL = 'http://localhost:5002/api/prodottiCatalogo/categoria';
+const SUBCATEGORIES_URL = 'http://localhost:5002/api/prodottiCatalogo/sottocategorie';
 
 // Funzione di supporto per gestire gli errori di autenticazione
 const handleAuthError = (error) => {
@@ -72,13 +73,13 @@ export const createProdotto = async (prodotto, immagini) => {
   }
 };
 
-// Funzione per ottenere tutte le categorie
+// Funzione per ottenere tutte le categorie (Domestico e Industriale)
 export const getAllCategories = async () => {
   try {
     const token = getAuthToken();
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-    const response = await fetch(CATEGORIES_URL, { headers });
+    const response = await fetch(SUBCATEGORIES_URL, { headers });
     
     if (response.status === 401) {
       throw { response: { status: 401 } };
@@ -97,12 +98,12 @@ export const getAllCategories = async () => {
 };
 
 // Funzione per ottenere le sottocategorie di una categoria
-export const getSubcategories = async (categoryId) => {
+export const getSubcategoriesByCategory = async (categoria) => {
   try {
     const token = getAuthToken();
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-    const response = await fetch(`${CATEGORIES_URL}/${categoryId}`, { headers });
+    const response = await fetch(`${CATEGORIES_URL}/${categoria}/sottocategorie`, { headers });
     
     if (response.status === 401) {
       throw { response: { status: 401 } };
@@ -112,8 +113,38 @@ export const getSubcategories = async (categoryId) => {
       throw new Error('Errore durante il recupero delle sottocategorie');
     }
     
-    const category = await response.json();
-    return category.subcategories || [];
+    return await response.json();
+  } catch (error) {
+    console.error(error);
+    handleAuthError(error);
+    throw error;
+  }
+};
+
+// Funzione per aggiungere una sottocategoria
+export const addSubcategory = async (categoria, sottocategoria) => {
+  try {
+    const token = getAuthToken();
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    };
+
+    const response = await fetch(`${CATEGORIES_URL}/${categoria}/sottocategorie`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ sottocategoria })
+    });
+    
+    if (response.status === 401) {
+      throw { response: { status: 401 } };
+    }
+    
+    if (!response.ok) {
+      throw new Error('Errore durante l\'aggiunta della sottocategoria');
+    }
+    
+    return await response.json();
   } catch (error) {
     console.error(error);
     handleAuthError(error);
@@ -236,37 +267,13 @@ export const deleteProdotto = async (id) => {
   }
 };
 
-// Funzione per ottenere prodotti per macro-categoria
-export const getProdottiByMacroCategoria = async (macroCategoria) => {
-  try {
-    const token = getAuthToken();
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
-    const response = await fetch(`${API_URL}/macrocategoria/${macroCategoria}`, { headers });
-    
-    if (response.status === 401) {
-      throw { response: { status: 401 } };
-    }
-    
-    if (!response.ok) {
-      throw new Error('Errore durante il recupero dei prodotti per macro-categoria');
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error(error);
-    handleAuthError(error);
-    throw error;
-  }
-};
-
 // Funzione per ottenere prodotti per categoria
-export const getProdottiByCategoria = async (categoriaId) => {
+export const getProdottiByCategoria = async (categoria) => {
   try {
     const token = getAuthToken();
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-    const response = await fetch(`${API_URL}/categoria/${categoriaId}`, { headers });
+    const response = await fetch(`${CATEGORIES_URL}/${categoria}`, { headers });
     
     if (response.status === 401) {
       throw { response: { status: 401 } };
@@ -285,12 +292,12 @@ export const getProdottiByCategoria = async (categoriaId) => {
 };
 
 // Funzione per ottenere prodotti per sottocategoria
-export const getProdottiBySottocategoria = async (categoriaId, sottocategoriaId) => {
+export const getProdottiBySottocategoria = async (categoria, sottocategoria) => {
   try {
     const token = getAuthToken();
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-    const response = await fetch(`${API_URL}/categoria/${categoriaId}/sottocategoria/${sottocategoriaId}`, { headers });
+    const response = await fetch(`${CATEGORIES_URL}/${categoria}/sottocategoria/${sottocategoria}`, { headers });
     
     if (response.status === 401) {
       throw { response: { status: 401 } };

@@ -1,6 +1,6 @@
 // frontend-catalogoprodotti/src/pages/AddProduct.js
 import React, { useState, useEffect } from 'react';
-import { createProdotto } from '../api';
+import { createProdotto, getSubcategoriesByCategory } from '../api';
 import { Form, Button, Container, Row, Col, Card, Alert } from 'react-bootstrap';
 
 const AddProduct = () => {
@@ -12,7 +12,7 @@ const AddProduct = () => {
     prezzo: '',
     unita: '',
     categoria: '',
-    sottocategoriaId: '',
+    sottocategoria: '',
     tipoImballaggio: '',
     pezziPerCartone: '',
     cartoniPerEpal: '',
@@ -20,8 +20,7 @@ const AddProduct = () => {
     descrizione: ''
   });
   
-  // Stato per le categorie e sottocategorie
-  const [categories, setCategories] = useState([]);
+  // Stato per le sottocategorie
   const [subcategories, setSubcategories] = useState([]);
   
   // Stato per le immagini
@@ -44,6 +43,9 @@ const AddProduct = () => {
   ];
   
   const unitaMisura = ['€/KG', '€/PZ'];
+  
+  // Categorie principali (solo Domestico e Industriale)
+  const categoriePrincipali = ['Domestico', 'Industriale'];
   
   const tipiImballaggio = [
     'Barattolo 1kg',
@@ -100,45 +102,27 @@ const AddProduct = () => {
     'Cartone 400tabs': { pezziPerCartone: 1, cartoniPerEpal: 60, pezziPerEpal: 60 }
   };
   
-  // Funzione per caricare le categorie
-  const fetchCategories = async () => {
-    try {
-      const response = await fetch('http://localhost:5002/api/gestoreProdotti/categorie');
-      if (!response.ok) {
-        throw new Error(`Errore HTTP! Status: ${response.status}`);
-      }
-      const data = await response.json();
-      
-      // Filtra solo per categorie Domestico e Industriale
-      const categoriesFiltrate = data.filter(cat => 
-        cat.name === 'Domestico' || cat.name === 'Industriale'
-      );
-      
-      setCategories(categoriesFiltrate);
-    } catch (error) {
-      console.error('Errore nel caricamento delle categorie:', error);
-      setErrorMessage('Impossibile caricare le categorie');
-    }
-  };
-  
-  // Carica le categorie all'avvio
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-  
   // Aggiorna le sottocategorie quando cambia la categoria
   useEffect(() => {
-    if (formData.categoria) {
-      const selectedCategory = categories.find(cat => cat._id === formData.categoria);
-      if (selectedCategory && selectedCategory.subcategories) {
-        setSubcategories(selectedCategory.subcategories);
+    const fetchSubcategories = async () => {
+      if (formData.categoria) {
+        try {
+          setIsLoading(true);
+          const data = await getSubcategoriesByCategory(formData.categoria);
+          setSubcategories(data || []);
+          setIsLoading(false);
+        } catch (error) {
+          console.error('Errore nel caricamento delle sottocategorie:', error);
+          setErrorMessage('Impossibile caricare le sottocategorie');
+          setIsLoading(false);
+        }
       } else {
         setSubcategories([]);
       }
-    } else {
-      setSubcategories([]);
-    }
-  }, [formData.categoria, categories]);
+    };
+    
+    fetchSubcategories();
+  }, [formData.categoria]);
   
   // Aggiorna automaticamente pezziPerEpal quando cambiano pezziPerCartone o cartoniPerEpal
   useEffect(() => {
@@ -191,19 +175,8 @@ const AddProduct = () => {
     setSuccessMessage('');
     
     try {
-      // Prepara i dati del prodotto, includendo la sottocategoria selezionata
+      // Prepara i dati del prodotto
       const prodottoData = { ...formData };
-      
-      // Se è selezionata una sottocategoria, trova il nome corrispondente
-      if (prodottoData.sottocategoriaId && subcategories.length > 0) {
-        const selectedSubcat = subcategories.find(s => s.id === prodottoData.sottocategoriaId);
-        if (selectedSubcat) {
-          prodottoData.sottocategoria = {
-            id: selectedSubcat.id,
-            name: selectedSubcat.name
-          };
-        }
-      }
       
       // Invia la richiesta al server
       await createProdotto(prodottoData, immagini);
@@ -216,7 +189,7 @@ const AddProduct = () => {
         prezzo: '',
         unita: '',
         categoria: '',
-        sottocategoriaId: '',
+        sottocategoria: '',
         tipoImballaggio: '',
         pezziPerCartone: '',
         cartoniPerEpal: '',
@@ -317,8 +290,8 @@ const AddProduct = () => {
                     required
                   >
                     <option value="">Seleziona categoria</option>
-                    {categories.map((cat) => (
-                      <option key={cat._id} value={cat._id}>{cat.name}</option>
+                    {categoriePrincipali.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
                     ))}
                   </Form.Select>
                 </Form.Group>
@@ -330,15 +303,15 @@ const AddProduct = () => {
                 <Form.Group className="mb-3">
                   <Form.Label>Sottocategoria</Form.Label>
                   <Form.Select
-                    name="sottocategoriaId"
-                    value={formData.sottocategoriaId}
+                    name="sottocategoria"
+                    value={formData.sottocategoria}
                     onChange={handleChange}
                     disabled={!formData.categoria || subcategories.length === 0}
                   >
                     <option value="">Seleziona sottocategoria</option>
                     {subcategories.map((subcat) => (
-                      <option key={subcat.id} value={subcat.id}>
-                        {subcat.name}
+                      <option key={subcat} value={subcat}>
+                        {subcat}
                       </option>
                     ))}
                   </Form.Select>

@@ -1,34 +1,26 @@
 // frontend-catalogoprodotti/src/pages/ViewProducts.js
 import React, { useEffect, useState } from 'react';
-import { getAllProdotti, deleteProdotto } from '../api';
+import { getAllProdotti, deleteProdotto, getSubcategoriesByCategory } from '../api';
 import './ViewProducts.css';
-import { Button, Form, Card, Row, Col, Badge, Accordion } from 'react-bootstrap';
+import { Button, Form, Card, Row, Col, Badge, Accordion, Container, Alert } from 'react-bootstrap';
 
 const ViewProducts = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterMacroCategoria, setFilterMacroCategoria] = useState('');
-  const [categories, setCategories] = useState([]);
-
-  // Carica le categorie all'avvio
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await fetch('http://localhost:5002/api/gestoreProdotti/categorie');
-        if (!response.ok) {
-          throw new Error(`Errore HTTP! Status: ${response.status}`);
-        }
-        const data = await response.json();
-        setCategories(data);
-      } catch (error) {
-        console.error('Errore nel caricamento delle categorie:', error);
-      }
-    };
-
-    fetchCategories();
-  }, []);
+  const [filterCategoria, setFilterCategoria] = useState('');
+  const [filterSottocategoria, setFilterSottocategoria] = useState('');
+  const [sottocategorieFiltrate, setSottocategorieFiltrate] = useState([]);
+  
+  // Categorie principali (solo Domestico e Industriale)
+  const categoriePrincipali = ['Domestico', 'Industriale'];
+  
+  // Mappa delle sottocategorie per categoria
+  const [sottocategorieMap, setSottocategorieMap] = useState({
+    'Domestico': [],
+    'Industriale': []
+  });
 
   // Carica i prodotti dal backend
   useEffect(() => {
@@ -36,43 +28,48 @@ const ViewProducts = () => {
       try {
         setLoading(true);
         const data = await getAllProdotti();
+        setProducts(data);
         
-        // Arricchisci i dati dei prodotti con i nomi delle categorie
-        const enrichedProducts = data.map(product => {
-          // Trova il nome della categoria se abbiamo l'ID
-          let categoryName = 'N/A';
-          const category = categories.find(c => c._id === product.categoria);
-          if (category) {
-            categoryName = category.name;
-            
-            // Verifica la sottocategoria se esiste
-            if (product.sottocategoria && product.sottocategoria.id) {
-              const subcategory = category.subcategories.find(sc => 
-                sc.id.toString() === product.sottocategoria.id.toString()
-              );
-              if (subcategory) {
-                product.sottocategoria.name = subcategory.name;
-              }
+        // Estrai tutte le sottocategorie dai prodotti
+        const sottocategoriePerCategoria = {
+          'Domestico': [],
+          'Industriale': []
+        };
+        
+        // Raccogliamo le sottocategorie uniche per ogni categoria
+        for (const categoria of categoriePrincipali) {
+          try {
+            const sottocategorie = await getSubcategoriesByCategory(categoria);
+            if (Array.isArray(sottocategorie)) {
+              sottocategoriePerCategoria[categoria] = sottocategorie;
             }
+          } catch (error) {
+            console.error(`Errore nel recupero delle sottocategorie per ${categoria}:`, error);
           }
-          
-          return { ...product, categoryName };
-        });
+        }
         
-        setProducts(enrichedProducts);
+        setSottocategorieMap(sottocategoriePerCategoria);
         setLoading(false);
       } catch (error) {
-        console.error(error);
+        console.error('Errore durante il recupero dei prodotti:', error);
         setError('Errore durante il recupero dei prodotti');
         setLoading(false);
       }
     };
 
-    // Carica i prodotti solo dopo aver caricato le categorie
-    if (categories.length > 0) {
-      fetchProducts();
+    fetchProducts();
+  }, []);
+
+  // Aggiorna le sottocategorie filtrate quando cambia la categoria
+  useEffect(() => {
+    if (filterCategoria) {
+      setSottocategorieFiltrate(sottocategorieMap[filterCategoria] || []);
+    } else {
+      setSottocategorieFiltrate([]);
     }
-  }, [categories]);
+    // Resetta il filtro della sottocategoria quando cambia la categoria
+    setFilterSottocategoria('');
+  }, [filterCategoria, sottocategorieMap]);
 
   // Gestisce la cancellazione di un prodotto
   const handleDelete = async (id) => {
@@ -82,13 +79,13 @@ const ViewProducts = () => {
         setProducts(products.filter((product) => product._id !== id));
         alert('Prodotto eliminato con successo!');
       } catch (error) {
-        console.error(error);
+        console.error('Errore durante l\'eliminazione del prodotto:', error);
         alert('Errore durante l\'eliminazione del prodotto');
       }
     }
   };
 
-  // Filtra i prodotti in base a ricerca e macro-categoria
+  // Filtra i prodotti in base a ricerca, categoria e sottocategoria
   const filteredProducts = products.filter((product) => {
     // Filtra per termine di ricerca
     const matchesSearch = 
@@ -96,19 +93,22 @@ const ViewProducts = () => {
       (product.nome && product.nome.toLowerCase().includes(searchTerm.toLowerCase())) || 
       (product.codice && product.codice.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    // Filtra per macro-categoria
-    const matchesMacroCategoria = !filterMacroCategoria || product.macroCategoria === filterMacroCategoria;
+    // Filtra per categoria
+    const matchesCategoria = !filterCategoria || product.categoria === filterCategoria;
     
-    return matchesSearch && matchesMacroCategoria;
+    // Filtra per sottocategoria
+    const matchesSottocategoria = !filterSottocategoria || product.sottocategoria === filterSottocategoria;
+    
+    return matchesSearch && matchesCategoria && matchesSottocategoria;
   });
 
-  // Raggruppa i prodotti per macro-categoria
+  // Raggruppa i prodotti per categoria
   const groupedProducts = filteredProducts.reduce((acc, product) => {
-    const macroCategoria = product.macroCategoria || 'Altra categoria';
-    if (!acc[macroCategoria]) {
-      acc[macroCategoria] = [];
+    const categoria = product.categoria || 'Non categorizzato';
+    if (!acc[categoria]) {
+      acc[categoria] = [];
     }
-    acc[macroCategoria].push(product);
+    acc[categoria].push(product);
     return acc;
   }, {});
 
@@ -116,26 +116,39 @@ const ViewProducts = () => {
   const formatPackagingInfo = (product) => {
     if (!product.tipoImballaggio) return 'N/A';
     
-    return `${product.tipoImballaggio} (${product.pezziPerCartone} pz/cartone, ${product.cartoniPerEpal} cart/epal, ${product.pezziPerEpal} pz/epal)`;
+    return `${product.tipoImballaggio} (${product.pezziPerCartone || 0} pz/cartone, ${product.cartoniPerEpal || 0} cart/epal, ${product.pezziPerEpal || 0} pz/epal)`;
   };
 
   if (loading) {
-    return <div className="container mt-4 text-center">Caricamento prodotti...</div>;
+    return (
+      <Container className="mt-5 text-center">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Caricamento...</span>
+        </div>
+        <p className="mt-3">Caricamento prodotti in corso...</p>
+      </Container>
+    );
   }
 
   if (error) {
-    return <div className="container mt-4 alert alert-danger">{error}</div>;
+    return (
+      <Container className="mt-4">
+        <Alert variant="danger">
+          {error}
+        </Alert>
+      </Container>
+    );
   }
 
   return (
-    <div className="container mt-4">
+    <Container className="mt-4">
       <h1 className="mb-4">Catalogo Prodotti</h1>
       
       {/* Filtri */}
       <Card className="mb-4">
         <Card.Body>
           <Row>
-            <Col md={6}>
+            <Col md={4}>
               <Form.Group className="mb-3">
                 <Form.Label>Cerca prodotto</Form.Label>
                 <Form.Control 
@@ -146,16 +159,32 @@ const ViewProducts = () => {
                 />
               </Form.Group>
             </Col>
-            <Col md={6}>
+            <Col md={4}>
               <Form.Group className="mb-3">
-                <Form.Label>Filtra per macro-categoria</Form.Label>
+                <Form.Label>Filtra per categoria</Form.Label>
                 <Form.Select
-                  value={filterMacroCategoria}
-                  onChange={(e) => setFilterMacroCategoria(e.target.value)}
+                  value={filterCategoria}
+                  onChange={(e) => setFilterCategoria(e.target.value)}
                 >
                   <option value="">Tutte le categorie</option>
-                  <option value="Linea Casa">Linea Casa</option>
-                  <option value="Linea Industriale">Linea Industriale</option>
+                  {categoriePrincipali.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+            </Col>
+            <Col md={4}>
+              <Form.Group className="mb-3">
+                <Form.Label>Filtra per sottocategoria</Form.Label>
+                <Form.Select
+                  value={filterSottocategoria}
+                  onChange={(e) => setFilterSottocategoria(e.target.value)}
+                  disabled={!filterCategoria || sottocategorieFiltrate.length === 0}
+                >
+                  <option value="">Tutte le sottocategorie</option>
+                  {sottocategorieFiltrate.map((subcat) => (
+                    <option key={subcat} value={subcat}>{subcat}</option>
+                  ))}
                 </Form.Select>
               </Form.Group>
             </Col>
@@ -165,13 +194,17 @@ const ViewProducts = () => {
       
       {/* Visualizzazione prodotti raggruppati */}
       {Object.keys(groupedProducts).length === 0 ? (
-        <div className="alert alert-info">Nessun prodotto trovato</div>
+        <Alert variant="info">
+          Nessun prodotto trovato {searchTerm ? `per la ricerca "${searchTerm}"` : ''} 
+          {filterCategoria ? ` nella categoria "${filterCategoria}"` : ''} 
+          {filterSottocategoria ? ` con sottocategoria "${filterSottocategoria}"` : ''}
+        </Alert>
       ) : (
         <Accordion defaultActiveKey="0" alwaysOpen className="mb-4">
-          {Object.entries(groupedProducts).map(([macroCategoria, products], index) => (
-            <Accordion.Item eventKey={String(index)} key={macroCategoria}>
+          {Object.entries(groupedProducts).map(([categoria, products], index) => (
+            <Accordion.Item eventKey={String(index)} key={categoria}>
               <Accordion.Header>
-                <span className="fw-bold">{macroCategoria}</span>
+                <span className="fw-bold">{categoria}</span>
                 <Badge bg="secondary" className="ms-2">{products.length} prodotti</Badge>
               </Accordion.Header>
               <Accordion.Body>
@@ -181,7 +214,6 @@ const ViewProducts = () => {
                       <tr>
                         <th>Codice</th>
                         <th>Nome</th>
-                        <th>Categoria</th>
                         <th>Sottocategoria</th>
                         <th>Prezzo</th>
                         <th>Imballaggio</th>
@@ -194,8 +226,7 @@ const ViewProducts = () => {
                         <tr key={product._id}>
                           <td>{product.codice || 'N/A'}</td>
                           <td>{product.nome}</td>
-                          <td>{product.categoryName || 'N/A'}</td>
-                          <td>{product.sottocategoria?.name || 'N/A'}</td>
+                          <td>{product.sottocategoria || 'N/A'}</td>
                           <td>{product.prezzo} {product.unita}</td>
                           <td>{formatPackagingInfo(product)}</td>
                           <td>
@@ -239,32 +270,32 @@ const ViewProducts = () => {
       )}
 
       {/* Statistiche */}
-      <div className="card mt-4">
-        <div className="card-header bg-light">
+      <Card className="mt-4">
+        <Card.Header className="bg-light">
           <h5 className="mb-0">Riepilogo Catalogo</h5>
-        </div>
-        <div className="card-body">
+        </Card.Header>
+        <Card.Body>
           <Row>
             <Col md={4} className="text-center border-end">
               <h6>Totale Prodotti</h6>
               <div className="fs-3">{products.length}</div>
             </Col>
             <Col md={4} className="text-center border-end">
-              <h6>Linea Casa</h6>
+              <h6>Domestico</h6>
               <div className="fs-3">
-                {products.filter(p => p.macroCategoria === 'Linea Casa').length}
+                {products.filter(p => p.categoria === 'Domestico').length}
               </div>
             </Col>
             <Col md={4} className="text-center">
-              <h6>Linea Industriale</h6>
+              <h6>Industriale</h6>
               <div className="fs-3">
-                {products.filter(p => p.macroCategoria === 'Linea Industriale').length}
+                {products.filter(p => p.categoria === 'Industriale').length}
               </div>
             </Col>
           </Row>
-        </div>
-      </div>
-    </div>
+        </Card.Body>
+      </Card>
+    </Container>
   );
 };
 
