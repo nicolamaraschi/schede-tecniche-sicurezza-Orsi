@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import productService from '../services/productService';
-import categoryService from '../services/categoryService';
+import axios from 'axios';
 import ProductCard from '../components/products/ProductCard';
-import Loader from '../components/common/Loader';
+// Importiamo le icone da react-icons
+import { FaHome, FaIndustry } from 'react-icons/fa'; // Icone per categorie
+import { MdVerified, MdLocalShipping, MdSupportAgent, MdEco } from 'react-icons/md'; // Icone per benefici
 import './HomePage.css';
 
 const HomePage = () => {
   const [featuredProducts, setFeaturedProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
+  const [categories] = useState([
+    { id: 'Domestico', name: 'Domestico', icon: <FaHome size={32} /> },
+    { id: 'Industriale', name: 'Industriale', icon: <FaIndustry size={32} /> }
+  ]); // Categorie fisse con icone
+  const [subcategories, setSubcategories] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -18,17 +23,19 @@ const HomePage = () => {
         setLoading(true);
         
         // Fetch all products and select a few for the featured section
-        const productsData = await productService.getAllProducts();
+        const productsResponse = await axios.get('http://localhost:5002/api/prodottiCatalogo/prodotti');
+        
         // Take 4 random products or fewer if there are less than 4
-        const randomProducts = productsData
+        const allProducts = productsResponse.data;
+        const randomProducts = allProducts
           .sort(() => 0.5 - Math.random())
-          .slice(0, Math.min(4, productsData.length));
+          .slice(0, Math.min(4, allProducts.length));
         
         setFeaturedProducts(randomProducts);
         
-        // Fetch categories
-        const categoriesData = await categoryService.getAllCategories();
-        setCategories(categoriesData);
+        // Fetch subcategories
+        const subcategoriesResponse = await axios.get('http://localhost:5002/api/prodottiCatalogo/sottocategorie');
+        setSubcategories(subcategoriesResponse.data || {});
         
         setLoading(false);
       } catch (err) {
@@ -41,9 +48,10 @@ const HomePage = () => {
     fetchData();
   }, []);
 
-  if (loading) {
-    return <Loader />;
-  }
+  // Funzione per codificare in modo sicuro i parametri nell'URL
+  const encodeUrlParam = (param) => {
+    return encodeURIComponent(param);
+  };
 
   return (
     <div className="home-page">
@@ -70,7 +78,11 @@ const HomePage = () => {
             <Link to="/catalogo" className="view-all">Vedi Tutti</Link>
           </div>
           
-          {error ? (
+          {loading ? (
+            <div className="loading-container">
+              <p>Caricamento prodotti in corso...</p>
+            </div>
+          ) : error ? (
             <div className="error-message">
               <p>Si è verificato un errore durante il caricamento dei prodotti.</p>
             </div>
@@ -100,17 +112,16 @@ const HomePage = () => {
           <div className="categories-grid">
             {categories.map((category) => (
               <Link 
-                key={category._id} 
-                to={`/catalogo/categoria/${category._id}`}
+                key={category.id} 
+                to={`/catalogo/categoria/${encodeUrlParam(category.id)}`}
                 className="category-card"
               >
                 <div className="category-icon">
-                  {/* Icon placeholder */}
-                  <div className="category-icon-placeholder"></div>
+                  {category.icon}
                 </div>
                 <h3>{category.name}</h3>
                 <span className="category-count">
-                  {category.subcategories?.length || 0} sottocategorie
+                  {subcategories[category.id]?.length || 0} sottocategorie
                 </span>
               </Link>
             ))}
@@ -123,25 +134,33 @@ const HomePage = () => {
         <div className="container">
           <div className="benefits-grid">
             <div className="benefit-card">
-              <div className="benefit-icon quality-icon"></div>
+              <div className="benefit-icon">
+                <MdVerified size={40} color="#3f51b5" />
+              </div>
               <h3>Qualità Garantita</h3>
               <p>Tutti i nostri prodotti sono sottoposti a rigorosi controlli di qualità</p>
             </div>
             
             <div className="benefit-card">
-              <div className="benefit-icon delivery-icon"></div>
+              <div className="benefit-icon">
+                <MdLocalShipping size={40} color="#3f51b5" />
+              </div>
               <h3>Consegna Veloce</h3>
               <p>Consegniamo in tutta Italia in tempi rapidi</p>
             </div>
             
             <div className="benefit-card">
-              <div className="benefit-icon support-icon"></div>
+              <div className="benefit-icon">
+                <MdSupportAgent size={40} color="#3f51b5" />
+              </div>
               <h3>Supporto Tecnico</h3>
               <p>I nostri esperti sono sempre disponibili per consigliarti</p>
             </div>
             
             <div className="benefit-card">
-              <div className="benefit-icon eco-icon"></div>
+              <div className="benefit-icon">
+                <MdEco size={40} color="#3f51b5" />
+              </div>
               <h3>Eco-Sostenibile</h3>
               <p>Prodotti rispettosi dell'ambiente e delle persone</p>
             </div>
