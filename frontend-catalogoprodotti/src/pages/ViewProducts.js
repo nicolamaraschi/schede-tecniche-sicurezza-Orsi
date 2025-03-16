@@ -10,6 +10,25 @@ const ViewProducts = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMacroCategoria, setFilterMacroCategoria] = useState('');
+  const [categories, setCategories] = useState([]);
+
+  // Carica le categorie all'avvio
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('http://localhost:5002/api/gestoreProdotti/categorie');
+        if (!response.ok) {
+          throw new Error(`Errore HTTP! Status: ${response.status}`);
+        }
+        const data = await response.json();
+        setCategories(data);
+      } catch (error) {
+        console.error('Errore nel caricamento delle categorie:', error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   // Carica i prodotti dal backend
   useEffect(() => {
@@ -17,7 +36,30 @@ const ViewProducts = () => {
       try {
         setLoading(true);
         const data = await getAllProdotti();
-        setProducts(data);
+        
+        // Arricchisci i dati dei prodotti con i nomi delle categorie
+        const enrichedProducts = data.map(product => {
+          // Trova il nome della categoria se abbiamo l'ID
+          let categoryName = 'N/A';
+          const category = categories.find(c => c._id === product.categoria);
+          if (category) {
+            categoryName = category.name;
+            
+            // Verifica la sottocategoria se esiste
+            if (product.sottocategoria && product.sottocategoria.id) {
+              const subcategory = category.subcategories.find(sc => 
+                sc.id.toString() === product.sottocategoria.id.toString()
+              );
+              if (subcategory) {
+                product.sottocategoria.name = subcategory.name;
+              }
+            }
+          }
+          
+          return { ...product, categoryName };
+        });
+        
+        setProducts(enrichedProducts);
         setLoading(false);
       } catch (error) {
         console.error(error);
@@ -26,8 +68,11 @@ const ViewProducts = () => {
       }
     };
 
-    fetchProducts();
-  }, []);
+    // Carica i prodotti solo dopo aver caricato le categorie
+    if (categories.length > 0) {
+      fetchProducts();
+    }
+  }, [categories]);
 
   // Gestisce la cancellazione di un prodotto
   const handleDelete = async (id) => {
@@ -149,9 +194,9 @@ const ViewProducts = () => {
                         <tr key={product._id}>
                           <td>{product.codice || 'N/A'}</td>
                           <td>{product.nome}</td>
-                          <td>{product.categoriaName || 'N/A'}</td>
+                          <td>{product.categoryName || 'N/A'}</td>
                           <td>{product.sottocategoria?.name || 'N/A'}</td>
-                          <td>{product.prezzo} €/{product.unita}</td>
+                          <td>{product.prezzo} {product.unita}</td>
                           <td>{formatPackagingInfo(product)}</td>
                           <td>
                             {product.immagini && product.immagini.length > 0 ? (

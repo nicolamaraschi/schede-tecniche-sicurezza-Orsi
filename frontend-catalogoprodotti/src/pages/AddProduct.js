@@ -11,7 +11,6 @@ const AddProduct = () => {
     tipo: '',
     prezzo: '',
     unita: '',
-    macroCategoria: '',
     categoria: '',
     sottocategoriaId: '',
     tipoImballaggio: '',
@@ -44,9 +43,7 @@ const AddProduct = () => {
     'MONODOSE CARTA'
   ];
   
-  const unitaMisura = ['KG', 'PZ'];
-  
-  const macroCategorie = ['Linea Casa', 'Linea Industriale'];
+  const unitaMisura = ['€/KG', '€/PZ'];
   
   const tipiImballaggio = [
     'Barattolo 1kg',
@@ -111,7 +108,13 @@ const AddProduct = () => {
         throw new Error(`Errore HTTP! Status: ${response.status}`);
       }
       const data = await response.json();
-      setCategories(data);
+      
+      // Filtra solo per categorie Domestico e Industriale
+      const categoriesFiltrate = data.filter(cat => 
+        cat.name === 'Domestico' || cat.name === 'Industriale'
+      );
+      
+      setCategories(categoriesFiltrate);
     } catch (error) {
       console.error('Errore nel caricamento delle categorie:', error);
       setErrorMessage('Impossibile caricare le categorie');
@@ -188,7 +191,22 @@ const AddProduct = () => {
     setSuccessMessage('');
     
     try {
-      await createProdotto(formData, immagini);
+      // Prepara i dati del prodotto, includendo la sottocategoria selezionata
+      const prodottoData = { ...formData };
+      
+      // Se è selezionata una sottocategoria, trova il nome corrispondente
+      if (prodottoData.sottocategoriaId && subcategories.length > 0) {
+        const selectedSubcat = subcategories.find(s => s.id === prodottoData.sottocategoriaId);
+        if (selectedSubcat) {
+          prodottoData.sottocategoria = {
+            id: selectedSubcat.id,
+            name: selectedSubcat.name
+          };
+        }
+      }
+      
+      // Invia la richiesta al server
+      await createProdotto(prodottoData, immagini);
       
       // Reset del form
       setFormData({
@@ -197,7 +215,6 @@ const AddProduct = () => {
         tipo: '',
         prezzo: '',
         unita: '',
-        macroCategoria: '',
         categoria: '',
         sottocategoriaId: '',
         tipoImballaggio: '',
@@ -292,25 +309,6 @@ const AddProduct = () => {
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Macro-Categoria *</Form.Label>
-                  <Form.Select
-                    name="macroCategoria"
-                    value={formData.macroCategoria}
-                    onChange={handleChange}
-                    required
-                  >
-                    <option value="">Seleziona macro-categoria</option>
-                    {macroCategorie.map((cat, index) => (
-                      <option key={index} value={cat}>{cat}</option>
-                    ))}
-                  </Form.Select>
-                </Form.Group>
-              </Col>
-            </Row>
-            
-            <Row>
-              <Col md={6}>
-                <Form.Group className="mb-3">
                   <Form.Label>Categoria *</Form.Label>
                   <Form.Select
                     name="categoria"
@@ -325,6 +323,9 @@ const AddProduct = () => {
                   </Form.Select>
                 </Form.Group>
               </Col>
+            </Row>
+            
+            <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label>Sottocategoria</Form.Label>
@@ -343,9 +344,6 @@ const AddProduct = () => {
                   </Form.Select>
                 </Form.Group>
               </Col>
-            </Row>
-            
-            <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label>Prezzo *</Form.Label>
@@ -360,6 +358,9 @@ const AddProduct = () => {
                   />
                 </Form.Group>
               </Col>
+            </Row>
+            
+            <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label>Unità di Misura *</Form.Label>
@@ -376,22 +377,23 @@ const AddProduct = () => {
                   </Form.Select>
                 </Form.Group>
               </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Tipo Imballaggio *</Form.Label>
+                  <Form.Select
+                    name="tipoImballaggio"
+                    value={formData.tipoImballaggio}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">Seleziona tipo imballaggio</option>
+                    {tipiImballaggio.map((tipo, index) => (
+                      <option key={index} value={tipo}>{tipo}</option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
             </Row>
-            
-            <Form.Group className="mb-3">
-              <Form.Label>Tipo Imballaggio *</Form.Label>
-              <Form.Select
-                name="tipoImballaggio"
-                value={formData.tipoImballaggio}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Seleziona tipo imballaggio</option>
-                {tipiImballaggio.map((tipo, index) => (
-                  <option key={index} value={tipo}>{tipo}</option>
-                ))}
-              </Form.Select>
-            </Form.Group>
             
             <Row>
               <Col md={4}>

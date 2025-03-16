@@ -8,24 +8,17 @@ const prodottoCatalogoSchema = new mongoose.Schema({
   prezzo: { type: Number, required: true },
   unita: { type: String, required: true },  // €/PZ o €/KG
   
-  // Macro-categoria (Linea Casa o Linea Industriale)
-  macroCategoria: { 
+  // Categoria di prodotto (Domestico o Industriale)
+  categoria: { 
     type: String, 
     required: true,
-    enum: ['Linea Casa', 'Linea Industriale']
+    enum: ['Domestico', 'Industriale'] 
   },
   
-  // Riferimento alla categoria esistente
-  categoria: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'Category',
-    required: true
-  },
-  
-  // Riferimento alla sottocategoria
+  // Sottocategoria del prodotto
   sottocategoria: {
-    id: { type: mongoose.Schema.Types.ObjectId },
-    name: { type: String }
+    type: String,
+    required: false
   },
   
   tipoImballaggio: {

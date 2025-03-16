@@ -13,7 +13,6 @@ const EditProduct = () => {
     tipo: '',
     prezzo: 0,
     unita: '',
-    macroCategoria: '',
     categoria: '',
     sottocategoriaId: '',
     tipoImballaggio: '',
@@ -46,9 +45,10 @@ const EditProduct = () => {
     'MONODOSE CARTA'
   ];
   
-  const unitaMisura = ['KG', 'PZ'];
+  const unitaMisura = ['€/KG', '€/PZ'];
   
-  const macroCategorie = ['Linea Casa', 'Linea Industriale'];
+  // Categorie principali (solo Domestico e Industriale)
+  const categoriePrincipali = ['Domestico', 'Industriale'];
   
   const tipiImballaggio = [
     'Barattolo 1kg',
@@ -112,7 +112,15 @@ const EditProduct = () => {
       if (!response.ok) {
         throw new Error(`Errore HTTP! Status: ${response.status}`);
       }
-      return await response.json();
+      const data = await response.json();
+      
+      // Filtra solo per categorie Domestico e Industriale
+      const categoriesFiltrate = data.filter(cat => 
+        cat.name === 'Domestico' || cat.name === 'Industriale'
+      );
+      
+      setCategories(categoriesFiltrate);
+      return categoriesFiltrate;
     } catch (error) {
       console.error('Errore nel caricamento delle categorie:', error);
       throw error;
@@ -125,11 +133,33 @@ const EditProduct = () => {
       try {
         setIsLoading(true);
         // Carica prodotti e categorie in parallelo
-        const productsData = await getAllProdotti();
         const categoriesData = await fetchCategories();
+        const productsData = await getAllProdotti();
         
-        setProducts(productsData);
-        setCategories(categoriesData);
+        // Arricchisci i prodotti con i nomi delle categorie e sottocategorie
+        const enrichedProducts = productsData.map(product => {
+          const categoria = categoriesData.find(c => c._id === product.categoria);
+          const categoriaName = categoria ? categoria.name : 'N/A';
+          
+          // Trova il nome della sottocategoria se possibile
+          let sottocategoriaName = 'N/A';
+          if (categoria && product.sottocategoria && product.sottocategoria.id) {
+            const sottocategoria = categoria.subcategories.find(
+              s => s.id === product.sottocategoria.id
+            );
+            if (sottocategoria) {
+              sottocategoriaName = sottocategoria.name;
+            }
+          }
+          
+          return {
+            ...product,
+            categoriaName,
+            sottocategoriaName
+          };
+        });
+        
+        setProducts(enrichedProducts);
         setIsLoading(false);
       } catch (error) {
         console.error('Errore nel recupero dei dati:', error);
@@ -200,7 +230,6 @@ const EditProduct = () => {
       tipo: product.tipo || '',
       prezzo: product.prezzo || 0,
       unita: product.unita || '',
-      macroCategoria: product.macroCategoria || '',
       categoria: product.categoria || '',
       sottocategoriaId: sottocategoriaId,
       tipoImballaggio: product.tipoImballaggio || '',
@@ -271,11 +300,47 @@ const EditProduct = () => {
         immaginiToRemove: imagesToRemove
       };
 
+      // Aggiungi la sottocategoria corretta se selezionata
+      if (formData.sottocategoriaId) {
+        const selectedSubcat = subcategories.find(s => s.id === formData.sottocategoriaId);
+        if (selectedSubcat) {
+          updateData.sottocategoria = {
+            id: selectedSubcat.id,
+            name: selectedSubcat.name
+          };
+        }
+      }
+
       await updateProdotto(selectedProduct._id, updateData, newImages);
       
       // Aggiorna la lista dei prodotti
+      const updatedCategories = await fetchCategories();
       const updatedProducts = await getAllProdotti();
-      setProducts(updatedProducts);
+      
+      // Arricchisci i prodotti con i nomi delle categorie
+      const enrichedProducts = updatedProducts.map(product => {
+        const categoria = updatedCategories.find(c => c._id === product.categoria);
+        const categoriaName = categoria ? categoria.name : 'N/A';
+        
+        // Trova il nome della sottocategoria se possibile
+        let sottocategoriaName = 'N/A';
+        if (categoria && product.sottocategoria && product.sottocategoria.id) {
+          const sottocategoria = categoria.subcategories.find(
+            s => s.id === product.sottocategoria.id
+          );
+          if (sottocategoria) {
+            sottocategoriaName = sottocategoria.name;
+          }
+        }
+        
+        return {
+          ...product,
+          categoriaName,
+          sottocategoriaName
+        };
+      });
+      
+      setProducts(enrichedProducts);
       
       // Chiudi il popup e resetta gli stati
       setShowModal(false);
@@ -336,8 +401,8 @@ const EditProduct = () => {
             <tr>
               <th>Codice</th>
               <th>Nome</th>
-              <th>Macro-Cat.</th>
               <th>Categoria</th>
+              <th>Sottocategoria</th>
               <th>Prezzo</th>
               <th>Imballaggio</th>
               <th>Immagini</th>
@@ -349,9 +414,9 @@ const EditProduct = () => {
               <tr key={product._id}>
                 <td>{product.codice || 'N/A'}</td>
                 <td>{product.nome}</td>
-                <td>{product.macroCategoria || 'N/A'}</td>
                 <td>{product.categoriaName || 'N/A'}</td>
-                <td>{product.prezzo} €/{product.unita}</td>
+                <td>{product.sottocategoriaName || 'N/A'}</td>
+                <td>{product.prezzo} {product.unita}</td>
                 <td>{product.tipoImballaggio || 'N/A'}</td>
                 <td>
                   {product.immagini && product.immagini.length > 0 ? (
@@ -455,25 +520,6 @@ const EditProduct = () => {
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Macro-Categoria *</Form.Label>
-                  <Form.Select
-                    name="macroCategoria"
-                    value={formData.macroCategoria}
-                    onChange={handleInputChange}
-                    required
-                  >
-                    <option value="">Seleziona macro-categoria</option>
-                    {macroCategorie.map((cat, index) => (
-                      <option key={index} value={cat}>{cat}</option>
-                    ))}
-                  </Form.Select>
-                </Form.Group>
-              </Col>
-            </Row>
-            
-            <Row>
-              <Col md={6}>
-                <Form.Group className="mb-3">
                   <Form.Label>Categoria *</Form.Label>
                   <Form.Select
                     name="categoria"
@@ -488,6 +534,9 @@ const EditProduct = () => {
                   </Form.Select>
                 </Form.Group>
               </Col>
+            </Row>
+            
+            <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label>Sottocategoria</Form.Label>
@@ -506,9 +555,6 @@ const EditProduct = () => {
                   </Form.Select>
                 </Form.Group>
               </Col>
-            </Row>
-            
-            <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label>Prezzo *</Form.Label>
@@ -523,6 +569,9 @@ const EditProduct = () => {
                   />
                 </Form.Group>
               </Col>
+            </Row>
+            
+            <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label>Unità di Misura *</Form.Label>
@@ -539,22 +588,23 @@ const EditProduct = () => {
                   </Form.Select>
                 </Form.Group>
               </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Tipo Imballaggio *</Form.Label>
+                  <Form.Select
+                    name="tipoImballaggio"
+                    value={formData.tipoImballaggio}
+                    onChange={handleInputChange}
+                    required
+                  >
+                    <option value="">Seleziona tipo imballaggio</option>
+                    {tipiImballaggio.map((tipo, index) => (
+                      <option key={index} value={tipo}>{tipo}</option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
             </Row>
-            
-            <Form.Group className="mb-3">
-              <Form.Label>Tipo Imballaggio *</Form.Label>
-              <Form.Select
-                name="tipoImballaggio"
-                value={formData.tipoImballaggio}
-                onChange={handleInputChange}
-                required
-              >
-                <option value="">Seleziona tipo imballaggio</option>
-                {tipiImballaggio.map((tipo, index) => (
-                  <option key={index} value={tipo}>{tipo}</option>
-                ))}
-              </Form.Select>
-            </Form.Group>
             
             <Row>
               <Col md={4}>

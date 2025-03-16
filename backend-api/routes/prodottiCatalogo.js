@@ -7,9 +7,13 @@ const {
   getProdottoById,
   updateProdotto,
   deleteProdotto,
-  getProdottiByMacroCategoria,
   getProdottiByCategoria,
-  getProdottiBySottocategoria
+  getProdottiBySottocategoria,
+  getAllSottocategorie,
+  getSottocategorieByCategoria,
+  addSottocategoria,
+  updateSottocategoria,
+  deleteSottocategoria
 } = require('../controllers/prodottiCatalogoController');
 
 const router = express.Router();
@@ -22,8 +26,14 @@ router.put('/prodotti/:id', upload.array('immagini', 5), updateProdotto); // Mas
 router.delete('/prodotti/:id', deleteProdotto);
 
 // Rotte per filtrare i prodotti
-router.get('/macrocategoria/:macroCategoria', getProdottiByMacroCategoria);
-router.get('/categoria/:categoriaId', getProdottiByCategoria);
-router.get('/categoria/:categoriaId/sottocategoria/:sottocategoriaId', getProdottiBySottocategoria);
+router.get('/categoria/:categoria', getProdottiByCategoria);
+router.get('/categoria/:categoria/sottocategoria/:sottocategoria', getProdottiBySottocategoria);
+
+// Rotte per gestire le sottocategorie
+router.get('/sottocategorie', getAllSottocategorie);
+router.get('/categoria/:categoria/sottocategorie', getSottocategorieByCategoria);
+router.post('/categoria/:categoria/sottocategorie', addSottocategoria);
+router.put('/categoria/:categoria/sottocategoria/:sottocategoria', updateSottocategoria);
+router.delete('/categoria/:categoria/sottocategoria/:sottocategoria', deleteSottocategoria);
 
 module.exports = router;
