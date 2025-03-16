@@ -1,74 +1,158 @@
 // src/pages/Login.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { loginUtente } from '../api'; // Assicurati di avere una funzione loginUtente nel tuo file API
+import { loginUtente } from '../api';
+import { useAuth } from '../contexts/AuthContext';
+import { FaUser, FaLock, FaSignInAlt, FaSpinner } from 'react-icons/fa';
 import './Login.css';
-import { FaEnvelope, FaLock } from 'react-icons/fa'; // Importa le icone da react-icons
 
 const Login = () => {
-  const [username, setUsername] = useState(''); // Cambiato da email a username
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false); // Stato per il caricamento
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  
+  // Effetto per reindirizzare se già autenticato
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setLoading(true); // Imposta il caricamento a true
+    setLoading(true);
+
+    // Validazione basilare
+    if (!username.trim() || !password.trim()) {
+      setError('Inserisci nome utente e password');
+      setLoading(false);
+      return;
+    }
 
     try {
-      console.log('Attempting login with:', { username, password });
-      const response = await loginUtente({ username, password }); // Usa la funzione di login corretta
-      alert('Login avvenuto con successo!');
-      console.log('Token:', response.token); // Memorizza il token come necessario
-      navigate('/'); // Redirect dopo il login
+      const response = await loginUtente({ username, password });
+      
+      if (response && response.token) {
+        // Effettua il login attraverso il context
+        login(response.token, username);
+        navigate('/');
+      } else {
+        setError('Si è verificato un errore durante il login');
+      }
     } catch (err) {
-      setError('Nome utente o password errati');
       console.error('Login error:', err);
+      setError('Nome utente o password non validi');
     } finally {
-      setLoading(false); // Imposta il caricamento a false dopo il tentativo
+      setLoading(false);
     }
   };
 
+  const toggleShowPassword = () => {
+    setShowPassword(!showPassword);
+  };
+
   return (
-    <div className="container mt-5 d-flex justify-content-center">
-      <div className="card shadow-lg p-4 rounded" style={{ maxWidth: '400px' }}>
-        <h2 className="mb-4 text-center">Login</h2>
-        {error && <div className="alert alert-danger">{error}</div>}
-        <form onSubmit={handleSubmit}>
-          <div className="mb-3">
-            <label htmlFor="username" className="form-label">
-              <FaEnvelope className="me-2" />
-              Nome Utente:
-            </label>
-            <input 
-              type="text" 
-              className="form-control" 
-              id="username" 
-              value={username} 
-              onChange={(e) => setUsername(e.target.value)} 
-              required 
-            />
+    <div className="login-container">
+      <div className="login-card-container">
+        <div className="login-card">
+          <div className="login-header">
+            <div className="login-logo">
+              <div className="logo-icon">
+                <FaUser />
+              </div>
+            </div>
+            <h1>Accedi</h1>
+            <p>Inserisci le tue credenziali per accedere al sistema</p>
           </div>
-          <div className="mb-3">
-            <label htmlFor="password" className="form-label">
-              <FaLock className="me-2" />
-              Password:
-            </label>
-            <input 
-              type="password" 
-              className="form-control" 
-              id="password" 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)} 
-              required 
-            />
+          
+          {error && (
+            <div className="login-error">
+              <p>{error}</p>
+            </div>
+          )}
+          
+          <form onSubmit={handleSubmit} className="login-form">
+            <div className="form-group">
+              <div className="input-icon-wrapper">
+                <FaUser className="input-icon" />
+                <input
+                  type="text"
+                  placeholder="Nome Utente"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="form-input"
+                  disabled={loading}
+                />
+              </div>
+            </div>
+            
+            <div className="form-group">
+              <div className="input-icon-wrapper">
+                <FaLock className="input-icon" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="form-input"
+                  disabled={loading}
+                />
+                <button 
+                  type="button" 
+                  className="toggle-password"
+                  onClick={toggleShowPassword}
+                  disabled={loading}
+                >
+                  {showPassword ? "Nascondi" : "Mostra"}
+                </button>
+              </div>
+            </div>
+            
+            <div className="form-group remember-me">
+              <label className="checkbox-container">
+                <input type="checkbox" />
+                <span className="checkmark"></span>
+                Ricordami
+              </label>
+              <a href="#" className="forgot-password">Password dimenticata?</a>
+            </div>
+            
+            <button 
+              type="submit" 
+              className="login-button"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <FaSpinner className="spinner" />
+                  <span>Accesso in corso...</span>
+                </>
+              ) : (
+                <>
+                  <FaSignInAlt />
+                  <span>Accedi</span>
+                </>
+              )}
+            </button>
+          </form>
+          
+          <div className="login-footer">
+            <p>© {new Date().getFullYear()} EGStore. Tutti i diritti riservati.</p>
           </div>
-          <button type="submit" className="btn btn-primary w-100" disabled={loading}>
-            {loading ? 'Accedendo...' : 'Accedi'} {/* Mostra stato di caricamento */}
-          </button>
-        </form>
+        </div>
+        
+        <div className="login-decoration">
+          <div className="decoration-image"></div>
+          <div className="decoration-text">
+            <h2>Benvenuto in EGStore</h2>
+            <p>Sistema di gestione per prodotti e cataloghi</p>
+          </div>
+        </div>
       </div>
     </div>
   );
