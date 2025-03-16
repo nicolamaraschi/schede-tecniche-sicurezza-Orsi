@@ -1,216 +1,415 @@
+// src/pages/ProductEdit.js
 import React, { useEffect, useState } from 'react';
-import { fetchProducts, updateProduct, deleteProduct, fetchCategories } from '../api'; // Importa la funzione fetchCategories
-import './ProductEdit.css'; // Importa gli stili per il componente
+import { fetchProducts, updateProduct, deleteProduct, fetchCategories } from '../api';
+import { useAuth } from '../contexts/AuthContext';
+import { FaEdit, FaTrash, FaImage, FaSave, FaUndo, FaSearch, FaFilter, FaSortAlphaDown, FaTimes } from 'react-icons/fa';
+import './ProductEdit.css';
 
 const ProductEdit = () => {
-  const [products, setProducts] = useState([]); // Stato per la lista dei prodotti
-  const [categories, setCategories] = useState([]); // Stato per la lista delle categorie
-  const [loading, setLoading] = useState(true); // Stato di caricamento
-  const [showModal, setShowModal] = useState(false); // Stato per il popup
-  const [selectedProduct, setSelectedProduct] = useState(null); // Prodotto selezionato
-  const [imagesToRemove, setImagesToRemove] = useState([]); // Stato per le immagini da rimuovere
-  const [selectedCategoryId, setSelectedCategoryId] = useState(''); // Stato per la categoria selezionata
-  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState(''); // Stato per la sottocategoria selezionata
+  // Stati per la gestione dei prodotti
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [imagesToRemove, setImagesToRemove] = useState([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState('');
+  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState('');
+  const [newImages, setNewImages] = useState([]);
+  const [notification, setNotification] = useState({ show: false, message: '', type: '' });
 
+  // Stati per filtraggio e ordinamento
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+  const [sortField, setSortField] = useState('name');
+  const [sortDirection, setSortDirection] = useState('asc');
+
+  const { checkTokenExpiration } = useAuth();
+
+  // Carica prodotti e categorie all'avvio del componente
   useEffect(() => {
     const loadInitialData = async () => {
       try {
-        const productData = await fetchProducts(); // Carica la lista dei prodotti
-        const categoryData = await fetchCategories(); // Carica la lista delle categorie
-        setProducts(productData); // Imposta i prodotti nello stato
-        setCategories(categoryData); // Imposta le categorie nello stato
+        setLoading(true);
+        const [productData, categoryData] = await Promise.all([
+          fetchProducts(),
+          fetchCategories()
+        ]);
+        setProducts(productData);
+        setCategories(categoryData);
       } catch (error) {
+        if (checkTokenExpiration) {
+          checkTokenExpiration(error);
+        }
+        showNotification('Errore nel caricamento dei dati', 'danger');
         console.error("Error fetching products or categories:", error);
       } finally {
-        setLoading(false); // Imposta il caricamento a false
+        setLoading(false);
       }
     };
 
-    loadInitialData(); // Chiama la funzione per caricare i dati iniziali
-  }, []);
+    loadInitialData();
+  }, [checkTokenExpiration]);
 
+  // Funzione per mostrare notifiche
+  const showNotification = (message, type = 'success') => {
+    setNotification({ show: true, message, type });
+    setTimeout(() => {
+      setNotification({ show: false, message: '', type: '' });
+    }, 5000);
+  };
+
+  // Gestisce il click sul pulsante modifica
   const handleEditClick = (product) => {
-    setSelectedProduct(product); // Imposta il prodotto selezionato
-    setSelectedCategoryId(product.category._id); // Imposta la categoria selezionata
-    setSelectedSubcategoryId(product.subcategory?._id); // Imposta la sottocategoria selezionata
-    setShowModal(true); // Mostra il popup
+    setSelectedProduct(product);
+    setSelectedCategoryId(product.category?._id || '');
+    setSelectedSubcategoryId(product.subcategory?.id || '');
+    setImagesToRemove([]);
+    setNewImages([]);
+    setShowModal(true);
   };
 
+  // Chiude il modal e resetta gli stati
   const handleCloseModal = () => {
-    setShowModal(false); // Chiude il popup
-    setSelectedProduct(null); // Resetta il prodotto selezionato
-    setImagesToRemove([]); // Resetta le immagini da rimuovere
+    setShowModal(false);
+    setSelectedProduct(null);
+    setImagesToRemove([]);
+    setNewImages([]);
   };
 
+  // Gestisce il cambio di categoria
+  const handleCategoryChange = (event) => {
+    setSelectedCategoryId(event.target.value);
+    setSelectedSubcategoryId('');
+  };
+
+  // Gestisce il cambio di sottocategoria
+  const handleSubcategoryChange = (event) => {
+    setSelectedSubcategoryId(event.target.value);
+  };
+
+  // Gestisce la selezione di nuove immagini
+  const handleImageChange = (event) => {
+    setNewImages(Array.from(event.target.files));
+  };
+
+  // Gestisce l'eliminazione di un prodotto
+  const handleDeleteProduct = async (productId, productName) => {
+    if (window.confirm(`Sei sicuro di voler eliminare il prodotto "${productName}"?`)) {
+      try {
+        await deleteProduct(productId);
+        setProducts((prevProducts) => prevProducts.filter((prod) => prod._id !== productId));
+        showNotification('Prodotto eliminato con successo');
+      } catch (error) {
+        if (checkTokenExpiration) {
+          checkTokenExpiration(error);
+        }
+        showNotification('Errore durante l\'eliminazione del prodotto', 'danger');
+        console.error("Error deleting product:", error);
+      }
+    }
+  };
+
+  // Gestisce l'aggiornamento di un prodotto
   const handleUpdateProduct = async (event) => {
-    event.preventDefault(); // Previene il comportamento predefinito del modulo
+    event.preventDefault();
 
     if (!selectedProduct) return;
 
-    const name = event.target.name.value?.trim() || selectedProduct.name;
-    const description = event.target.description.value?.trim() || selectedProduct.description;
+    const formData = new FormData(event.target);
+    
+    const name = formData.get('name')?.trim();
+    const description = formData.get('description')?.trim();
 
     if (!name || !description || !selectedCategoryId) {
-        window.alert("Nome, descrizione e categoria non possono essere vuoti.");
-        return;
+      showNotification("Nome, descrizione e categoria sono campi obbligatori", "danger");
+      return;
     }
 
     const updatedProductData = {
-        ...selectedProduct,
-        name,
-        description,
-        category: selectedCategoryId,
-        subcategory: {
-            id: selectedSubcategoryId,
-            name: categories.find(cat => cat._id === selectedCategoryId)?.subcategories.find(sub => sub._id === selectedSubcategoryId)?.name
-        },
+      ...selectedProduct,
+      name,
+      description,
+      category: selectedCategoryId,
+      subcategory: {
+        id: selectedSubcategoryId,
+        name: categories
+          .find(cat => cat._id === selectedCategoryId)
+          ?.subcategories
+          .find(sub => sub._id === selectedSubcategoryId)
+          ?.name || ''
+      },
     };
 
-    // Definisci e popola images
-    const images = [];
-    const imagesToAdd = event.target.images?.files || [];
-    for (let i = 0; i < imagesToAdd.length; i++) {
-        images.push(imagesToAdd[i]);
-        console.log('Immagine da aggiungere:', imagesToAdd[i].name);
-    }
-
-    console.log('Immagini da rimuovere:', imagesToRemove);
-
     try {
-      const response = await updateProduct(selectedProduct._id, updatedProductData, images, imagesToRemove);
+      // Aggiunge le immagini caricate
+      await updateProduct(selectedProduct._id, updatedProductData, newImages, imagesToRemove);
       
-      console.log('Response:', response);
-      console.log('Response status:', response.status); // Assicurati di controllare lo status
-  
-      if (response.ok) {
-          const responseData = await response.json();
-          console.log('Server response:', responseData);
-          
-          // Aggiorna la lista dei prodotti
-          const updatedProducts = await fetchProducts();
-          setProducts(updatedProducts);
-          
-          window.alert("Prodotto aggiornato con successo!");
-          handleCloseModal();
-      } else {
-          const errorResponse = await response.json();
-          console.error("Errore durante l'aggiornamento:", errorResponse);
-          window.alert("Errore durante l'aggiornamento del prodotto: " + errorResponse.message);
-      }
-  } catch (error) {
-      console.error("Error updating product:", error);
-      window.alert("Errore durante l'aggiornamento del prodotto.");
-  }
-};
-
-
-
-
-
-  const handleCategoryChange = (event) => {
-    setSelectedCategoryId(event.target.value); // Aggiorna la categoria selezionata
-    setSelectedSubcategoryId(''); // Resetta la sottocategoria selezionata
-  };
-
-  const handleSubcategoryChange = (event) => {
-    setSelectedSubcategoryId(event.target.value); // Aggiorna la sottocategoria selezionata
-  };
-
-  const handleDeleteProduct = async (productId) => {
-    try {
-      await deleteProduct(productId);
-      setProducts((prevProducts) => prevProducts.filter((prod) => prod._id !== productId));
+      // Aggiorna la lista dei prodotti
+      const updatedProducts = await fetchProducts();
+      setProducts(updatedProducts);
+      
+      showNotification("Prodotto aggiornato con successo");
+      handleCloseModal();
     } catch (error) {
-      console.error("Error deleting product:", error);
+      if (checkTokenExpiration) {
+        checkTokenExpiration(error);
+      }
+      showNotification("Errore durante l'aggiornamento del prodotto", "danger");
+      console.error("Error updating product:", error);
     }
   };
 
+  // Filtra e ordina i prodotti in base ai criteri impostati
+  const filteredAndSortedProducts = () => {
+    return [...products]
+      .filter(product => {
+        // Filtra per termine di ricerca
+        const matchesSearchTerm = 
+          product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          product.description.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        // Filtra per categoria
+        const matchesCategory = !filterCategory || product.category?._id === filterCategory;
+        
+        return matchesSearchTerm && matchesCategory;
+      })
+      .sort((a, b) => {
+        let valA, valB;
+        
+        // Determina i valori da confrontare in base al campo di ordinamento
+        switch (sortField) {
+          case 'name':
+            valA = a.name.toLowerCase();
+            valB = b.name.toLowerCase();
+            break;
+          case 'category':
+            valA = a.category?.name?.toLowerCase() || '';
+            valB = b.category?.name?.toLowerCase() || '';
+            break;
+          default:
+            valA = a.name.toLowerCase();
+            valB = b.name.toLowerCase();
+        }
+        
+        // Applica la direzione di ordinamento
+        if (sortDirection === 'asc') {
+          return valA.localeCompare(valB);
+        } else {
+          return valB.localeCompare(valA);
+        }
+      });
+  };
+
+  // Inverte la direzione di ordinamento
+  const toggleSortDirection = () => {
+    setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+  };
+
+  // Renderizza un indicatore di caricamento
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="loading-container">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Caricamento...</span>
+        </div>
+        <p>Caricamento dei prodotti...</p>
+      </div>
+    );
   }
 
   return (
-    <div className="container mt-4">
-      <h2>Elenco dei Prodotti</h2>
-      <table className="table table-striped">
-        <thead>
-          <tr>
-            <th>Nome</th>
-            <th>Descrizione</th>
-            <th>Categoria</th>
-            <th>Sottocategoria</th>
-            <th>Immagini</th>
-            <th>Azioni</th>
-          </tr>
-        </thead>
-        <tbody>
-          {products.map(product => (
-            <tr key={product._id}>
-              <td>{product.name}</td>
-              <td>{product.description}</td>
-              <td>{product.category?.name}</td>
-              <td>{product.subcategory?.name}</td>
-              <td>
-                {product.images.length > 0 ? (
-                  product.images.map((img, index) => {
-                    const imageUrl = `http://localhost:5002/${img}`;
-                    return (
-                      <div key={index} style={{ display: 'flex', alignItems: 'center' }}>
-                        <img 
-                          src={imageUrl} 
-                          alt={product.name} 
-                          style={{ width: '50px', height: '50px', marginRight: '5px', objectFit: 'cover' }} 
+    <div className="enhanced-product-edit-container">
+      <div className="page-header">
+        <h2>Gestione Prodotti</h2>
+        <p>Modifica e aggiorna i tuoi prodotti</p>
+      </div>
+      
+      {/* Mostra la notifica se presente */}
+      {notification.show && (
+        <div className={`alert alert-${notification.type} alert-dismissible fade show`} role="alert">
+          {notification.message}
+          <button type="button" className="btn-close" onClick={() => setNotification({ show: false, message: '', type: '' })}></button>
+        </div>
+      )}
+      
+      {/* Barra di ricerca e filtri */}
+      <div className="filters-bar">
+        <div className="search-box">
+          <FaSearch className="search-icon" />
+          <input
+            type="text"
+            placeholder="Cerca prodotti..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
+          {searchTerm && (
+            <button 
+              className="clear-search" 
+              onClick={() => setSearchTerm('')}
+              title="Cancella ricerca"
+            >
+              <FaTimes />
+            </button>
+          )}
+        </div>
+        
+        <div className="filters-section">
+          <div className="filter-group">
+            <label>
+              <FaFilter className="filter-icon" />
+              Filtra per categoria:
+            </label>
+            <select
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="form-select filter-select"
+            >
+              <option value="">Tutte le categorie</option>
+              {categories.map((category) => (
+                <option key={category._id} value={category._id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="filter-group">
+            <label>
+              <FaSortAlphaDown className="filter-icon" />
+              Ordina per:
+            </label>
+            <select
+              value={sortField}
+              onChange={(e) => setSortField(e.target.value)}
+              className="form-select filter-select"
+            >
+              <option value="name">Nome</option>
+              <option value="category">Categoria</option>
+            </select>
+            <button
+              className="btn btn-sm btn-outline-secondary sort-direction"
+              onClick={toggleSortDirection}
+              title={sortDirection === 'asc' ? 'Ordine crescente' : 'Ordine decrescente'}
+            >
+              {sortDirection === 'asc' ? '↑' : '↓'}
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      {/* Tabella dei prodotti */}
+      <div className="products-table-container">
+        {filteredAndSortedProducts().length === 0 ? (
+          <div className="no-products">
+            {searchTerm || filterCategory ? (
+              <p>Nessun prodotto corrisponde ai criteri di ricerca.</p>
+            ) : (
+              <p>Non ci sono prodotti disponibili.</p>
+            )}
+          </div>
+        ) : (
+          <div className="table-responsive">
+            <table className="products-table">
+              <thead>
+                <tr>
+                  <th>Immagine</th>
+                  <th>Nome</th>
+                  <th>Descrizione</th>
+                  <th>Categoria</th>
+                  <th>Sottocategoria</th>
+                  <th>Azioni</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredAndSortedProducts().map((product) => (
+                  <tr key={product._id} className="product-row">
+                    <td className="product-image-cell">
+                      {product.images && product.images.length > 0 ? (
+                        <img
+                          src={`http://localhost:5002/${product.images[0]}`}
+                          alt={product.name}
+                          className="product-thumbnail"
                         />
-                      </div>
-                    );
-                  })
-                ) : (
-                  <p>Nessuna immagine disponibile</p>
-                )}
-              </td>
-              <td>
-                <button
-                  onClick={() => handleEditClick(product)}
-                  className="btn btn-warning"
-                >
-                  Modifica
-                </button>
-                <button onClick={() => handleDeleteProduct(product._id)} className="btn btn-danger">Elimina</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                      ) : (
+                        <div className="no-image">No Img</div>
+                      )}
+                    </td>
+                    <td>{product.name}</td>
+                    <td className="description-cell">
+                      <div className="truncated-text">{product.description}</div>
+                    </td>
+                    <td>{product.category?.name || 'N/A'}</td>
+                    <td>{product.subcategory?.name || 'N/A'}</td>
+                    <td className="actions-cell">
+                    <button
+                      className="btn btn-primary btn-sm me-2"
+                      onClick={() => handleEditClick(product)}
+                      title="Modifica prodotto"
+                    >
+                      <FaEdit className="me-1" /> Modifica
+                    </button>
+                    <button
+                      className="btn btn-danger btn-sm"
+                      onClick={() => handleDeleteProduct(product._id, product.name)}
+                      title="Elimina prodotto"
+                    >
+                      <FaTrash className="me-1" /> Elimina
+                    </button>
+                  </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
-      {showModal && (
-        <div className="modal">
-          <div className="modal-content">
-            <span className="close" onClick={handleCloseModal}>&times;</span>
-            <h2>Modifica Prodotto</h2>
-            {selectedProduct && (
+      {/* Modal di modifica prodotto */}
+      {showModal && selectedProduct && (
+        <div className="edit-modal-backdrop">
+          <div className="edit-modal">
+            <div className="modal-header">
+              <h3>Modifica Prodotto</h3>
+              <button className="btn-close" onClick={handleCloseModal}></button>
+            </div>
+            
+            <div className="modal-body">
               <form onSubmit={handleUpdateProduct}>
                 <div className="form-group">
-                  <label htmlFor="name">Nome</label>
+                  <label htmlFor="name">Nome Prodotto:</label>
                   <input
                     type="text"
                     id="name"
                     name="name"
+                    className="form-control"
                     defaultValue={selectedProduct.name}
                     required
                   />
                 </div>
+                
                 <div className="form-group">
-                  <label htmlFor="description">Descrizione</label>
+                  <label htmlFor="description">Descrizione:</label>
                   <textarea
                     id="description"
                     name="description"
+                    className="form-control"
                     defaultValue={selectedProduct.description}
                     required
                   />
                 </div>
+                
                 <div className="form-group">
-                  <label htmlFor="category">Categoria</label>
-                  <select id="category" name="category" value={selectedCategoryId} onChange={handleCategoryChange} required>
+                  <label htmlFor="category">Categoria:</label>
+                  <select 
+                    id="category" 
+                    name="category" 
+                    className="form-select"
+                    value={selectedCategoryId} 
+                    onChange={handleCategoryChange}
+                    required
+                  >
                     <option value="">Seleziona una categoria</option>
                     {categories.map(category => (
                       <option key={category._id} value={category._id}>
@@ -219,46 +418,104 @@ const ProductEdit = () => {
                     ))}
                   </select>
                 </div>
+                
                 <div className="form-group">
-                  <label htmlFor="subcategory">Sottocategoria</label>
-                  <select id="subcategory" name="subcategory" value={selectedSubcategoryId} onChange={handleSubcategoryChange} required>
+                  <label htmlFor="subcategory">Sottocategoria:</label>
+                  <select 
+                    id="subcategory" 
+                    name="subcategory" 
+                    className="form-select"
+                    value={selectedSubcategoryId} 
+                    onChange={handleSubcategoryChange}
+                    required
+                    disabled={!selectedCategoryId}
+                  >
                     <option value="">Seleziona una sottocategoria</option>
                     {categories
-                      .find(category => category._id === selectedCategoryId)?.subcategories
-                      .map(sub => (
+                      .find(category => category._id === selectedCategoryId)
+                      ?.subcategories.map(sub => (
                         <option key={sub._id} value={sub._id}>
                           {sub.name}
                         </option>
                       ))}
                   </select>
                 </div>
+                
                 <div className="form-group">
-                  <label htmlFor="images">Immagini</label>
-                  {selectedProduct.images.length > 0 ? (
-                    selectedProduct.images.map((img, index) => (
-                      <div key={index} style={{ display: 'flex', alignItems: 'center' }}>
-                        <img 
-                          src={`http://localhost:5002/${img}`} 
-                          alt={selectedProduct.name} 
-                          style={{ width: '50px', height: '50px', marginRight: '5px', objectFit: 'cover' }} 
-                        />
-                        <button
-                          type="button"
-                          className="btn btn-danger btn-sm"
-                          onClick={() => setImagesToRemove([...imagesToRemove, img])}
-                        >
-                          Rimuovi
-                        </button>
+                  <label>
+                    <FaImage /> Immagini:
+                  </label>
+                  
+                  <div className="images-container">
+                    {selectedProduct.images && selectedProduct.images.length > 0 ? (
+                      <div className="current-images">
+                        <p>Immagini attuali:</p>
+                        <div className="images-grid">
+                          {selectedProduct.images.map((img, index) => (
+                            <div 
+                              key={index} 
+                              className={`image-item ${imagesToRemove.includes(img) ? 'marked-for-removal' : ''}`}
+                            >
+                              <img 
+                                src={`http://localhost:5002/${img}`} 
+                                alt={`${selectedProduct.name} - ${index}`} 
+                              />
+                              <button
+                                type="button"
+                                className={`btn ${imagesToRemove.includes(img) ? 'btn-success' : 'btn-danger'}`}
+                                onClick={() => {
+                                  if (imagesToRemove.includes(img)) {
+                                    setImagesToRemove(imagesToRemove.filter(i => i !== img));
+                                  } else {
+                                    setImagesToRemove([...imagesToRemove, img]);
+                                  }
+                                }}
+                                title={imagesToRemove.includes(img) ? 'Annulla rimozione' : 'Rimuovi immagine'}
+                              >
+                                {imagesToRemove.includes(img) ? 'Annulla' : 'Rimuovi'}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    ))
-                  ) : (
-                    <p>Nessuna immagine disponibile</p>
-                  )}
-                  <input type="file" name="images" multiple />
+                    ) : (
+                      <p className="no-images-message">Nessuna immagine disponibile</p>
+                    )}
+                    
+                    <div className="new-images">
+                      <p>Aggiungi nuove immagini:</p>
+                      <input 
+                        type="file" 
+                        name="images" 
+                        multiple 
+                        onChange={handleImageChange}
+                        className="form-control"
+                      />
+                      
+                      {newImages.length > 0 && (
+                        <div className="selected-new-images">
+                          <p>Nuove immagini selezionate: {newImages.length}</p>
+                          <ul>
+                            {newImages.map((img, idx) => (
+                              <li key={idx}>{img.name}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <button type="submit" className="btn btn-success">Aggiorna Prodotto</button>
+                
+                <div className="form-actions">
+                  <button type="submit" className="btn btn-primary">
+                    <FaSave /> Salva Modifiche
+                  </button>
+                  <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>
+                    <FaUndo /> Annulla
+                  </button>
+                </div>
               </form>
-            )}
+            </div>
           </div>
         </div>
       )}
