@@ -275,3 +275,39 @@
     padding: var(--spacing-xxl) 0 calc(var(--spacing-xxl) * 1.5);
   }
 }
+
+/* Category Icon styling */
+.category-icon {
+  width: 64px;
+  height: 64px;
+  margin-bottom: var(--spacing-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(63, 81, 181, 0.1);
+  border-radius: 50%;
+  transition: transform var(--transition-normal), background-color var(--transition-normal);
+}
+
+.category-card:hover .category-icon {
+  transform: scale(1.1);
+  background-color: rgba(63, 81, 181, 0.2);
+}
+
+/* Benefit Icon styling */
+.benefit-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto var(--spacing-md);
+  background-color: rgba(63, 81, 181, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--transition-normal), background-color var(--transition-normal);
+}
+
+.benefit-card:hover .benefit-icon {
+  transform: scale(1.1);
+  background-color: rgba(63, 81, 181, 0.2);
+}
