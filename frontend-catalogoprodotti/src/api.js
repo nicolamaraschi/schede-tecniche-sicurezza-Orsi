@@ -1,6 +1,30 @@
 // src/api.js
-const API_URL = 'http://localhost:5002/api/prodottiCatalogo/prodotti'; // Modifica con l'URL corretto
-const AUTH_URL = 'http://localhost:5002/api/auth'; // URL per le API di autenticazione
+const API_URL = 'http://localhost:5002/api/prodottiCatalogo/prodotti';
+const AUTH_URL = 'http://localhost:5002/api/auth';
+
+// Funzione di supporto per gestire gli errori di autenticazione
+const handleAuthError = (error) => {
+  // Verifica se l'errore è di tipo 401 Unauthorized
+  if (error.response && error.response.status === 401) {
+    // Rimuovi il token dalla localStorage
+    localStorage.removeItem('authToken');
+    
+    // Visualizza un messaggio all'utente
+    alert('La tua sessione è scaduta. Per favore, effettua nuovamente il login.');
+    
+    // Reindirizza alla pagina di login
+    window.location.href = '/login';
+  }
+  
+  // Rilancia l'errore per permettere al chiamante di gestirlo ulteriormente se necessario
+  throw error;
+};
+
+// Ottieni il token JWT dalla localStorage
+const getAuthToken = () => {
+  return localStorage.getItem('authToken');
+};
+
 // Funzione per creare un nuovo prodotto
 export const createProdotto = async (prodotto, immagini) => {
   try {
@@ -22,10 +46,18 @@ export const createProdotto = async (prodotto, immagini) => {
       console.log(`${key}: ${value instanceof File ? value.name : value}`);
     }
 
+    const token = getAuthToken();
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
     const response = await fetch(API_URL, {
       method: 'POST',
-      body: formData, // Invia il FormData
+      body: formData,
+      headers
     });
+
+    if (response.status === 401) {
+      throw { response: { status: 401 } };
+    }
 
     if (!response.ok) {
       throw new Error('Errore durante la creazione del prodotto');
@@ -34,44 +66,60 @@ export const createProdotto = async (prodotto, immagini) => {
     return await response.json();
   } catch (error) {
     console.error(error);
+    handleAuthError(error);
     throw error;
   }
 };
 
-
-
 // Funzione per ottenere tutti i prodotti
 export const getAllProdotti = async () => {
   try {
-    const response = await fetch(API_URL);
+    const token = getAuthToken();
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+    const response = await fetch(API_URL, { headers });
+    
+    if (response.status === 401) {
+      throw { response: { status: 401 } };
+    }
+    
     if (!response.ok) {
       throw new Error('Errore durante il recupero dei prodotti');
     }
     
     const data = await response.json();
-    console.log('Prodotti recuperati:', data); // Stampa il JSON dei prodotti
+    console.log('Prodotti recuperati:', data);
     return data;
   } catch (error) {
     console.error(error);
+    handleAuthError(error);
     throw error;
   }
 };
-
 
 // Funzione per ottenere un prodotto per ID
 export const getProdottoById = async (id) => {
   try {
-    const response = await fetch(`${API_URL}/${id}`);
+    const token = getAuthToken();
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+    const response = await fetch(`${API_URL}/${id}`, { headers });
+    
+    if (response.status === 401) {
+      throw { response: { status: 401 } };
+    }
+    
     if (!response.ok) {
       throw new Error('Errore durante il recupero del prodotto');
     }
+    
     return await response.json();
   } catch (error) {
     console.error(error);
+    handleAuthError(error);
     throw error;
   }
 };
-
 
 // Funzione per aggiornare un prodotto
 export const updateProdotto = async (id, prodotto, immagini) => {
@@ -86,11 +134,19 @@ export const updateProdotto = async (id, prodotto, immagini) => {
       formData.append('immagini', file);
     });
 
+    const token = getAuthToken();
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
     const response = await fetch(`${API_URL}/${id}`, {
       method: 'PUT',
-      body: formData, // Invia il FormData
+      body: formData,
+      headers
     });
 
+    if (response.status === 401) {
+      throw { response: { status: 401 } };
+    }
+    
     if (!response.ok) {
       throw new Error('Errore durante l\'aggiornamento del prodotto');
     }
@@ -98,6 +154,7 @@ export const updateProdotto = async (id, prodotto, immagini) => {
     return await response.json();
   } catch (error) {
     console.error(error);
+    handleAuthError(error);
     throw error;
   }
 };
@@ -105,10 +162,18 @@ export const updateProdotto = async (id, prodotto, immagini) => {
 // Funzione per cancellare un prodotto
 export const deleteProdotto = async (id) => {
   try {
+    const token = getAuthToken();
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
     const response = await fetch(`${API_URL}/${id}`, {
       method: 'DELETE',
+      headers
     });
 
+    if (response.status === 401) {
+      throw { response: { status: 401 } };
+    }
+    
     if (!response.ok) {
       throw new Error('Errore durante la cancellazione del prodotto');
     }
@@ -116,6 +181,7 @@ export const deleteProdotto = async (id) => {
     return await response.json();
   } catch (error) {
     console.error(error);
+    handleAuthError(error);
     throw error;
   }
 };
@@ -157,9 +223,28 @@ export const loginUtente = async (credentials) => {
       throw new Error('Errore durante il login');
     }
 
-    return await response.json();
+    const data = await response.json();
+    
+    // Salva il token nella localStorage
+    if (data && data.token) {
+      localStorage.setItem('authToken', data.token);
+    }
+    
+    return data;
   } catch (error) {
     console.error(error);
     throw error;
   }
+};
+
+// Funzione per il logout
+export const logoutUtente = () => {
+  localStorage.removeItem('authToken');
+  // Reindirizza alla pagina di login
+  window.location.href = '/login';
+};
+
+// Funzione per verificare se l'utente è autenticato
+export const isAuthenticated = () => {
+  return !!localStorage.getItem('authToken');
 };
