@@ -1,17 +1,18 @@
 {
- "name": "progetto-completo",
- "version": "1.0.0",
- "scripts": {
-  "start": "concurrently \"npm run start:backend\" \"npm run start:schede-tecniche\" \"npm run start:catalogo-prodotti\" \"npm run start:gestore-prodotti\"",
-  "start:backend": "cd backend-api && npm start",
-  "start:schede-tecniche": "cd frontend_schedetechiche && npm start",
-  "start:catalogo-prodotti": "cd frontend-catalogoprodotti && npm start",
-  "start:gestore-prodotti": "cd frontendgestoreprodotti && npm start"
- },
- "devDependencies": {
-  "concurrently": "^8.2.2"
- },
- "dependencies": {
-  "react-icons": "^5.5.0"
- }
-}
+    "name": "progetto-completo",
+    "version": "1.0.0",
+    "scripts": {
+      "start": "concurrently \"npm run start:backend\" \"npm run start:schede-tecniche\" \"npm run start:catalogo-prodotti\" \"npm run start:gestore-prodotti\" \"npm run start:frontend-catalogo\"",
+      "start:backend": "cd backend-api && npm start",
+      "start:schede-tecniche": "cd frontend_schedetechiche && npm start",
+      "start:catalogo-prodotti": "cd catalogo-frontend && PORT=3006 npm start",
+      "start:gestore-prodotti": "cd frontendgestoreprodotti && npm start",
+      "start:frontend-catalogo": "cd frontend-catalogoprodotti && PORT=3007 npm start"
+    },
+    "devDependencies": {
+      "concurrently": "^8.2.2"
+    },
+    "dependencies": {
+      "react-icons": "^5.5.0"
+    }
+  }

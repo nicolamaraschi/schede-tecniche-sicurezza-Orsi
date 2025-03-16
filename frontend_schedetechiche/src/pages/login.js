@@ -1,16 +1,23 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom'; // Aggiungi Link qui
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './login.css';
 
-const Login = () => {
+const Login = ({ setIsAuthenticated }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [menuOpen, setMenuOpen] = useState(false);
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Controlla se l'utente è già autenticato
+    const token = localStorage.getItem('token');
+    if (token) {
+      navigate('/'); // Reindirizza alla home se c'è già un token
+    }
+  }, [navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -32,12 +39,20 @@ const Login = () => {
       if (response.ok) {
         setSuccess('Login effettuato con successo!');
         localStorage.setItem('token', data.token);
-        navigate('/');
+        setIsAuthenticated(true); // Imposta lo stato di autenticazione
+        
+        // Breve ritardo per mostrare il messaggio di successo
+        setTimeout(() => {
+          navigate('/'); // Reindirizza alla home dopo il login
+        }, 1000);
       } else {
         setError(data.message || 'Errore durante il login.');
+        setIsAuthenticated(false);
       }
     } catch (err) {
+      console.error('Error during login:', err);
       setError('Errore di rete. Riprova più tardi.');
+      setIsAuthenticated(false);
     }
 
     setLoading(false);
@@ -47,18 +62,6 @@ const Login = () => {
     <div className="login-container">
       <div className="login-card">
         <h2>Accedi</h2>
-        <button className="hamburger" onClick={() => setMenuOpen(!menuOpen)}>
-          &#9776;
-        </button>
-        {menuOpen && (
-          <div className="menu">
-            <Link to="/login" className="menu-item">Login</Link>
-            <Link to="/create-product" className="menu-item">Crea Prodotto</Link>
-            <Link to="/upload-document" className="menu-item">Carica Documento</Link>
-            <Link to="/view-documents" className="menu-item">Visualizza Documenti</Link>
-            <Link to="/product-info" className="menu-item">Info Prodotto</Link>
-          </div>
-        )}
         <form onSubmit={handleLogin}>
           <div className="input-group">
             <label>Username</label>
