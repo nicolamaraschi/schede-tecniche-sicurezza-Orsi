@@ -1,7 +1,8 @@
 // src/api.js
 import { getToken, isTokenExpired, removeToken } from './services/authService';
 
-const API_BASE_URL = 'http://localhost:5002/api';
+// Usa la variabile d'ambiente per la base URL
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5002/api'; // Default per lo sviluppo
 
 // Funzione di utilità per ottenere il token corrente o reindirizzare se è scaduto
 const getAuthToken = () => {

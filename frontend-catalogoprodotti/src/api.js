@@ -1,8 +1,7 @@
-// src/api.js
-const API_URL = 'http://localhost:5002/api/prodottiCatalogo/prodotti';
-const AUTH_URL = 'http://localhost:5002/api/auth';
-const CATEGORIES_URL = 'http://localhost:5002/api/prodottiCatalogo/categoria';
-const SUBCATEGORIES_URL = 'http://localhost:5002/api/prodottiCatalogo/sottocategorie';
+const API_URL = process.env.REACT_APP_API_URL + '/prodottiCatalogo/prodotti';
+const AUTH_URL = process.env.REACT_APP_API_URL + '/auth';
+const CATEGORIES_URL = process.env.REACT_APP_API_URL + '/prodottiCatalogo/categoria';
+const SUBCATEGORIES_URL = process.env.REACT_APP_API_URL + '/prodottiCatalogo/sottocategorie';
 
 // Funzione di supporto per gestire gli errori di autenticazione
 const handleAuthError = (error) => {

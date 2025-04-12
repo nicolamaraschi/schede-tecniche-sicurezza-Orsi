@@ -1,6 +1,5 @@
-// src/api.js
-const API_URL = 'http://localhost:5002/api/gestoreProdotti'; // API per il gestore prodotti
-const AUTH_URL = 'http://localhost:5002/api/auth'; // API per l'autenticazione
+const API_URL = process.env.REACT_APP_API_URL + '/gestoreProdotti'; // API per il gestore prodotti
+const AUTH_URL = process.env.REACT_APP_API_URL + '/auth'; // API per l'autenticazione
 
 // Funzione per ottenere l'intestazione di autorizzazione
 export const getAuthHeader = () => {
