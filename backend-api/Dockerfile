@@ -8,8 +8,8 @@ RUN npm install
 
 COPY . .
 
-# Assicurati che la directory uploads esista
-RUN mkdir -p uploads
+# Ensure uploads directory exists and is writable
+RUN mkdir -p uploads && chmod 777 uploads
 
 EXPOSE 5002
 
