@@ -10,8 +10,7 @@ services:
       - JWT_SECRET=${JWT_SECRET:-il_tuo_jwt_secret}
       - PORT=5002
       - NODE_ENV=production
-    volumes:
-      - uploads_data:/usr/src/app/uploads
+    # Remove the volumes section
     ports:
       - "5002:5002"
 
@@ -46,6 +45,3 @@ services:
       - backend-api
     ports:
       - "3006:80"
-
-volumes:
-  uploads_data:
