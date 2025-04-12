@@ -1,9 +1,12 @@
 FROM ubuntu:latest
 
-# Installa dipendenze Python e Docker
+# Installa dipendenze di sistema
 RUN apt-get update && \
-    apt-get install -y python3-distutils docker.io docker-compose curl && \
+    apt-get install -y python3-pip python3-setuptools docker.io docker-compose curl && \
     rm -rf /var/lib/apt/lists/*
+
+# Installa distutils usando pip
+RUN pip3 install setuptools
 
 WORKDIR /app
 
