@@ -1,5 +1,3 @@
 [deploy]
-numReplicas = 1
 startCommand = "docker-compose up -d"
-sleepApplication = false
-restartPolicyType = "ON_FAILURE"
+numReplicas = 1
