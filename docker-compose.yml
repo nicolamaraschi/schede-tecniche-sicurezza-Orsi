@@ -1,47 +1,51 @@
 version: '3'
+
 services:
-  backend:
+  backend-api:
     build: ./backend-api
     container_name: backend-api
-    env_file:
-      - ./backend-api/.env  # Carica le variabili d'ambiente dal file .env
+    restart: always
+    environment:
+      - MONGO_URI=mongodb+srv://nicolamaraschi01:marase@cluster0.8odxl.mongodb.net/?retryWrites=true&w=majority
+      - JWT_SECRET=${JWT_SECRET:-il_tuo_jwt_secret}
+      - PORT=5002
+      - NODE_ENV=production
+    volumes:
+      - uploads_data:/usr/src/app/uploads
     ports:
       - "5002:5002"
-    volumes:
-      - ./backend-api:/usr/src/app
-    networks:
-      - app-network
 
-  frontend_schedetechiche:
+  frontend-schedetecniche:
     build: ./frontend_schedetechiche
-    container_name: frontend-schedetechiche
-    ports:
-      - "3000:80"
-    volumes:
-      - ./frontend_schedetechiche:/usr/src/app
-    networks:
-      - app-network
-
-  frontend_catalogoprodotti:
-    build: ./frontend-catalogoprodotti
-    container_name: frontend-catalogoprodotti
+    container_name: frontend-schedetecniche
+    depends_on:
+      - backend-api
     ports:
       - "3001:80"
-    volumes:
-      - ./frontend-catalogoprodotti:/usr/src/app
-    networks:
-      - app-network
 
-  frontend_gestoreprodotti:
-    build: ./frontendgestoreprodotti
-    container_name: frontend-gestoreprodotti
+  frontend-catalogoprodotti:
+    build: ./frontend-catalogoprodotti
+    container_name: frontend-catalogoprodotti
+    depends_on:
+      - backend-api
     ports:
       - "3002:80"
-    volumes:
-      - ./frontendgestoreprodotti:/usr/src/app
-    networks:
-      - app-network
 
-networks:
-  app-network:
-    driver: bridge
+  frontend-gestoreprodotti:
+    build: ./frontendgestoreprodotti
+    container_name: frontend-gestoreprodotti
+    depends_on:
+      - backend-api
+    ports:
+      - "3003:80"
+      
+  catalogo-frontend:
+    build: ./catalogo-frontend
+    container_name: catalogo-frontend
+    depends_on:
+      - backend-api
+    ports:
+      - "3006:80"
+
+volumes:
+  uploads_data:

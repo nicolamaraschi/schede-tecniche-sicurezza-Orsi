@@ -1,27 +1,44 @@
-# Usa un'immagine base ufficiale di Node.js
-FROM node:18
+# Fase di build
+FROM node:18 as build
 
-# Imposta la directory di lavoro
 WORKDIR /usr/src/app
 
-# Copia i file package.json e package-lock.json
 COPY package*.json ./
 
-# Installa le dipendenze
 RUN npm install
 
-# Copia il resto del codice dell'app
 COPY . .
 
-# Compila l'app per la produzione
 RUN npm run build
 
-# Usa un'immagine Nginx per servire il frontend
+# Fase di produzione
 FROM nginx:alpine
-COPY --from=0 /usr/src/app/build /usr/share/nginx/html
 
-# Esponi la porta 80 per Nginx
+COPY --from=build /usr/src/app/build /usr/share/nginx/html
+
+# Configurazione per il routing React
+RUN echo '                                                   \
+server {                                                    \
+    listen 80;                                              \
+    location / {                                            \
+        root /usr/share/nginx/html;                         \
+        index index.html index.htm;                         \
+        try_files $uri $uri/ /index.html;                   \
+    }                                                       \
+    location /api {                                         \
+        proxy_pass http://backend-api:5002/api;             \
+        proxy_http_version 1.1;                             \
+        proxy_set_header Upgrade $http_upgrade;             \
+        proxy_set_header Connection "upgrade";              \
+        proxy_set_header Host $host;                        \
+        proxy_cache_bypass $http_upgrade;                   \
+    }                                                       \
+    location /uploads {                                     \
+        proxy_pass http://backend-api:5002/uploads;         \
+    }                                                       \
+}                                                           \
+' > /etc/nginx/conf.d/default.conf
+
 EXPOSE 80
 
-# Comando per avviare Nginx
 CMD ["nginx", "-g", "daemon off;"]
