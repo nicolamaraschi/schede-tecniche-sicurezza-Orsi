@@ -25,7 +25,9 @@ app.use(cors({
     'http://localhost:3004',
     'http://localhost:3005',
     'http://localhost:3006',
-    'http://localhost:3007'
+    'http://localhost:3007',
+    process.env.RAILWAY_STATIC_URL, // Aggiungi questa riga
+    'https://' + process.env.RAILWAY_STATIC_URL // E questa
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
