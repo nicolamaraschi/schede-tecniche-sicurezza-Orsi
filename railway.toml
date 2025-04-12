@@ -1,9 +1,5 @@
-[build]
-builder = "DOCKERFILE"
-dockerfilePath = "./docker-compose.yml"
-
 [deploy]
+numReplicas = 1
 startCommand = "docker-compose up -d"
-healthcheckPath = "/api/products"
-healthcheckTimeout = 60
-restartPolicyType = "ON_FAILURE"
+sleepApplication = false
+restartPolicyType = "ON_FAIL
