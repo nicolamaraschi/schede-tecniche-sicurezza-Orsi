@@ -2,4 +2,4 @@
 numReplicas = 1
 startCommand = "docker-compose up -d"
 sleepApplication = false
-restartPolicyType = "ON_FAIL"
+restartPolicyType = "ON_FAILURE"
