@@ -1,2 +1,2 @@
 [deploy]
-startCommand = "docker-compose up -d"
+startCommand = "cd backend-api && npm install && npm start"
