@@ -1,5 +1,5 @@
 // backend-api/controllers/prodottiCatalogoController.js
-const ProdottoCatalogo = require('../models/ProdottoCatalogo');
+const ProdottoCatalogo = require('../models/prodottoCatalogo');
 const fs = require('fs');
 const path = require('path');
 
