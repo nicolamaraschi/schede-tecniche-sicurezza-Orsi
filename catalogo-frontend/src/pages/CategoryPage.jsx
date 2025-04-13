@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import axios from 'axios';
 import ProductList from '../components/products/ProductList';
 import CategoryMenu from '../components/products/CategoryMenu';
 import ProductFilter from '../components/products/ProductFilter';
@@ -28,43 +28,44 @@ const CategoryPage = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        let productEndpoint;
+        let productsEndpoint;
         let subcategoriesEndpoint;
         
         // Determina gli endpoint in base ai parametri URL
         if (subcategoryId && categoryId) {
+          // Codifica correttamente i parametri nell'URL
           const encodedCategory = encodeURIComponent(categoryId);
           const encodedSubcategory = encodeURIComponent(subcategoryId);
           
-          productEndpoint = `/prodottiCatalogo/categoria/${encodedCategory}/sottocategoria/${encodedSubcategory}`;
-          subcategoriesEndpoint = `/prodottiCatalogo/categoria/${encodedCategory}/sottocategorie`;
+          productsEndpoint = `https://orsi-production.up.railway.app/api/prodottiCatalogo/categoria/${encodedCategory}/sottocategoria/${encodedSubcategory}`;
+          subcategoriesEndpoint = `https://orsi-production.up.railway.app/api/prodottiCatalogo/categoria/${encodedCategory}/sottocategorie`;
         } else if (categoryId) {
           const encodedCategory = encodeURIComponent(categoryId);
-          productEndpoint = `/prodottiCatalogo/categoria/${encodedCategory}`;
-          subcategoriesEndpoint = `/prodottiCatalogo/categoria/${encodedCategory}/sottocategorie`;
+          productsEndpoint = `https://orsi-production.up.railway.app/api/prodottiCatalogo/categoria/${encodedCategory}`;
+          subcategoriesEndpoint = `https://orsi-production.up.railway.app/api/prodottiCatalogo/categoria/${encodedCategory}/sottocategorie`;
         } else {
-          productEndpoint = '/prodottiCatalogo/prodotti';
+          productsEndpoint = 'https://orsi-production.up.railway.app/api/prodottiCatalogo/prodotti';
         }
         
-        console.log("Fetching products from:", productEndpoint);
+        console.log("Fetching products from:", productsEndpoint);
         
-        // Carica prodotti usando l'API centralizzata
-        const productsResponse = await api.get(productEndpoint);
-        console.log("Products response:", productsResponse);
+        // Carica prodotti
+        const productsResponse = await axios.get(productsEndpoint);
+        console.log("Products response:", productsResponse.data);
         
-        if (Array.isArray(productsResponse)) {
-          setProducts(productsResponse);
+        if (Array.isArray(productsResponse.data)) {
+          setProducts(productsResponse.data);
         } else {
-          console.error("API non ha restituito un array:", productsResponse);
+          console.error("API non ha restituito un array:", productsResponse.data);
           setProducts([]);
         }
         
         // Carica sottocategorie se necessario
         if (subcategoriesEndpoint) {
           console.log("Fetching subcategories from:", subcategoriesEndpoint);
-          const subcategoriesResponse = await api.get(subcategoriesEndpoint);
-          console.log("Subcategories response:", subcategoriesResponse);
-          setSubcategories(Array.isArray(subcategoriesResponse) ? subcategoriesResponse : []);
+          const subcategoriesResponse = await axios.get(subcategoriesEndpoint);
+          console.log("Subcategories response:", subcategoriesResponse.data);
+          setSubcategories(Array.isArray(subcategoriesResponse.data) ? subcategoriesResponse.data : []);
         }
         
         setLoading(false);
