@@ -48,14 +48,14 @@ const CategoryPage = () => {
           const encodedCategory = encodeURIComponent(categoryId);
           const encodedSubcategory = encodeURIComponent(subcategoryId);
           
-          productsEndpoint = `http://localhost:5002/api/prodottiCatalogo/categoria/${encodedCategory}/sottocategoria/${encodedSubcategory}`;
-          subcategoriesEndpoint = `http://localhost:5002/api/prodottiCatalogo/categoria/${encodedCategory}/sottocategorie`;
+          productsEndpoint = `https://orsi-production.up.railway.app/api/prodottiCatalogo/categoria/${encodedCategory}/sottocategoria/${encodedSubcategory}`;
+          subcategoriesEndpoint = `https://orsi-production.up.railway.app/api/prodottiCatalogo/categoria/${encodedCategory}/sottocategorie`;
         } else if (categoryId) {
           const encodedCategory = encodeURIComponent(categoryId);
-          productsEndpoint = `http://localhost:5002/api/prodottiCatalogo/categoria/${encodedCategory}`;
-          subcategoriesEndpoint = `http://localhost:5002/api/prodottiCatalogo/categoria/${encodedCategory}/sottocategorie`;
+          productsEndpoint = `https://orsi-production.up.railway.app/api/prodottiCatalogo/categoria/${encodedCategory}`;
+          subcategoriesEndpoint = `https://orsi-production.up.railway.app/api/prodottiCatalogo/categoria/${encodedCategory}/sottocategorie`;
         } else {
-          productsEndpoint = 'http://localhost:5002/api/prodottiCatalogo/prodotti';
+          productsEndpoint = 'https://orsi-production.up.railway.app/api/prodottiCatalogo/prodotti';
         }
         
         console.log("Fetching products from:", productsEndpoint);
