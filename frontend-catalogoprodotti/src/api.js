@@ -339,6 +339,9 @@ export const registerUtente = async (utente) => {
 // Funzione per il login dell'utente
 export const loginUtente = async (credentials) => {
   try {
+    console.log('Login URL:', `${AUTH_URL}/login`);
+    console.log('Credentials:', credentials);
+
     const response = await fetch(`${AUTH_URL}/login`, {
       method: 'POST',
       headers: {
@@ -347,8 +350,12 @@ export const loginUtente = async (credentials) => {
       body: JSON.stringify(credentials),
     });
 
+    console.log('Response status:', response.status);
+
     if (!response.ok) {
-      throw new Error('Errore durante il login');
+      const errorText = await response.text();
+      console.error('Login Error Response:', errorText);
+      throw new Error(errorText || 'Errore durante il login');
     }
 
     const data = await response.json();
@@ -360,7 +367,10 @@ export const loginUtente = async (credentials) => {
     
     return data;
   } catch (error) {
-    console.error(error);
+    console.error('Detailed Login Error:', {
+      message: error.message,
+      stack: error.stack
+    });
     throw error;
   }
 };
