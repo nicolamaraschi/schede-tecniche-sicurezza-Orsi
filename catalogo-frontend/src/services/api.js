@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL, 
+  baseURL: process.env.REACT_APP_API_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -13,11 +13,10 @@ const api = axios.create({
 console.log('API Base URL:', {
   url: process.env.REACT_APP_API_URL,
   type: typeof process.env.REACT_APP_API_URL,
-  trimmed: process.env.REACT_APP_API_URL?.trim(),
   exists: !!process.env.REACT_APP_API_URL
 });
 
-api.interceptors.request.use( 
+api.interceptors.request.use(
   (config) => {
     console.log('Request Interceptor:', {
       baseURL: config.baseURL,
@@ -27,10 +26,7 @@ api.interceptors.request.use(
     });
     return config;
   },
-  (error) => {
-    console.error('Request Interceptor Error:', error);
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 api.interceptors.response.use(
@@ -42,7 +38,7 @@ api.interceptors.response.use(
     return response.data;
   },
   (error) => {
-    console.error('Detailed API Error:', {
+    const errorDetails = {
       name: error.name,
       message: error.message,
       code: error.code,
@@ -50,17 +46,10 @@ api.interceptors.response.use(
         baseURL: error.config?.baseURL,
         url: error.config?.url,
         method: error.config?.method
-      },
-      response: error.response ? {
-        status: error.response.status,
-        data: error.response.data,
-        headers: error.response.headers
-      } : null,
-      request: error.request ? {
-        method: error.request.method,
-        path: error.request.path
-      } : null
-    });
+      }
+    };
+
+    console.error('Detailed API Error:', errorDetails);
 
     if (error.response) {
       return Promise.reject({
@@ -68,7 +57,9 @@ api.interceptors.response.use(
         message: error.response.data?.message || 'Server error',
         details: error.response.data
       });
-    } else if (error.request) {
+    } 
+    
+    if (error.request) {
       return Promise.reject({
         message: 'No response received from server',
         request: {
@@ -76,12 +67,12 @@ api.interceptors.response.use(
           path: error.request.path
         }
       });
-    } else {
-      return Promise.reject({
-        message: 'Error setting up the request',
-        errorMessage: error.message
-      });
     }
+
+    return Promise.reject({
+      message: 'Error setting up the request',
+      errorDetails
+    });
   }
 );
 
