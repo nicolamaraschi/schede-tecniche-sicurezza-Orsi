@@ -34,7 +34,7 @@ mongoose.connect(process.env.MONGO_URI)
   .catch(err => console.error('Failed to connect to MongoDB:', err));
 
 // Importa il middleware di Multer
-const upload = require('./middleware/upload'); // Percorso corretto del file upload
+const upload = require('./middlewares/uploadGestoreProdotti');
 
 // Nuova route per l'upload dei file
 app.post('/api/upload', upload.single('file'), (req, res) => {
