@@ -1,7 +1,20 @@
 import axios from 'axios';
 
-// Aggiungi un fallback per l'URL
-const API_URL = process.env.REACT_APP_API_URL || 'https://orsi-production.up.railway.app/api';
+// Rimuovi OGNI spazio e gestisci fallback
+const API_URL = (process.env.REACT_APP_API_URL || 'https://orsi-production.up.railway.app/api')
+  .trim()
+  .replace(/\s+/g, '');
+
+console.group('🔍 API Configuration');
+console.log('Raw Environment URL:', process.env.REACT_APP_API_URL);
+console.log('Cleaned Base URL:', API_URL);
+console.log('URL Type:', typeof API_URL);
+console.log('URL Validity:', {
+  exists: !!API_URL,
+  length: API_URL.length,
+  isValid: API_URL.startsWith('http')
+});
+console.groupEnd();
 
 const api = axios.create({
   baseURL: API_URL,
@@ -12,44 +25,66 @@ const api = axios.create({
   }
 });
 
-// Debug log più dettagliato
-console.group('API Configuration');
-console.log('Configured Base URL:', API_URL);
-console.log('Environment URL:', process.env.REACT_APP_API_URL);
-console.log('Type of URL:', typeof API_URL);
-console.log('URL Exists:', !!API_URL);
-console.groupEnd();
-
+// Interceptor di richiesta
 api.interceptors.request.use(
   (config) => {
-    console.group('Request Interceptor');
+    // Override per tentativi di connessione a localhost
+    if (config.url?.includes('localhost')) {
+      config.baseURL = API_URL;
+      config.url = config.url.replace('http://localhost:5002/api', '');
+    }
+
+    console.group('🌐 Request Details');
     console.log('Full Request URL:', `${config.baseURL}${config.url}`);
     console.log('Method:', config.method);
     console.log('Headers:', config.headers);
+    
+    // Log payload per richieste POST/PUT
+    if (['post', 'put', 'patch'].includes(config.method?.toLowerCase())) {
+      console.log('Request Payload:', config.data);
+    }
+    
     console.groupEnd();
+
     return config;
   },
   (error) => Promise.reject(error)
 );
 
+// Interceptor di risposta
 api.interceptors.response.use(
   (response) => {
-    console.group('Response Interceptor');
+    console.group('✅ Response Success');
     console.log('Status:', response.status);
-    console.log('Data:', response.data);
+    console.log('Data Length:', JSON.stringify(response.data).length);
+    console.log('Data Type:', typeof response.data);
     console.groupEnd();
+
     return response.data;
   },
   (error) => {
-    console.group('Detailed API Error');
-    console.error('Error Name:', error.name);
-    console.error('Error Message:', error.message);
-    console.error('Error Code:', error.code);
-    
+    console.group('❌ Detailed API Error');
+    console.error('Error Context:', {
+      name: error.name,
+      message: error.message,
+      code: error.code
+    });
+
+    // Analisi dettagliata dell'errore
     if (error.response) {
-      console.error('Response Status:', error.response.status);
-      console.error('Response Data:', error.response.data);
-    }
+      console.error('Server Response:', {
+        status: error.response.status,
+        data: error.response.data,
+        headers: error.response.headers
+      });
+
+      return Promise.reject({
+        status: error.response.status,
+        message: error.response.data?.message || 'Errore del server',
+        details: error.response.data,
+        fullError: error
+      });
+    } 
     
     if (error.request) {
       console.error('Request Details:', {
@@ -57,32 +92,23 @@ api.interceptors.response.use(
         url: error.request.url,
         readyState: error.request.readyState
       });
-    }
-    
-    console.groupEnd();
 
-    // Gestione degli errori più dettagliata
-    if (error.response) {
-      return Promise.reject({
-        status: error.response.status,
-        message: error.response.data?.message || 'Errore del server',
-        details: error.response.data
-      });
-    } 
-    
-    if (error.request) {
       return Promise.reject({
         message: 'Nessuna risposta ricevuta dal server',
         details: {
           method: error.request.method,
           url: error.request.url
-        }
+        },
+        fullError: error
       });
     }
 
+    // Errore generico di configurazione
+    console.error('Configurazione richiesta errata', error);
     return Promise.reject({
       message: 'Errore nella configurazione della richiesta',
-      details: error.message
+      details: error.message,
+      fullError: error
     });
   }
 );
