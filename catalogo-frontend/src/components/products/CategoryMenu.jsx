@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../services/api';
 import './CategoryMenu.css';
 
 const CategoryMenu = ({ loading = false, activeCategory = null, activeSubcategory = null }) => {
@@ -15,10 +15,10 @@ const CategoryMenu = ({ loading = false, activeCategory = null, activeSubcategor
     const fetchAllSubcategories = async () => {
       try {
         setIsLoading(true);
-        // Chiama l'endpoint che restituisce tutte le sottocategorie per categoria
-        const response = await axios.get('http://localhost:5002/api/prodottiCatalogo/sottocategorie');
-        console.log("All subcategories response:", response.data);
-        setSubcategories(response.data || {});
+        // Usa il servizio API centralizzato
+        const response = await api.get('/prodottiCatalogo/sottocategorie');
+        console.log("All subcategories response:", response);
+        setSubcategories(response || {});
         setIsLoading(false);
       } catch (error) {
         console.error('Errore nel recupero delle sottocategorie:', error);
