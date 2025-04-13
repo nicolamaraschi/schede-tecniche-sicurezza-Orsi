@@ -25,7 +25,7 @@ app.use(cors({
     'http://localhost:3005',
     'http://localhost:3006',
     'http://localhost:3007',
-    'https://frontend-catalogoprodotti.vercel.app', // Per il frontend su Vercel
+   'https://catalogo-frontend-75r2hgknz-nicolamaraschis-projects.vercel.app', 
     'https://frontendgestoreprodotti.vercel.app',
     'https://frontendschedetechiche.vercel.app',
     'https://catalogo-frontend-five.vercel.app',
