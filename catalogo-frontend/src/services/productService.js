@@ -4,17 +4,30 @@ const productService = {
   // Get all products in the catalog
   getAllProducts: async () => {
     try {
-      return await api.get('/prodottiCatalogo/prodotti');
+      const response = await api.get('/prodottiCatalogo/prodotti');
+      // Aggiungi il prefisso '/uploads/' per ogni immagine
+      const products = response.data.map(product => {
+        if (product.immagini && Array.isArray(product.immagini)) {
+          product.immagini = product.immagini.map(img => `/uploads/${img}`);
+        }
+        return product;
+      });
+      return products;
     } catch (error) {
       console.error('Error fetching products:', error);
       throw error;
     }
   },
+  
 
   // Get a single product by ID
   getProductById: async (productId) => {
     try {
-      return await api.get(`/prodottiCatalogo/prodotti/${productId}`);
+      const response = await api.get(`/prodottiCatalogo/prodotti/${productId}`);
+      if (response.data.immagini && Array.isArray(response.data.immagini)) {
+        response.data.immagini = response.data.immagini.map(img => `/uploads/${img}`);
+      }
+      return response.data;
     } catch (error) {
       console.error(`Error fetching product with ID ${productId}:`, error);
       throw error;

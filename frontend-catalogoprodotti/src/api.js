@@ -117,6 +117,14 @@ export const getAllProdotti = async () => {
 
     const data = await response.json();
     console.log('Prodotti recuperati:', data);
+
+    // Aggiungi il prefisso '/uploads/' alle immagini
+    data.forEach(prodotto => {
+      if (prodotto.immagini) {
+        prodotto.immagini = prodotto.immagini.map(img => `/uploads/${img}`);
+      }
+    });
+
     return data;
   } catch (error) {
     console.error(error);
@@ -124,6 +132,7 @@ export const getAllProdotti = async () => {
     throw error;
   }
 };
+
 
 export const getProdottoById = async (id) => {
   try {
@@ -134,13 +143,21 @@ export const getProdottoById = async (id) => {
     if (response.status === 401) throw { response: { status: 401 } };
     if (!response.ok) throw new Error('Errore durante il recupero del prodotto');
 
-    return await response.json();
+    const prodotto = await response.json();
+
+    // Aggiungi il prefisso '/uploads/' alle immagini
+    if (prodotto.immagini) {
+      prodotto.immagini = prodotto.immagini.map(img => `/uploads/${img}`);
+    }
+
+    return prodotto;
   } catch (error) {
     console.error(error);
     handleAuthError(error);
     throw error;
   }
 };
+
 
 export const updateProdotto = async (id, prodotto, immagini) => {
   try {
@@ -167,6 +184,7 @@ export const updateProdotto = async (id, prodotto, immagini) => {
     throw error;
   }
 };
+
 
 export const deleteProdotto = async (id) => {
   try {
@@ -198,13 +216,23 @@ export const getProdottiByCategoria = async (categoria) => {
     if (response.status === 401) throw { response: { status: 401 } };
     if (!response.ok) throw new Error('Errore durante il recupero dei prodotti per categoria');
 
-    return await response.json();
+    const data = await response.json();
+
+    // Aggiungi il prefisso '/uploads/' alle immagini
+    data.forEach(prodotto => {
+      if (prodotto.immagini) {
+        prodotto.immagini = prodotto.immagini.map(img => `/uploads/${img}`);
+      }
+    });
+
+    return data;
   } catch (error) {
     console.error(error);
     handleAuthError(error);
     throw error;
   }
 };
+
 
 export const getProdottiBySottocategoria = async (categoria, sottocategoria) => {
   try {
@@ -215,7 +243,16 @@ export const getProdottiBySottocategoria = async (categoria, sottocategoria) => 
     if (response.status === 401) throw { response: { status: 401 } };
     if (!response.ok) throw new Error('Errore durante il recupero dei prodotti per sottocategoria');
 
-    return await response.json();
+    const data = await response.json();
+
+    // Aggiungi il prefisso '/uploads/' alle immagini
+    data.forEach(prodotto => {
+      if (prodotto.immagini) {
+        prodotto.immagini = prodotto.immagini.map(img => `/uploads/${img}`);
+      }
+    });
+
+    return data;
   } catch (error) {
     console.error(error);
     handleAuthError(error);

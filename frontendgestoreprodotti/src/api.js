@@ -69,6 +69,14 @@ export const fetchProducts = async () => {
     }
     
     const products = await response.json();
+    
+    // Aggiungi il prefisso '/uploads/' alle immagini
+    products.forEach(product => {
+      if (product.images) {
+        product.images = product.images.map(img => `/uploads/${img}`);
+      }
+    });
+
     console.log('Prodotti ricevuti:', products);
     return products;
   } catch (error) {
@@ -76,6 +84,7 @@ export const fetchProducts = async () => {
     throw error;
   }
 };
+
 
 export const createProduct = async (product, images) => {
   try {
@@ -139,6 +148,12 @@ export const fetchProductByCode = async (id) => {
     }
     
     const product = await response.json();
+    
+    // Aggiungi il prefisso '/uploads/' alle immagini
+    if (product.images) {
+      product.images = product.images.map(img => `/uploads/${img}`);
+    }
+
     console.log('Prodotto ricevuto per codice:', product);
     return product;
   } catch (error) {
