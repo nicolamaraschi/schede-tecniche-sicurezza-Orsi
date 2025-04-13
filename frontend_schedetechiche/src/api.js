@@ -224,17 +224,25 @@ export const fetchDocumentByCode = async (token, documentCode) => {
   return document; // Restituisce il documento trovato
 };
 
-export const createProduct = async (token, newProductName, newProductCode) => {
+export const createProduct = async (token, newProductName, newProductCode, images = []) => {
   // Usa il token fornito o ottienilo automaticamente
   const authToken = token || getAuthToken();
   
+  const formData = new FormData();
+  formData.append('name', newProductName);
+  formData.append('code', newProductCode);
+  
+  // Aggiungi le immagini al FormData, se ci sono
+  images.forEach(image => {
+    formData.append('images', image);
+  });
+
   const response = await fetch(`${API_BASE_URL}/products`, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
       'Authorization': `Bearer ${authToken}`,
     },
-    body: JSON.stringify({ name: newProductName, code: newProductCode }),
+    body: formData,
   });
 
   if (!response.ok) {
@@ -249,6 +257,7 @@ export const createProduct = async (token, newProductName, newProductCode) => {
   
   return await response.json();
 };
+
 
 export const fetchProducts = async (token) => {
   // Usa il token fornito o ottienilo automaticamente
@@ -269,9 +278,19 @@ export const fetchProducts = async (token) => {
     }
     throw new Error('Errore nel recupero dei prodotti');
   }
-  
-  return await response.json();
+
+  const products = await response.json();
+
+  // Aggiungi il prefisso '/uploads/' alle immagini se presente
+  products.forEach(product => {
+    if (product.images) {
+      product.images = product.images.map(img => `/uploads/${img}`);
+    }
+  });
+
+  return products;
 };
+
 
 export const deleteProduct = async (token, productCode, productName) => {
   // Usa il token fornito o ottienilo automaticamente

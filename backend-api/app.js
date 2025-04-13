@@ -16,37 +16,39 @@ dotenv.config();
 const app = express();
 
 app.use(cors({
-  /*
-  origin: [
-    'http://localhost:3000',   // Per il dev locale
-    'http://localhost:3001',
-    'http://localhost:3002',
-    'http://localhost:3003',
-    'http://localhost:3004',
-    'http://localhost:3005',
-    'http://localhost:3006',
-    'http://localhost:3007',
-   'https://catalogo-frontend-75r2hgknz-nicolamaraschis-projects.vercel.app', 
-    'https://frontendgestoreprodotti.vercel.app',
-    'https://frontendschedetechiche.vercel.app',
-    'https://catalogo-frontend-five.vercel.app',
-  ],
-  */
-  origin: '*',
+  origin: '*', // Per ora accetta richieste da tutte le origini
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-
 // Middleware per il parsing del corpo delle richieste
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve i file statici dalla cartella 'uploads'
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Collega al database MongoDB senza opzioni deprecate
 mongoose.connect(process.env.MONGO_URI)
-.then(() => console.log('Connected to MongoDB'))
-.catch(err => console.error('Failed to connect to MongoDB:', err));
+  .then(() => console.log('Connected to MongoDB'))
+  .catch(err => console.error('Failed to connect to MongoDB:', err));
+
+// Importa il middleware di Multer
+const upload = require('./middleware/upload'); // Percorso corretto del file upload
+
+// Nuova route per l'upload dei file
+app.post('/api/upload', upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: 'Nessun file caricato' });
+  }
+
+  // Rispondi con successo e dettagli del file caricato
+  res.status(200).json({
+    message: 'File caricato con successo',
+    filename: req.file.filename,
+    url: `/uploads/${req.file.filename}`  // URL per scaricare il file
+  });
+});
 
 // Usa le rotte
 app.use('/api/auth', authRoutes);
