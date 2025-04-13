@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Card, Row, Col, Form, Button, ListGroup, Modal, Alert } from 'react-bootstrap';
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5002/api/prodottiCatalogo';
+const API_URL = 'https://orsi-production.up.railway.app/api/prodottiCatalogo';
 
 const SubcategoryManagement = () => {
   // Stati per i dati

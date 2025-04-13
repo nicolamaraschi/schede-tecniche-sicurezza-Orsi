@@ -155,7 +155,7 @@ const Main = () => {
                         <td>{doc.documentCode}</td>
                         <td>
                           <a 
-                            href={`http://localhost:5002/${doc.fileUrl}`} 
+                            href={`https://orsi-production.up.railway.app/api/${doc.fileUrl}`} 
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="view-button"
