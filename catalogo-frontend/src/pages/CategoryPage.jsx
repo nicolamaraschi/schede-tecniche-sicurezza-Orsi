@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/api';
 import ProductList from '../components/products/ProductList';
 import CategoryMenu from '../components/products/CategoryMenu';
 import ProductFilter from '../components/products/ProductFilter';
@@ -28,44 +28,43 @@ const CategoryPage = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        let productsEndpoint;
+        let productEndpoint;
         let subcategoriesEndpoint;
         
         // Determina gli endpoint in base ai parametri URL
         if (subcategoryId && categoryId) {
-          // Codifica correttamente i parametri nell'URL
           const encodedCategory = encodeURIComponent(categoryId);
           const encodedSubcategory = encodeURIComponent(subcategoryId);
           
-          productsEndpoint = `http://localhost:5002/api/prodottiCatalogo/categoria/${encodedCategory}/sottocategoria/${encodedSubcategory}`;
-          subcategoriesEndpoint = `http://localhost:5002/api/prodottiCatalogo/categoria/${encodedCategory}/sottocategorie`;
+          productEndpoint = `/prodottiCatalogo/categoria/${encodedCategory}/sottocategoria/${encodedSubcategory}`;
+          subcategoriesEndpoint = `/prodottiCatalogo/categoria/${encodedCategory}/sottocategorie`;
         } else if (categoryId) {
           const encodedCategory = encodeURIComponent(categoryId);
-          productsEndpoint = `http://localhost:5002/api/prodottiCatalogo/categoria/${encodedCategory}`;
-          subcategoriesEndpoint = `http://localhost:5002/api/prodottiCatalogo/categoria/${encodedCategory}/sottocategorie`;
+          productEndpoint = `/prodottiCatalogo/categoria/${encodedCategory}`;
+          subcategoriesEndpoint = `/prodottiCatalogo/categoria/${encodedCategory}/sottocategorie`;
         } else {
-          productsEndpoint = 'http://localhost:5002/api/prodottiCatalogo/prodotti';
+          productEndpoint = '/prodottiCatalogo/prodotti';
         }
         
-        console.log("Fetching products from:", productsEndpoint);
+        console.log("Fetching products from:", productEndpoint);
         
-        // Carica prodotti
-        const productsResponse = await axios.get(productsEndpoint);
-        console.log("Products response:", productsResponse.data);
+        // Carica prodotti usando l'API centralizzata
+        const productsResponse = await api.get(productEndpoint);
+        console.log("Products response:", productsResponse);
         
-        if (Array.isArray(productsResponse.data)) {
-          setProducts(productsResponse.data);
+        if (Array.isArray(productsResponse)) {
+          setProducts(productsResponse);
         } else {
-          console.error("API non ha restituito un array:", productsResponse.data);
+          console.error("API non ha restituito un array:", productsResponse);
           setProducts([]);
         }
         
         // Carica sottocategorie se necessario
         if (subcategoriesEndpoint) {
           console.log("Fetching subcategories from:", subcategoriesEndpoint);
-          const subcategoriesResponse = await axios.get(subcategoriesEndpoint);
-          console.log("Subcategories response:", subcategoriesResponse.data);
-          setSubcategories(Array.isArray(subcategoriesResponse.data) ? subcategoriesResponse.data : []);
+          const subcategoriesResponse = await api.get(subcategoriesEndpoint);
+          console.log("Subcategories response:", subcategoriesResponse);
+          setSubcategories(Array.isArray(subcategoriesResponse) ? subcategoriesResponse : []);
         }
         
         setLoading(false);

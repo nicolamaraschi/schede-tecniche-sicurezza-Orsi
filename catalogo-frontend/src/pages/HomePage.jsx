@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/api';
 import ProductCard from '../components/products/ProductCard';
-// Importiamo le icone da react-icons
-import { FaHome, FaIndustry } from 'react-icons/fa'; // Icone per categorie
-import { MdVerified, MdLocalShipping, MdSupportAgent, MdEco } from 'react-icons/md'; // Icone per benefici
+import { FaHome, FaIndustry } from 'react-icons/fa';
+import { MdVerified, MdLocalShipping, MdSupportAgent, MdEco } from 'react-icons/md';
 import './HomePage.css';
 
 const HomePage = () => {
@@ -12,7 +11,7 @@ const HomePage = () => {
   const [categories] = useState([
     { id: 'Domestico', name: 'Domestico', icon: <FaHome size={32} /> },
     { id: 'Industriale', name: 'Industriale', icon: <FaIndustry size={32} /> }
-  ]); // Categorie fisse con icone
+  ]);
   const [subcategories, setSubcategories] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -23,10 +22,10 @@ const HomePage = () => {
         setLoading(true);
         
         // Fetch all products and select a few for the featured section
-        const productsResponse = await axios.get('http://localhost:5002/api/prodottiCatalogo/prodotti');
+        const productsResponse = await api.get('/prodottiCatalogo/prodotti');
         
         // Take 4 random products or fewer if there are less than 4
-        const allProducts = productsResponse.data;
+        const allProducts = productsResponse;
         const randomProducts = allProducts
           .sort(() => 0.5 - Math.random())
           .slice(0, Math.min(4, allProducts.length));
@@ -34,8 +33,8 @@ const HomePage = () => {
         setFeaturedProducts(randomProducts);
         
         // Fetch subcategories
-        const subcategoriesResponse = await axios.get('http://localhost:5002/api/prodottiCatalogo/sottocategorie');
-        setSubcategories(subcategoriesResponse.data || {});
+        const subcategoriesResponse = await api.get('/prodottiCatalogo/sottocategorie');
+        setSubcategories(subcategoriesResponse || {});
         
         setLoading(false);
       } catch (err) {

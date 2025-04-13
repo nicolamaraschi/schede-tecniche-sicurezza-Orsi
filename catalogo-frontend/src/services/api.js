@@ -1,19 +1,11 @@
 import axios from 'axios';
 
-// Rimuovi OGNI spazio e gestisci fallback
-const API_URL = (process.env.REACT_APP_API_URL || 'https://orsi-production.up.railway.app/api')
-  .trim()
-  .replace(/\s+/g, '');
+// Usa sempre un URL relativo per il proxy di Vercel o l'URL assoluto come fallback
+const API_URL = '/api';
+const FALLBACK_URL = 'https://orsi-production.up.railway.app/api';
 
 console.group('🔍 API Configuration');
-console.log('Raw Environment URL:', process.env.REACT_APP_API_URL);
-console.log('Cleaned Base URL:', API_URL);
-console.log('URL Type:', typeof API_URL);
-console.log('URL Validity:', {
-  exists: !!API_URL,
-  length: API_URL.length,
-  isValid: API_URL.startsWith('http')
-});
+console.log('Using API URL:', API_URL);
 console.groupEnd();
 
 const api = axios.create({
@@ -28,22 +20,14 @@ const api = axios.create({
 // Interceptor di richiesta
 api.interceptors.request.use(
   (config) => {
-    // Override per tentativi di connessione a localhost
+    // Gestione di URL hardcoded a localhost
     if (config.url?.includes('localhost')) {
-      config.baseURL = API_URL;
-      config.url = config.url.replace('http://localhost:5002/api', '');
+      config.url = config.url.replace(/http:\/\/localhost:5002\/api/, '');
     }
 
     console.group('🌐 Request Details');
     console.log('Full Request URL:', `${config.baseURL}${config.url}`);
     console.log('Method:', config.method);
-    console.log('Headers:', config.headers);
-    
-    // Log payload per richieste POST/PUT
-    if (['post', 'put', 'patch'].includes(config.method?.toLowerCase())) {
-      console.log('Request Payload:', config.data);
-    }
-    
     console.groupEnd();
 
     return config;
@@ -51,65 +35,38 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Interceptor di risposta
+// Interceptor per gestire errori di rete
 api.interceptors.response.use(
   (response) => {
     console.group('✅ Response Success');
     console.log('Status:', response.status);
     console.log('Data Length:', JSON.stringify(response.data).length);
-    console.log('Data Type:', typeof response.data);
     console.groupEnd();
 
     return response.data;
   },
   (error) => {
-    console.group('❌ Detailed API Error');
-    console.error('Error Context:', {
-      name: error.name,
-      message: error.message,
-      code: error.code
-    });
-
-    // Analisi dettagliata dell'errore
-    if (error.response) {
-      console.error('Server Response:', {
-        status: error.response.status,
-        data: error.response.data,
-        headers: error.response.headers
-      });
-
-      return Promise.reject({
-        status: error.response.status,
-        message: error.response.data?.message || 'Errore del server',
-        details: error.response.data,
-        fullError: error
-      });
-    } 
+    console.group('❌ API Error');
+    console.error('Error Context:', error.message);
     
-    if (error.request) {
-      console.error('Request Details:', {
-        method: error.request.method,
-        url: error.request.url,
-        readyState: error.request.readyState
-      });
-
-      return Promise.reject({
-        message: 'Nessuna risposta ricevuta dal server',
-        details: {
-          method: error.request.method,
-          url: error.request.url
-        },
-        fullError: error
-      });
+    // Tenta di utilizzare il FALLBACK_URL se la richiesta originale fallisce
+    if (error.message === 'Network Error' && error.config && !error.config._isRetry) {
+      console.log('Attempting fallback to direct API URL...');
+      
+      const originalRequest = error.config;
+      originalRequest._isRetry = true;
+      originalRequest.baseURL = FALLBACK_URL;
+      
+      return axios(originalRequest)
+        .then(response => response.data)
+        .catch(fallbackError => {
+          console.error('Fallback request also failed:', fallbackError.message);
+          return Promise.reject(fallbackError);
+        });
     }
-
-    // Errore generico di configurazione
-    console.error('Configurazione richiesta errata', error);
-    return Promise.reject({
-      message: 'Errore nella configurazione della richiesta',
-      details: error.message,
-      fullError: error
-    });
+    
+    console.groupEnd();
+    return Promise.reject(error);
   }
 );
 
