@@ -9,6 +9,7 @@ import ProductDetailPage from './pages/ProductDetailPage';
 import CategoryPage from './pages/CategoryPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ErrorBoundary from './components/common/ErrorBoundary';
+import APIDiagnosticTool from './components/APIDiagnosticTool'; // Importa il componente
 import './App.css';
 
 function App() {
@@ -40,6 +41,19 @@ function App() {
                     <ProductDetailPage />
                   </ErrorBoundary>
                 } />
+                
+                {/* Nuova route per diagnostica */}
+                <Route 
+                  path="/debug" 
+                  element={
+                    process.env.NODE_ENV === 'development' ? (
+                      <APIDiagnosticTool />
+                    ) : (
+                      <NotFoundPage />
+                    )
+                  } 
+                />
+                
                 <Route path="*" element={<NotFoundPage />} />
               </Route>
             </Routes>
