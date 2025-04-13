@@ -15,10 +15,9 @@ dotenv.config();
 
 const app = express();
 
-// Configurazione CORS più permissiva per le porte 3000-3007
 app.use(cors({
   origin: [
-    'http://localhost:3000',
+    'http://localhost:3000',   // Per il dev locale
     'http://localhost:3001',
     'http://localhost:3002',
     'http://localhost:3003',
@@ -26,12 +25,15 @@ app.use(cors({
     'http://localhost:3005',
     'http://localhost:3006',
     'http://localhost:3007',
-    process.env.RAILWAY_STATIC_URL, // Aggiungi questa riga
-    'https://' + process.env.RAILWAY_STATIC_URL // E questa
+    'https://frontend-catalogoprodotti.vercel.app', // Per il frontend su Vercel
+    'https://frontendgestoreprodotti.vercel.app',
+    'https://frontendschedetechiche.vercel.app',
+    'https://catalogo-frontend-five.vercel.app',
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
 
 // Middleware per il parsing del corpo delle richieste
 app.use(express.json());
