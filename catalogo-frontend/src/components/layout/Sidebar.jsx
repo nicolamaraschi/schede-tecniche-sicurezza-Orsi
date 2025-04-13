@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import api from '../../services/api';
+import axios from 'axios';
 import './Sidebar.css';
 
 const Sidebar = ({ isOpen, onClose }) => {
@@ -17,10 +17,10 @@ const Sidebar = ({ isOpen, onClose }) => {
     const fetchAllSubcategories = async () => {
       try {
         setIsLoading(true);
-        // Usa il servizio API centralizzato
-        const response = await api.get('/prodottiCatalogo/sottocategorie');
-        console.log("Sidebar subcategories:", response);
-        setSubcategories(response || {});
+        // URL diretto a Railway
+        const response = await axios.get('https://orsi-production.up.railway.app/api/prodottiCatalogo/sottocategorie');
+        console.log("Sidebar subcategories:", response.data);
+        setSubcategories(response.data || {});
         setIsLoading(false);
       } catch (error) {
         console.error('Errore nel recupero delle sottocategorie:', error);

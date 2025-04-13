@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import api from '../../services/api';
+import axios from 'axios';
 import './CategoryMenu.css';
 
 const CategoryMenu = ({ loading = false, activeCategory = null, activeSubcategory = null }) => {
@@ -15,10 +15,10 @@ const CategoryMenu = ({ loading = false, activeCategory = null, activeSubcategor
     const fetchAllSubcategories = async () => {
       try {
         setIsLoading(true);
-        // Usa il servizio API centralizzato
-        const response = await api.get('/prodottiCatalogo/sottocategorie');
-        console.log("All subcategories response:", response);
-        setSubcategories(response || {});
+        // URL diretto a Railway
+        const response = await axios.get('https://orsi-production.up.railway.app/api/prodottiCatalogo/sottocategorie');
+        console.log("All subcategories response:", response.data);
+        setSubcategories(response.data || {});
         setIsLoading(false);
       } catch (error) {
         console.error('Errore nel recupero delle sottocategorie:', error);

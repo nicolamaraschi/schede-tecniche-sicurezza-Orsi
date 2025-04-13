@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../services/api';
+import axios from 'axios';
 import ProductCard from '../components/products/ProductCard';
 import { FaHome, FaIndustry } from 'react-icons/fa';
 import { MdVerified, MdLocalShipping, MdSupportAgent, MdEco } from 'react-icons/md';
@@ -22,10 +22,10 @@ const HomePage = () => {
         setLoading(true);
         
         // Fetch all products and select a few for the featured section
-        const productsResponse = await api.get('/prodottiCatalogo/prodotti');
+        const productsResponse = await axios.get('https://orsi-production.up.railway.app/api/prodottiCatalogo/prodotti');
         
         // Take 4 random products or fewer if there are less than 4
-        const allProducts = productsResponse;
+        const allProducts = productsResponse.data;
         const randomProducts = allProducts
           .sort(() => 0.5 - Math.random())
           .slice(0, Math.min(4, allProducts.length));
@@ -33,8 +33,8 @@ const HomePage = () => {
         setFeaturedProducts(randomProducts);
         
         // Fetch subcategories
-        const subcategoriesResponse = await api.get('/prodottiCatalogo/sottocategorie');
-        setSubcategories(subcategoriesResponse || {});
+        const subcategoriesResponse = await axios.get('https://orsi-production.up.railway.app/api/prodottiCatalogo/sottocategorie');
+        setSubcategories(subcategoriesResponse.data || {});
         
         setLoading(false);
       } catch (err) {
