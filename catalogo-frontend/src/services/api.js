@@ -1,8 +1,7 @@
 import axios from 'axios';
 
-// Create an instance of axios with default config
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL, // Usa la variabile d'ambiente
+  baseURL: process.env.REACT_APP_API_URL, 
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -10,40 +9,77 @@ const api = axios.create({
   }
 });
 
-// Add a request interceptor to handle authorization if needed
+// Debug log per variabile d'ambiente
+console.log('API Base URL:', {
+  url: process.env.REACT_APP_API_URL,
+  type: typeof process.env.REACT_APP_API_URL,
+  trimmed: process.env.REACT_APP_API_URL?.trim(),
+  exists: !!process.env.REACT_APP_API_URL
+});
+
 api.interceptors.request.use( 
   (config) => {
-    // You can add auth token here if needed
+    console.log('Request Interceptor:', {
+      baseURL: config.baseURL,
+      url: config.url,
+      method: config.method,
+      fullURL: `${config.baseURL}${config.url}`
+    });
     return config;
   },
   (error) => {
+    console.error('Request Interceptor Error:', error);
     return Promise.reject(error);
   }
 );
 
-// Add a response interceptor to handle errors
 api.interceptors.response.use(
   (response) => {
+    console.log('Response Interceptor Success:', {
+      status: response.status,
+      data: response.data
+    });
     return response.data;
   },
   (error) => {
-    // Handle error responses
+    console.error('Detailed API Error:', {
+      name: error.name,
+      message: error.message,
+      code: error.code,
+      config: {
+        baseURL: error.config?.baseURL,
+        url: error.config?.url,
+        method: error.config?.method
+      },
+      response: error.response ? {
+        status: error.response.status,
+        data: error.response.data,
+        headers: error.response.headers
+      } : null,
+      request: error.request ? {
+        method: error.request.method,
+        path: error.request.path
+      } : null
+    });
+
     if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
-      console.error('API Error:', error.response.data);
-      return Promise.reject(error.response.data);
-    } else if (error.request) {
-      // The request was made but no response was received
-      console.error('API Error: No response received', error.request);
       return Promise.reject({
-        message: 'No response from server. Please check your connection.'
+        status: error.response.status,
+        message: error.response.data?.message || 'Server error',
+        details: error.response.data
+      });
+    } else if (error.request) {
+      return Promise.reject({
+        message: 'No response received from server',
+        request: {
+          method: error.request.method,
+          path: error.request.path
+        }
       });
     } else {
-      // Something happened in setting up the request that triggered an Error
-      console.error('API Error:', error.message);
       return Promise.reject({
-        message: 'An error occurred while setting up the request.'
+        message: 'Error setting up the request',
+        errorMessage: error.message
       });
     }
   }
