@@ -2,7 +2,7 @@
 import { getToken, isTokenExpired, removeToken } from './services/authService';
 
 // Usa la variabile d'ambiente per la base URL
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5002/api'; // Default per lo sviluppo
+const API_BASE_URL = 'https://orsi-production.up.railway.app/api'; // Default per lo sviluppo
 
 // Funzione di utilità per ottenere il token corrente o reindirizzare se è scaduto
 const getAuthToken = () => {

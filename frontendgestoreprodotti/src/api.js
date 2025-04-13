@@ -1,5 +1,5 @@
-const API_URL = process.env.REACT_APP_API_URL + '/gestoreProdotti'; // API per il gestore prodotti
-const AUTH_URL = process.env.REACT_APP_API_URL + '/auth'; // API per l'autenticazione
+const API_URL = 'https://orsi-production.up.railway.app/api/gestoreProdotti';
+const AUTH_URL = 'https://orsi-production.up.railway.app/api/auth';
 
 // Funzione per ottenere l'intestazione di autorizzazione
 export const getAuthHeader = () => {
@@ -12,18 +12,13 @@ export const loginUtente = async (userData) => {
   try {
     const response = await fetch(`${AUTH_URL}/login`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(userData),
     });
 
     const data = await response.json();
 
-    if (!response.ok) {
-      console.error('Login failed with status:', response.status, 'and message:', data);
-      throw new Error(data.message || 'Error logging in user');
-    }
+    if (!response.ok) throw new Error(data.message || 'Error logging in user');
     return data;
   } catch (error) {
     console.error('Login error:', error);
