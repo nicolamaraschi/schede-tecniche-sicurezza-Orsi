@@ -1,10 +1,27 @@
+// categoryService.js
 import api from './api';
 
 const categoryService = {
+  // Metodo di test per la connessione
+  testConnection: async () => {
+    try {
+      console.log('Tentativo di connessione API');
+      const result = await api.get('/prodottiCatalogo/sottocategorie');
+      console.log('Connessione riuscita:', result);
+      return result;
+    } catch (error) {
+      console.error('Errore di connessione:', error);
+      throw error;
+    }
+  },
+
   // Get all categories
   getAllCategories: async () => {
     try {
-      return await api.get('/gestoreProdotti/categorie');
+      console.log('Fetching categories from: /gestoreProdotti/categorie');
+      const result = await api.get('/gestoreProdotti/categorie');
+      console.log('Categories fetched:', result);
+      return result;
     } catch (error) {
       console.error('Error fetching categories:', error);
       throw error;
@@ -14,7 +31,10 @@ const categoryService = {
   // Get a single category by ID
   getCategoryById: async (categoryId) => {
     try {
-      return await api.get(`/gestoreProdotti/categorie/${categoryId}`);
+      console.log(`Fetching category with ID: ${categoryId}`);
+      const result = await api.get(`/gestoreProdotti/categorie/${categoryId}`);
+      console.log('Category fetched:', result);
+      return result;
     } catch (error) {
       console.error(`Error fetching category with ID ${categoryId}:`, error);
       throw error;
@@ -24,7 +44,10 @@ const categoryService = {
   // Get all subcategories in the catalog
   getAllSubcategories: async () => {
     try {
-      return await api.get('/prodottiCatalogo/sottocategorie');
+      console.log('Fetching all subcategories');
+      const result = await api.get('/prodottiCatalogo/sottocategorie');
+      console.log('Subcategories fetched:', result);
+      return result;
     } catch (error) {
       console.error('Error fetching subcategories:', error);
       throw error;
