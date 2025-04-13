@@ -16,6 +16,7 @@ dotenv.config();
 const app = express();
 
 app.use(cors({
+  /*
   origin: [
     'http://localhost:3000',   // Per il dev locale
     'http://localhost:3001',
@@ -30,6 +31,8 @@ app.use(cors({
     'https://frontendschedetechiche.vercel.app',
     'https://catalogo-frontend-five.vercel.app',
   ],
+  */
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
