@@ -70,13 +70,7 @@ export const fetchProducts = async () => {
     
     const products = await response.json();
     
-    // Aggiungi il prefisso '/uploads/' alle immagini
-    products.forEach(product => {
-      if (product.images) {
-        product.images = product.images.map(img => `/uploads/${img}`);
-      }
-    });
-
+    // Non modificare i percorsi delle immagini, usa direttamente gli URL forniti dall'API
     console.log('Prodotti ricevuti:', products);
     return products;
   } catch (error) {
@@ -149,11 +143,7 @@ export const fetchProductByCode = async (id) => {
     
     const product = await response.json();
     
-    // Aggiungi il prefisso '/uploads/' alle immagini
-    if (product.images) {
-      product.images = product.images.map(img => `/uploads/${img}`);
-    }
-
+    // Non modificare i percorsi delle immagini, usa direttamente gli URL forniti dall'API
     console.log('Prodotto ricevuto per codice:', product);
     return product;
   } catch (error) {
@@ -188,7 +178,7 @@ export const updateProduct = async (productId, updatedProductData, images, image
       });
     }
 
-    // Aggiungi le immagini da rimuovere
+    // Aggiungi le immagini da rimuovere (usa gli URL completi)
     if (imagesToRemove && imagesToRemove.length > 0) {
       imagesToRemove.forEach(image => {
         formData.append('removeImages', image);
@@ -255,7 +245,6 @@ export const deleteProduct = async (id) => {
     throw error;
   }
 };
-
 // Funzioni per le API delle categorie
 export const fetchCategories = async () => {
   try {
