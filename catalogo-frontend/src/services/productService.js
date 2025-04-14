@@ -5,14 +5,8 @@ const productService = {
   getAllProducts: async () => {
     try {
       const response = await api.get('/prodottiCatalogo/prodotti');
-      // Aggiungi il prefisso '/uploads/' per ogni immagine
-      const products = response.data.map(product => {
-        if (product.immagini && Array.isArray(product.immagini)) {
-          product.immagini = product.immagini.map(img => `/uploads/${img}`);
-        }
-        return product;
-      });
-      return products;
+      // Non modificare i percorsi delle immagini, sono già URL completi
+      return response;
     } catch (error) {
       console.error('Error fetching products:', error);
       throw error;
@@ -20,13 +14,10 @@ const productService = {
   },
   
 
-  // Get a single product by ID
   getProductById: async (productId) => {
     try {
       const response = await api.get(`/prodottiCatalogo/prodotti/${productId}`);
-      if (response.data.immagini && Array.isArray(response.data.immagini)) {
-        response.data.immagini = response.data.immagini.map(img => `/uploads/${img}`);
-      }
+      // Non modificare i percorsi delle immagini
       return response.data;
     } catch (error) {
       console.error(`Error fetching product with ID ${productId}:`, error);
@@ -37,6 +28,7 @@ const productService = {
   // Get products by category from the catalog endpoints
   getProductsByCategory: async (category) => {
     try {
+      // Non modificare i percorsi delle immagini
       return await api.get(`/prodottiCatalogo/categoria/${category}`);
     } catch (error) {
       console.error(`Error fetching products for category ${category}:`, error);
@@ -44,9 +36,11 @@ const productService = {
     }
   },
 
+
   // Get products by subcategory from the catalog endpoints
   getProductsBySubcategory: async (category, subcategory) => {
     try {
+      // Non modificare i percorsi delle immagini
       return await api.get(`/prodottiCatalogo/categoria/${category}/sottocategoria/${subcategory}`);
     } catch (error) {
       console.error(`Error fetching products for subcategory ${subcategory}:`, error);
@@ -54,8 +48,8 @@ const productService = {
     }
   },
   
-  // Create a new product
-  createProduct: async (productData) => {
+   // Create a new product
+   createProduct: async (productData) => {
     try {
       // Using FormData to handle file uploads
       const formData = new FormData();
@@ -74,11 +68,14 @@ const productService = {
         });
       }
       
-      return await api.post('/prodottiCatalogo/prodotti', formData, {
+      const response = await api.post('/prodottiCatalogo/prodotti', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
+      
+      // Non modificare i percorsi delle immagini nella risposta
+      return response;
     } catch (error) {
       console.error('Error creating product:', error);
       throw error;
@@ -114,11 +111,14 @@ const productService = {
         });
       }
       
-      return await api.put(`/prodottiCatalogo/prodotti/${productId}`, formData, {
+      const response = await api.put(`/prodottiCatalogo/prodotti/${productId}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
+      
+      // Non modificare i percorsi delle immagini nella risposta
+      return response;
     } catch (error) {
       console.error(`Error updating product with ID ${productId}:`, error);
       throw error;
