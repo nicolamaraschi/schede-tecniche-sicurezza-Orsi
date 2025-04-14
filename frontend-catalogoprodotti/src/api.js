@@ -118,13 +118,7 @@ export const getAllProdotti = async () => {
     const data = await response.json();
     console.log('Prodotti recuperati:', data);
 
-    // Aggiungi il prefisso '/uploads/' alle immagini
-    data.forEach(prodotto => {
-      if (prodotto.immagini) {
-        prodotto.immagini = prodotto.immagini.map(img => `/uploads/${img}`);
-      }
-    });
-
+    // Non modificare i percorsi delle immagini, usa direttamente gli URL forniti dall'API
     return data;
   } catch (error) {
     console.error(error);
@@ -145,11 +139,7 @@ export const getProdottoById = async (id) => {
 
     const prodotto = await response.json();
 
-    // Aggiungi il prefisso '/uploads/' alle immagini
-    if (prodotto.immagini) {
-      prodotto.immagini = prodotto.immagini.map(img => `/uploads/${img}`);
-    }
-
+    // Non modificare i percorsi delle immagini, usa direttamente gli URL forniti dall'API
     return prodotto;
   } catch (error) {
     console.error(error);
@@ -218,13 +208,7 @@ export const getProdottiByCategoria = async (categoria) => {
 
     const data = await response.json();
 
-    // Aggiungi il prefisso '/uploads/' alle immagini
-    data.forEach(prodotto => {
-      if (prodotto.immagini) {
-        prodotto.immagini = prodotto.immagini.map(img => `/uploads/${img}`);
-      }
-    });
-
+    // Non modificare i percorsi delle immagini, usa direttamente gli URL forniti dall'API
     return data;
   } catch (error) {
     console.error(error);
@@ -245,13 +229,7 @@ export const getProdottiBySottocategoria = async (categoria, sottocategoria) => 
 
     const data = await response.json();
 
-    // Aggiungi il prefisso '/uploads/' alle immagini
-    data.forEach(prodotto => {
-      if (prodotto.immagini) {
-        prodotto.immagini = prodotto.immagini.map(img => `/uploads/${img}`);
-      }
-    });
-
+    // Non modificare i percorsi delle immagini, usa direttamente gli URL forniti dall'API
     return data;
   } catch (error) {
     console.error(error);

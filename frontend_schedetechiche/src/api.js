@@ -20,6 +20,7 @@ const getAuthToken = () => {
   return localStorage.getItem('token');
 };
 
+
 // API per i documenti
 export const fetchDocuments = async (token, productCode = '') => {
   // Usa il token fornito o ottienilo automaticamente
@@ -51,16 +52,17 @@ export const fetchDocuments = async (token, productCode = '') => {
   console.log('Documents fetched:', data); // Debugging the fetched data
 
   // Mappa i documenti per includere il codice documento
+  // Non modificare il campo fileUrl, usalo così come viene restituito dall'API
   const documents = data.map(doc => ({
     idDocument: doc.idDocument,
     productName: doc.productName,
     productCode: doc.productCode,
     documentType: doc.documentType,
-    fileUrl: doc.fileUrl,
-    documentCode: doc.documentCode, // Aggiungi il codice del documento
+    fileUrl: doc.fileUrl, // Usa l'URL così com'è, senza manipolazioni
+    documentCode: doc.documentCode,
   }));
 
-  return documents; // Restituisce i documenti con il codice documento incluso
+  return documents;
 };
 
 export const uploadDocument = async (token, selectedFile, selectedProductName, uploadType, documentCode) => {
@@ -105,8 +107,6 @@ export const uploadDocument = async (token, selectedFile, selectedProductName, u
     throw error;
   }
 };
-
-// Funzione corretta di deleteDocument per api.js
 
 export const deleteDocument = async (token, documentId) => {
   if (!documentId) {
@@ -212,13 +212,14 @@ export const fetchDocumentByCode = async (token, documentCode) => {
   console.log('Document fetched:', data); // Debugging the fetched data
 
   // Mappa il documento per includere tutti i campi necessari
+  // Non modificare il campo fileUrl, usalo così come viene restituito dall'API
   const document = {
     idDocument: data.idDocument,
     documentCode: data.documentCode,
     documentType: data.type, // Cambiato per corrispondere alla risposta
-    fileUrl: data.fileUrl,
-    productName: data.productName, // Aggiunto il nome del prodotto
-    productCode: data.productCode,   // Aggiunto il codice del prodotto
+    fileUrl: data.fileUrl, // Usa l'URL così com'è, senza manipolazioni
+    productName: data.productName,
+    productCode: data.productCode,
   };
 
   return document; // Restituisce il documento trovato
@@ -279,15 +280,8 @@ export const fetchProducts = async (token) => {
     throw new Error('Errore nel recupero dei prodotti');
   }
 
+  // Non modificare i percorsi delle immagini, usa direttamente gli URL forniti dall'API
   const products = await response.json();
-
-  // Aggiungi il prefisso '/uploads/' alle immagini se presente
-  products.forEach(product => {
-    if (product.images) {
-      product.images = product.images.map(img => `/uploads/${img}`);
-    }
-  });
-
   return products;
 };
 
@@ -316,7 +310,6 @@ export const deleteProduct = async (token, productCode, productName) => {
 
   return response.json(); // Opzionale, puoi restituire il messaggio di successo
 };
-
 // API per l'autenticazione
 export const loginUser = async (username, password) => {
   const response = await fetch(`${API_BASE_URL}/auth/login`, {
