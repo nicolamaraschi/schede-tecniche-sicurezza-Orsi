@@ -256,10 +256,10 @@ export const registerUtente = async (utente) => {
 
 export const loginUtente = async (credentials) => {
   try {
-    console.log('Login URL:', `${AUTH_URL}/login`);
+    console.log('Login URL:', `${API_BASE}/login`);
     console.log('Credentials:', credentials);
 
-    const response = await fetch(`${AUTH_URL}/login`, {
+    const response = await fetch(`${API_BASEL}/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(credentials),
