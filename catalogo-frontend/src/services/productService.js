@@ -17,8 +17,9 @@ const productService = {
   getProductById: async (productId) => {
     try {
       const response = await api.get(`/prodottiCatalogo/prodotti/${productId}`);
-      // Non modificare i percorsi delle immagini
-      return response.data;
+      // Assicurati che response.data sia un oggetto valido
+      console.log("Prodotto ricevuto:", response);
+      return response; // Potrebbe essere necessario usare response invece di response.data
     } catch (error) {
       console.error(`Error fetching product with ID ${productId}:`, error);
       throw error;
