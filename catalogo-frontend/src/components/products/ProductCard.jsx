@@ -34,7 +34,7 @@ const ProductCard = ({ product }) => {
     ? prezzo.toFixed(2) 
     : '0.00';
   
-  // Get the first image or use a placeholder
+  // Usa direttamente l'URL completo dall'API
   const mainImage = immagini && Array.isArray(immagini) && immagini.length > 0 
     ? immagini[0] 
     : '/placeholder-product.jpg';
