@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const path = require('path');
+const { uploadToCloudinary } = require('./utils/cloudinaryUpload');
+const fileUpload = require('express-fileupload');
 
 const authRoutes = require('./routes/auth');
 const documentRoutes = require('./routes/documents');
@@ -27,6 +29,36 @@ app.use(express.urlencoded({ extended: true }));
 
 // Serve i file statici dalla cartella 'uploads'
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Nuova route per l'upload su Cloudinary
+app.post('/api/upload/cloudinary', upload.single('file'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: 'Nessun file caricato' });
+  }
+
+  try {
+    // Determina il tipo di risorsa in base al mimetype
+    const resourceType = req.file.mimetype === 'application/pdf' ? 'raw' : 'image';
+    
+    // Carica il file su Cloudinary
+    const result = await uploadToCloudinary(
+      req.file.buffer,
+      req.body.folder || 'uploads',
+      resourceType
+    );
+
+    // Rispondi con l'URL Cloudinary
+    res.status(200).json({
+      message: 'File caricato con successo',
+      url: result.secure_url,
+      public_id: result.public_id
+    });
+  } catch (error) {
+    console.error('Errore durante il caricamento su Cloudinary:', error);
+    res.status(500).json({ message: 'Errore durante il caricamento del file' });
+  }
+});
+
 
 // Collega al database MongoDB senza opzioni deprecate
 mongoose.connect(process.env.MONGO_URI)
@@ -67,6 +99,11 @@ const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+app.use(fileUpload({
+  useTempFiles: false, // Non salvare in file temporanei
+  limits: { fileSize: 10 * 1024 * 1024 } // Limite di 10 MB
+}));
 
 // Esporta l'app per i test
 module.exports = app;

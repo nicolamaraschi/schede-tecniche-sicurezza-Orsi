@@ -1,106 +1,199 @@
-// src/pages/Login.js
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { loginUtente, isAuthenticated } from '../api';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { FaUser, FaLock, FaSignInAlt, FaExclamationCircle, FaInfoCircle, FaSpinner } from 'react-icons/fa';
 import './Login.css';
-import { FaEnvelope, FaLock } from 'react-icons/fa';
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isSessionExpired, setIsSessionExpired] = useState(false);
+  const [error, setError] = useState('');
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  
   const navigate = useNavigate();
-
-  // Verifica se è stata effettuata una redirezione a causa di sessione scaduta
+  const location = useLocation();
+  
   useEffect(() => {
-    // Verifica se c'è un parametro nella URL che indica sessione scaduta
-    const urlParams = new URLSearchParams(window.location.search);
-    const sessionExpired = urlParams.get('sessionExpired');
+    // Verifica sessione scaduta dal parametro URL
+    const searchParams = new URLSearchParams(location.search);
+    const sessionExpired = searchParams.get('sessionExpired');
     
     if (sessionExpired === 'true') {
-      setIsSessionExpired(true);
       setError('La tua sessione è scaduta. Effettua nuovamente il login.');
     }
     
-    // Se l'utente è già autenticato, reindirizza alla home
-    if (isAuthenticated()) {
+    // Verifica se l'utente è già autenticato
+    const token = localStorage.getItem('authToken');
+    if (token) {
       navigate('/home');
     }
-  }, [navigate]);
-
+    
+    // Carica username salvato se "ricordami" era attivo
+    const savedUsername = localStorage.getItem('rememberedUsername');
+    if (savedUsername) {
+      setUsername(savedUsername);
+      setRememberMe(true);
+    }
+  }, [location, navigate]);
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    
+    // Validazione form
+    if (!username.trim() || !password.trim()) {
+      setError('Inserisci username e password');
+      return;
+    }
+    
     setLoading(true);
-
+    setError('');
+    
     try {
-      console.log('Attempting login with:', { username, password });
-      const response = await loginUtente({ username, password });
-      console.log('Login successful, token:', response.token);
+      const response = await fetch('https://orsi-production.up.railway.app/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
       
-      // Reimposta il flag sessione scaduta
-      setIsSessionExpired(false);
+      const data = await response.json();
       
-      // Reindirizza dopo il login
-      navigate('/home');
+      if (response.ok && data.token) {
+        // Gestione "ricordami"
+        if (rememberMe) {
+          localStorage.setItem('rememberedUsername', username);
+        } else {
+          localStorage.removeItem('rememberedUsername');
+        }
+        
+        localStorage.setItem('authToken', data.token);
+        navigate('/home');
+      } else {
+        setError(data.message || 'Nome utente o password non validi');
+      }
     } catch (err) {
-      setError('Nome utente o password errati');
       console.error('Login error:', err);
+      setError('Errore durante il login. Riprova più tardi.');
     } finally {
       setLoading(false);
     }
   };
+  
+  const togglePasswordVisibility = () => {
+    setIsPasswordVisible(!isPasswordVisible);
+  };
 
   return (
-    <div className="container mt-5 d-flex justify-content-center">
-      <div className="card shadow-lg p-4 rounded" style={{ maxWidth: '400px' }}>
-        <h2 className="mb-4 text-center">Login</h2>
+    <div className="catalog-login-page">
+      <div className="login-content-wrapper">
+        <div className="login-brand-section">
+          <h1 className="login-brand-title">Catalogo <span>Prodotti</span></h1>
+          <p className="login-brand-tagline">Sistema di gestione catalogo e schede prodotti</p>
+        </div>
         
-        {isSessionExpired && (
-          <div className="alert alert-warning">
-            La tua sessione è scaduta. Per favore, effettua nuovamente il login.
+        <div className="login-form-container">
+          <div className="login-header">
+            <div className="login-icon-wrapper">
+              <FaUser className="login-icon" />
+            </div>
+            <h2>Accesso Admin</h2>
+            <p>Accedi per gestire i prodotti del catalogo</p>
           </div>
-        )}
-        
-        {error && !isSessionExpired && (
-          <div className="alert alert-danger">{error}</div>
-        )}
-        
-        <form onSubmit={handleSubmit}>
-          <div className="mb-3">
-            <label htmlFor="username" className="form-label">
-              <FaEnvelope className="me-2" />
-              Nome Utente:
-            </label>
-            <input 
-              type="text" 
-              className="form-control" 
-              id="username" 
-              value={username} 
-              onChange={(e) => setUsername(e.target.value)} 
-              required 
-            />
+          
+          {error && (
+            <div className="login-alert error">
+              <FaExclamationCircle />
+              <span>{error}</span>
+            </div>
+          )}
+          
+          {location.search.includes('sessionExpired') && (
+            <div className="login-alert info">
+              <FaInfoCircle />
+              <span>Sessione scaduta per inattività. Effettua nuovamente il login.</span>
+            </div>
+          )}
+          
+          <form onSubmit={handleSubmit} className="login-form">
+            <div className="form-group">
+              <label htmlFor="username">
+                <FaUser className="input-icon" />
+                <span>Username</span>
+              </label>
+              <input
+                type="text"
+                id="username"
+                placeholder="Inserisci il tuo username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                disabled={loading}
+                autoComplete="username"
+              />
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="password">
+                <FaLock className="input-icon" />
+                <span>Password</span>
+              </label>
+              <div className="password-field">
+                <input
+                  type={isPasswordVisible ? "text" : "password"}
+                  id="password"
+                  placeholder="Inserisci la tua password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={loading}
+                  autoComplete="current-password"
+                />
+                <button 
+                  type="button" 
+                  className="password-toggle"
+                  onClick={togglePasswordVisibility}
+                >
+                  {isPasswordVisible ? "Nascondi" : "Mostra"}
+                </button>
+              </div>
+            </div>
+            
+            <div className="form-options">
+              <div className="remember-option">
+                <input
+                  type="checkbox"
+                  id="remember-me"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  disabled={loading}
+                />
+                <label htmlFor="remember-me">Ricordami</label>
+              </div>
+              
+              <a href="#/" className="forgot-password">Password dimenticata?</a>
+            </div>
+            
+            <button 
+              type="submit" 
+              className="login-submit-button"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <FaSpinner className="spinner-icon" />
+                  <span>Autenticazione...</span>
+                </>
+              ) : (
+                <>
+                  <FaSignInAlt />
+                  <span>Accedi</span>
+                </>
+              )}
+            </button>
+          </form>
+          
+          <div className="login-footer">
+            <p>&copy; {new Date().getFullYear()} EG Store. Tutti i diritti riservati.</p>
           </div>
-          <div className="mb-3">
-            <label htmlFor="password" className="form-label">
-              <FaLock className="me-2" />
-              Password:
-            </label>
-            <input 
-              type="password" 
-              className="form-control" 
-              id="password" 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)} 
-              required 
-            />
-          </div>
-          <button type="submit" className="btn btn-primary w-100" disabled={loading}>
-            {loading ? 'Accedendo...' : 'Accedi'}
-          </button>
-        </form>
+        </div>
       </div>
     </div>
   );

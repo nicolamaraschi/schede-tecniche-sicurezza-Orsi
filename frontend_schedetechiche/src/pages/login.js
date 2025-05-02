@@ -1,34 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Row, Col, Card, Form, Button, Alert, Spinner, Container } from 'react-bootstrap';
-import { FontAwesomeIcon } from 'react-icons/fa';
-import { FaUser, FaLock, FaSignInAlt, FaExclamationCircle, FaInfoCircle } from 'react-icons/fa';
-import './Login.css';
+import { useNavigate } from 'react-router-dom';
+import './login.css';
 
-const Login = () => {
+const Login = ({ setIsAuthenticated }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [success, setSuccess] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
-  
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+
   const navigate = useNavigate();
-  const location = useLocation();
-  
-  // Check for query parameters like session expiration
+
   useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const sessionExpired = searchParams.get('sessionExpired');
-    
-    if (sessionExpired === 'true') {
-      setError('La tua sessione è scaduta. Effettua nuovamente il login.');
-    }
-    
-    // Check if the user is already authenticated
-    const token = localStorage.getItem('authToken');
+    // Check if user is already authenticated
+    const token = localStorage.getItem('token');
     if (token) {
-      navigate('/home');
+      navigate('/');
     }
     
     // Load saved username if remember me was used
@@ -37,30 +26,32 @@ const Login = () => {
       setUsername(savedUsername);
       setRememberMe(true);
     }
-  }, [location, navigate]);
-  
-  const handleSubmit = async (e) => {
+  }, [navigate]);
+
+  const handleLogin = async (e) => {
     e.preventDefault();
     
-    // Form validation
     if (!username.trim() || !password.trim()) {
-      setError('Inserisci username e password');
+      setError('Username e password sono obbligatori');
       return;
     }
     
     setLoading(true);
     setError('');
-    
+    setSuccess('');
+
     try {
       const response = await fetch('https://orsi-production.up.railway.app/api/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ username, password }),
       });
-      
+
       const data = await response.json();
-      
-      if (response.ok && data.token) {
+
+      if (response.ok) {
         // Handle remember me
         if (rememberMe) {
           localStorage.setItem('rememberedUsername', username);
@@ -68,157 +59,112 @@ const Login = () => {
           localStorage.removeItem('rememberedUsername');
         }
         
-        localStorage.setItem('authToken', data.token);
+        localStorage.setItem('token', data.token);
+        setIsAuthenticated(true);
+        setSuccess('Login effettuato con successo!');
         
-        // Redirect to home after successful login
-        navigate('/home');
+        setTimeout(() => {
+          navigate('/');
+        }, 1000);
       } else {
-        setError(data.message || 'Nome utente o password non validi');
+        setError(data.message || 'Credenziali non valide. Riprova.');
+        setIsAuthenticated(false);
       }
     } catch (err) {
-      console.error('Login error:', err);
-      setError('Errore durante il login. Riprova più tardi.');
-    } finally {
-      setLoading(false);
+      console.error('Error during login:', err);
+      setError('Errore di connessione al server. Riprova più tardi.');
+      setIsAuthenticated(false);
     }
+
+    setLoading(false);
   };
-  
+
   const togglePasswordVisibility = () => {
     setIsPasswordVisible(!isPasswordVisible);
   };
 
   return (
-    <Container fluid className="login-page-container">
-      <Row className="justify-content-center align-items-center min-vh-100">
-        <Col md={8} lg={6} xl={5}>
-          {/* Brand Header */}
-          <div className="text-center mb-4">
-            <h1 className="brand-title">Catalogo <span>Prodotti</span></h1>
-            <p className="brand-subtitle">Sistema di gestione catalogo e schede prodotti</p>
+    <div className="login-page">
+      <div className="login-container">
+        <div className="login-branding">
+          <h1 className="app-title">Tech<span>Sheets</span></h1>
+          <p className="app-description">Sistema di gestione schede tecniche e di sicurezza</p>
+        </div>
+        
+        <div className="login-card">
+          <div className="login-header">
+            <h2>Accedi al tuo account</h2>
+            <p>Inserisci le tue credenziali per continuare</p>
           </div>
           
-          <Card className="login-card shadow">
-            <Card.Body className="p-4 p-md-5">
-              {/* Login Header */}
-              <div className="text-center mb-4">
-                <div className="login-icon-container">
-                  <FaUser size={24} className="login-icon" />
-                </div>
-                <h2 className="login-title">Accesso Admin</h2>
-                <p className="login-subtitle">Accedi per gestire i prodotti del catalogo</p>
-              </div>
-              
-              {/* Error Message */}
-              {error && (
-                <Alert variant="danger" className="d-flex align-items-center mb-4">
-                  <FaExclamationCircle className="me-2" />
-                  <span>{error}</span>
-                </Alert>
-              )}
-              
-              {/* Session expiration info box */}
-              {location.search.includes('sessionExpired') && (
-                <Alert variant="info" className="d-flex align-items-center mb-4">
-                  <FaInfoCircle className="me-2" />
-                  <span>Sessione scaduta per inattività. Effettua nuovamente il login.</span>
-                </Alert>
-              )}
-              
-              {/* Login Form */}
-              <Form onSubmit={handleSubmit}>
-                <Form.Group className="mb-4" controlId="username">
-                  <Form.Label className="d-flex align-items-center">
-                    <FaUser className="me-2 text-primary" />
-                    <span>Username</span>
-                  </Form.Label>
-                  <Form.Control 
-                    type="text"
-                    placeholder="Inserisci il tuo username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    disabled={loading}
-                    className="form-control-lg"
-                    autoComplete="username"
-                  />
-                </Form.Group>
-                
-                <Form.Group className="mb-4" controlId="password">
-                  <Form.Label className="d-flex align-items-center">
-                    <FaLock className="me-2 text-primary" />
-                    <span>Password</span>
-                  </Form.Label>
-                  <div className="password-input-wrapper">
-                    <Form.Control
-                      type={isPasswordVisible ? "text" : "password"}
-                      placeholder="Inserisci la tua password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      disabled={loading}
-                      className="form-control-lg"
-                      autoComplete="current-password"
-                    />
-                    <Button 
-                      variant="link" 
-                      className="password-toggle-btn"
-                      onClick={togglePasswordVisibility}
-                    >
-                      {isPasswordVisible ? "Nascondi" : "Mostra"}
-                    </Button>
-                  </div>
-                </Form.Group>
-                
-                <Form.Group className="mb-4 d-flex justify-content-between align-items-center">
-                  <Form.Check
-                    type="checkbox"
-                    id="remember-me"
-                    label="Ricordami"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    disabled={loading}
-                  />
-                  
-                  <Button variant="link" className="p-0 text-decoration-none">
-                    Password dimenticata?
-                  </Button>
-                </Form.Group>
-                
-                <Button 
-                  variant="primary" 
-                  type="submit" 
+          {error && <div className="message-box error">{error}</div>}
+          {success && <div className="message-box success">{success}</div>}
+          
+          <form onSubmit={handleLogin} className="login-form">
+            <div className="form-group">
+              <label htmlFor="username">Username</label>
+              <input
+                id="username"
+                type="text"
+                placeholder="Inserisci il tuo username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                disabled={loading}
+                autoComplete="username"
+              />
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="password">Password</label>
+              <div className="password-input-container">
+                <input
+                  id="password"
+                  type={isPasswordVisible ? "text" : "password"}
+                  placeholder="Inserisci la tua password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   disabled={loading}
-                  className="w-100 py-3 d-flex justify-content-center align-items-center"
+                  autoComplete="current-password"
+                />
+                <button 
+                  type="button" 
+                  className="password-toggle" 
+                  onClick={togglePasswordVisibility}
                 >
-                  {loading ? (
-                    <>
-                      <Spinner 
-                        as="span"
-                        animation="border"
-                        size="sm"
-                        role="status"
-                        aria-hidden="true"
-                        className="me-2"
-                      />
-                      <span>Accesso in corso...</span>
-                    </>
-                  ) : (
-                    <>
-                      <FaSignInAlt className="me-2" />
-                      <span>Accedi</span>
-                    </>
-                  )}
-                </Button>
-              </Form>
-              
-              <div className="text-center mt-4">
-                <p className="login-footer-text">
-                  &copy; {new Date().getFullYear()} Catalogo Prodotti. Tutti i diritti riservati.
-                </p>
+                  {isPasswordVisible ? "Nascondi" : "Mostra"}
+                </button>
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
+            </div>
+            
+            <div className="form-options">
+              <div className="remember-me">
+                <input
+                  type="checkbox"
+                  id="remember-me"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  disabled={loading}
+                />
+                <label htmlFor="remember-me">Ricordami</label>
+              </div>
+              <a href="#/" className="forgot-password">Password dimenticata?</a>
+            </div>
+            
+            <button
+              type="submit"
+              className={`login-button ${loading ? 'loading' : ''}`}
+              disabled={loading}
+            >
+              {loading ? 'Accesso in corso...' : 'Accedi'}
+            </button>
+          </form>
+          
+          <div className="login-footer">
+            <p>&copy; {new Date().getFullYear()} TechSheets. Tutti i diritti riservati.</p>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 
