@@ -17,8 +17,15 @@ dotenv.config();
 
 const app = express();
 
+// Usa express-fileupload PRIMA di tutte le route che usano file
+app.use(fileUpload({
+  useTempFiles: false, // Non salvare in file temporanei
+  limits: { fileSize: 10 * 1024 * 1024 } // Limite di 10 MB
+}));
+
+// CORS
 app.use(cors({
-  origin: '*', // Per ora accetta richieste da tutte le origini
+  origin: '*', 
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -31,18 +38,18 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Nuova route per l'upload su Cloudinary
-app.post('/api/upload/cloudinary', upload.single('file'), async (req, res) => {
-  if (!req.file) {
+app.post('/api/upload/cloudinary', async (req, res) => {
+  if (!req.files || !req.files.file) {
     return res.status(400).json({ message: 'Nessun file caricato' });
   }
 
   try {
     // Determina il tipo di risorsa in base al mimetype
-    const resourceType = req.file.mimetype === 'application/pdf' ? 'raw' : 'image';
+    const resourceType = req.files.file.mimetype === 'application/pdf' ? 'raw' : 'image';
     
     // Carica il file su Cloudinary
     const result = await uploadToCloudinary(
-      req.file.buffer,
+      req.files.file.data,
       req.body.folder || 'uploads',
       resourceType
     );
@@ -59,30 +66,12 @@ app.post('/api/upload/cloudinary', upload.single('file'), async (req, res) => {
   }
 });
 
-
 // Collega al database MongoDB senza opzioni deprecate
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('Failed to connect to MongoDB:', err));
 
-// Importa il middleware di Multer
-const upload = require('./middlewares/uploadGestoreProdotti');
-
-// Nuova route per l'upload dei file
-app.post('/api/upload', upload.single('file'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ message: 'Nessun file caricato' });
-  }
-
-  // Rispondi con successo e dettagli del file caricato
-  res.status(200).json({
-    message: 'File caricato con successo',
-    filename: req.file.filename,
-    url: `/uploads/${req.file.filename}`  // URL per scaricare il file
-  });
-});
-
-// Usa le rotte
+// Altre route API
 app.use('/api/auth', authRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/products', productRoutes);
@@ -100,10 +89,4 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-app.use(fileUpload({
-  useTempFiles: false, // Non salvare in file temporanei
-  limits: { fileSize: 10 * 1024 * 1024 } // Limite di 10 MB
-}));
-
-// Esporta l'app per i test
 module.exports = app;
