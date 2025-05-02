@@ -2,17 +2,18 @@ const mongoose = require('mongoose');
 
 // Definizione dello schema per il manager dei prodotti
 const productManagerSchema = new mongoose.Schema({
-  name: { type: String, required: true }, // Nome del prodotto
-  description: { type: String }, // Descrizione del prodotto
-  images: [{ type: String }], // Array di URL delle immagini
+  name: { type: String, required: true },
+  description: { type: String },
+  images: [{ type: String }], // Array di URL delle immagini Cloudinary
+  cloudinaryIds: [{ type: String }], // Array di ID Cloudinary per le immagini
   category: { 
-    type: mongoose.Schema.Types.ObjectId, // Riferimento alla categoria
-    ref: 'Category', // Nome del modello della categoria
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Category',
     required: true 
   },
   subcategory: { 
-    id: { type: mongoose.Schema.Types.ObjectId, required: true }, // ID della sottocategoria
-    name: { type: String, required: true } // Nome della sottocategoria
+    id: { type: mongoose.Schema.Types.ObjectId, required: true },
+    name: { type: String, required: true }
   }
 });
 

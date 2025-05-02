@@ -1,13 +1,15 @@
 const Document = require('../models/document');
 const Product = require('../models/product');
-const fs = require('fs');
-const path = require('path');
+const { uploadToCloudinary } = require('../utils/cloudinaryUpload');
 
 // Carica un nuovo documento
 exports.uploadDocument = async (req, res) => {
   try {
-    const { productName, type, documentCode } = req.body; // Aggiungi documentCode all'input
-    const fileUrl = req.file.path;
+    const { productName, type, documentCode } = req.body;
+    
+    if (!req.file) {
+      return res.status(400).json({ message: 'Nessun file caricato' });
+    }
 
     // Verifica se il prodotto esiste in base al nome
     const product = await Product.findOne({ name: productName });
@@ -15,20 +17,33 @@ exports.uploadDocument = async (req, res) => {
       return res.status(404).json({ message: 'Product not found' });
     }
 
-    // Crea un nuovo documento, includendo documentCode
-    const newDocument = new Document({ 
-      productId: product._id, 
-      type, 
-      fileUrl, 
-      documentCode  // Aggiungi il campo documentCode
+    // Carica il file su Cloudinary
+    const uploadResult = await uploadToCloudinary(
+      req.file.buffer, 
+      'documents', 
+      'raw' // Per i PDF
+    );
+
+    // Crea un nuovo documento utilizzando l'URL di Cloudinary
+    const newDocument = new Document({
+      productId: product._id,
+      type,
+      documentCode,
+      fileUrl: uploadResult.secure_url,
+      cloudinaryId: uploadResult.public_id // Salva l'ID per poterlo eliminare in seguito
     });
     
     await newDocument.save();
-    res.status(201).json({ message: 'Document uploaded successfully', document: newDocument });
+    res.status(201).json({ 
+      message: 'Document uploaded successfully', 
+      document: newDocument 
+    });
   } catch (error) {
+    console.error('Upload error:', error);
     res.status(500).json({ message: error.message });
   }
 };
+
 
 
 
@@ -108,12 +123,6 @@ exports.getDocumentByCode = async (req, res) => {
 };
 
 
-
-
-
-
-
-
 // Ottieni tutti i documenti
 exports.getAllDocuments = async (req, res) => {
   try {
@@ -140,42 +149,31 @@ exports.getAllDocuments = async (req, res) => {
 
 
 
-// Funzione per eliminare un documento e il suo file
+// Aggiorna anche la funzione deleteDocument per eliminare i file da Cloudinary
 exports.deleteDocument = async (req, res) => {
   try {
     const { documentId } = req.params;
-
+    
     if (!documentId) return res.status(400).json({ message: 'Document ID is required' });
 
     // Trova il documento nel database
     const document = await Document.findById(documentId);
-
     if (!document) return res.status(404).json({ message: 'Document not found' });
 
-    // Percorso del file da eliminare
-    const filePath = path.join(__dirname, '..', document.fileUrl);
-    console.log('File path to delete:', filePath);
+    // Elimina il file da Cloudinary se è presente l'ID
+    if (document.cloudinaryId) {
+      await cloudinary.uploader.destroy(document.cloudinaryId, { resource_type: 'raw' });
+    }
 
-    // Elimina il file fisico
-    fs.unlink(filePath, async (err) => {
-      if (err) {
-        console.error('Error deleting file:', err);
-        return res.status(500).json({ message: 'Error deleting file' });
-      }
-
-      // Elimina il documento dal database
-      await Document.findByIdAndDelete(documentId);
-      console.log('File deleted successfully:', filePath);
-
-      // Restituisce un messaggio di successo
-      res.status(200).json({ message: 'Document and file deleted successfully' });
-    });
+    // Elimina il documento dal database
+    await Document.findByIdAndDelete(documentId);
+    
+    res.status(200).json({ message: 'Document deleted successfully' });
   } catch (error) {
     console.error('Error deleting document:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 };
-
 
 
 

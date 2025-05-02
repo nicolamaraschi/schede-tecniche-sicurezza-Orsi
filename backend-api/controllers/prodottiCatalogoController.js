@@ -1,7 +1,7 @@
 // backend-api/controllers/prodottiCatalogoController.js
 const ProdottoCatalogo = require('../models/prodottoCatalogo');
-const fs = require('fs');
-const path = require('path');
+const { uploadToCloudinary } = require('../utils/cloudinaryUpload'); // La tua utility
+const cloudinary = require('cloudinary').v2;
 
 // Funzione helper per ottenere i valori predefiniti in base al tipo di imballaggio
 const getPackagingDefaults = (tipoImballaggio) => {
@@ -38,73 +38,104 @@ const getPackagingDefaults = (tipoImballaggio) => {
 // Crea un nuovo prodotto
 exports.createProdotto = async (req, res) => {
   try {
-    const immagini = req.files.map(file => file.path);
-    
-    // Ottieni i dati del form
-    let prodottoData = { ...req.body, immagini };
-    
-    // Gestisci i valori predefiniti per il tipo di imballaggio
+    const immaginiCloudinary = [];
+    // Carica le immagini su Cloudinary se presenti
+    if (req.files && req.files.length > 0) {
+      console.log(`Uploading ${req.files.length} files...`);
+      for (const file of req.files) {
+        try {
+          const result = await uploadToCloudinary(
+            file.buffer,       // Buffer del file
+            'product_images',  // Cartella su Cloudinary
+            'image'            // Tipo di risorsa
+          );
+          immaginiCloudinary.push({
+            url: result.secure_url,
+            publicId: result.public_id
+          });
+          console.log(`Uploaded ${file.originalname} to ${result.public_id}`);
+        } catch (uploadError) {
+          console.error(`Failed to upload ${file.originalname}:`, uploadError);
+          // Decidi se interrompere o continuare in caso di errore di upload parziale
+          // Qui continuiamo, ma potresti voler restituire un errore 400
+        }
+      }
+    }
+
+    // Prepara i dati del prodotto
+    let prodottoData = {
+      ...req.body,
+      immagini: immaginiCloudinary // Array di oggetti { url, publicId }
+    };
+
+    // Applica valori di default per imballaggio
     if (prodottoData.tipoImballaggio) {
       const defaults = getPackagingDefaults(prodottoData.tipoImballaggio);
-      
-      // Usa i valori predefiniti solo se non sono stati forniti nell'input
-      if (!prodottoData.pezziPerCartone) prodottoData.pezziPerCartone = defaults.pezziPerCartone;
-      if (!prodottoData.cartoniPerEpal) prodottoData.cartoniPerEpal = defaults.cartoniPerEpal;
-      if (!prodottoData.pezziPerEpal) prodottoData.pezziPerEpal = defaults.pezziPerEpal;
+      if (prodottoData.pezziPerCartone === undefined || prodottoData.pezziPerCartone === null || prodottoData.pezziPerCartone === '') prodottoData.pezziPerCartone = defaults.pezziPerCartone;
+      if (prodottoData.cartoniPerEpal === undefined || prodottoData.cartoniPerEpal === null || prodottoData.cartoniPerEpal === '') prodottoData.cartoniPerEpal = defaults.cartoniPerEpal;
+      if (prodottoData.pezziPerEpal === undefined || prodottoData.pezziPerEpal === null || prodottoData.pezziPerEpal === '') prodottoData.pezziPerEpal = defaults.pezziPerEpal;
     }
-    
-    // Verifica che la categoria sia valida
-    if (!['Domestico', 'Industriale'].includes(prodottoData.categoria)) {
-      return res.status(400).json({ message: 'Categoria non valida. Deve essere "Domestico" o "Industriale"' });
+
+    // Validazione categoria
+    if (!prodottoData.categoria || !['Domestico', 'Industriale'].includes(prodottoData.categoria)) {
+      // Se fallisce qui, le immagini già caricate rimarranno su Cloudinary.
+      // Considera una logica di cleanup se necessario.
+      return res.status(400).json({ message: 'Categoria non valida o mancante. Deve essere "Domestico" o "Industriale".' });
     }
-    
-    // Converti i valori numerici
-    if (prodottoData.pezziPerCartone) prodottoData.pezziPerCartone = Number(prodottoData.pezziPerCartone);
-    if (prodottoData.cartoniPerEpal) prodottoData.cartoniPerEpal = Number(prodottoData.cartoniPerEpal);
-    if (prodottoData.pezziPerEpal) prodottoData.pezziPerEpal = Number(prodottoData.pezziPerEpal);
-    if (prodottoData.prezzo) prodottoData.prezzo = Number(prodottoData.prezzo);
-    
-    // Crea e salva il prodotto
+
+    // Conversione tipi numerici (assicurati che i campi vuoti diventino null o gestiscili)
+    prodottoData.pezziPerCartone = prodottoData.pezziPerCartone ? Number(prodottoData.pezziPerCartone) : null;
+    prodottoData.cartoniPerEpal = prodottoData.cartoniPerEpal ? Number(prodottoData.cartoniPerEpal) : null;
+    prodottoData.pezziPerEpal = prodottoData.pezziPerEpal ? Number(prodottoData.pezziPerEpal) : null;
+    prodottoData.prezzo = prodottoData.prezzo ? Number(prodottoData.prezzo) : null;
+
+    // Crea e salva il prodotto nel database
     const prodotto = new ProdottoCatalogo(prodottoData);
     await prodotto.save();
-    
+
+    console.log(`Product created successfully with ID: ${prodotto._id}`);
     res.status(201).json(prodotto);
+
   } catch (error) {
     console.error('Errore nella creazione del prodotto:', error);
-    res.status(400).json({ message: error.message });
+    // Potrebbe essere utile loggare req.body per debug (escludendo dati sensibili)
+    // console.error('Request Body:', req.body);
+
+    // Se l'errore avviene dopo l'upload, potresti voler eliminare le immagini caricate.
+    // Implementa logica di rollback/cleanup se necessario. Esempio:
+    // if (immaginiCloudinary && immaginiCloudinary.length > 0) {
+    //   console.log('Rolling back Cloudinary uploads due to error...');
+    //   const idsToDelete = immaginiCloudinary.map(img => img.publicId);
+    //   cloudinary.api.delete_resources(idsToDelete, { resource_type: 'image' })
+    //     .catch(cleanupErr => console.error('Error during Cloudinary cleanup:', cleanupErr));
+    // }
+
+    res.status(400).json({ message: `Errore nella creazione del prodotto: ${error.message}` });
   }
 };
+
 
 // Ottieni tutti i prodotti
 exports.getAllProdotti = async (req, res) => {
   try {
-    // Opzionalmente filtra per categoria se specificata nella query
     const filter = {};
+    // Filtro per categoria
     if (req.query.categoria && ['Domestico', 'Industriale'].includes(req.query.categoria)) {
       filter.categoria = req.query.categoria;
     }
-    
-    // Escludi i prodotti "dummy" che iniziano con "_sottocategoria_"
+    // Escludi prodotti "dummy" per sottocategorie
     filter.nome = { $not: { $regex: /^_sottocategoria_/ } };
-    
+
     const prodotti = await ProdottoCatalogo.find(filter);
-    
-    // Aggiungi l'URL base per le immagini
-    const baseUrl = `${req.protocol}://${req.get('host')}/uploads/`;
-    const prodottiConUrlImmagini = prodotti.map(prodotto => {
-      const prodottoObj = prodotto.toObject();
-      return {
-        ...prodottoObj,
-        immagini: prodotto.immagini.map(img => baseUrl + path.basename(img))
-      };
-    });
-    
-    res.json(prodottiConUrlImmagini);
+
+    // I dati delle immagini (url, publicId) sono già nel documento
+    res.json(prodotti);
   } catch (error) {
     console.error('Errore nel recupero dei prodotti:', error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: `Errore nel recupero dei prodotti: ${error.message}` });
   }
 };
+
 
 // Ottieni un prodotto per ID
 exports.getProdottoById = async (req, res) => {
@@ -113,22 +144,15 @@ exports.getProdottoById = async (req, res) => {
     if (!prodotto) {
       return res.status(404).json({ message: 'Prodotto non trovato' });
     }
-
-    // Aggiungi l'URL base per le immagini
-    const baseUrl = `${req.protocol}://${req.get('host')}/uploads/`;
-    const prodottoObj = prodotto.toObject();
-    const prodottoConUrlImmagini = {
-      ...prodottoObj,
-      immagini: prodotto.immagini.map(img => baseUrl + path.basename(img))
-    };
-
-    res.json(prodottoConUrlImmagini);
+    // I dati delle immagini (url, publicId) sono già nel documento
+    res.json(prodotto);
   } catch (error) {
-    console.error('Errore nel recupero del prodotto:', error);
-    res.status(500).json({ message: error.message });
+    console.error(`Errore nel recupero del prodotto ${req.params.id}:`, error);
+    res.status(500).json({ message: `Errore nel recupero del prodotto: ${error.message}` });
   }
 };
 
+// Aggiorna un prodotto
 // Aggiorna un prodotto
 exports.updateProdotto = async (req, res) => {
   try {
@@ -137,73 +161,105 @@ exports.updateProdotto = async (req, res) => {
       return res.status(404).json({ message: 'Prodotto non trovato' });
     }
 
-    // Rimuovi le immagini specificate
+    // 1. Rimuovi Immagini Esistenti (da Cloudinary e DB)
+    // Assumi che `immaginiToRemove` sia un array di publicId
     const { immaginiToRemove } = req.body;
-    if (immaginiToRemove && Array.isArray(immaginiToRemove)) {
-      immaginiToRemove.forEach(img => {
-        const index = prodotto.immagini.indexOf(img);
-        if (index > -1) {
-          prodotto.immagini.splice(index, 1);
-          // Elimina fisicamente l'immagine dal server
-          const fullPath = path.resolve(img);
-          fs.unlink(fullPath, err => {
-            if (err) console.error('Errore durante l\'eliminazione dell\'immagine:', err);
-          });
-        }
-      });
+    let currentImages = [...prodotto.immagini]; // Copia l'array corrente
+
+    if (immaginiToRemove && Array.isArray(immaginiToRemove) && immaginiToRemove.length > 0) {
+      const publicIdsToRemove = immaginiToRemove;
+      console.log(`Removing images with publicIds: ${publicIdsToRemove.join(', ')}`);
+
+      // Elimina da Cloudinary
+      try {
+         // Nota: delete_resources è più efficiente per eliminazioni multiple
+        const deleteResult = await cloudinary.api.delete_resources(publicIdsToRemove, { resource_type: 'image' });
+        console.log('Cloudinary deletion result:', deleteResult);
+        // Verifica quali sono state effettivamente eliminate o se ci sono errori parziali
+        // const deletedIds = Object.keys(deleteResult.deleted);
+        // const failedDeletions = publicIdsToRemove.filter(id => !deletedIds.includes(id));
+        // if(failedDeletions.length > 0) console.warn(`Failed to delete from Cloudinary: ${failedDeletions.join(', ')}`);
+
+      } catch (cloudinaryError) {
+        console.error('Errore durante l\'eliminazione bulk da Cloudinary:', cloudinaryError);
+        // Potresti voler interrompere l'aggiornamento o solo loggare l'errore
+      }
+
+      // Filtra l'array nel DB
+      currentImages = currentImages.filter(img => !publicIdsToRemove.includes(img.publicId));
     }
 
-    // Aggiungi nuove immagini se ce ne sono
+    // 2. Aggiungi Nuove Immagini (a Cloudinary e DB)
     if (req.files && req.files.length > 0) {
-      prodotto.immagini.push(...req.files.map(file => file.path));
+       console.log(`Uploading ${req.files.length} new files for update...`);
+       for (const file of req.files) {
+         try {
+           const result = await uploadToCloudinary(file.buffer, 'product_images', 'image');
+           currentImages.push({
+             url: result.secure_url,
+             publicId: result.public_id
+           });
+           console.log(`Uploaded new image ${file.originalname} to ${result.public_id}`);
+         } catch (uploadError) {
+           console.error(`Failed to upload new image ${file.originalname}:`, uploadError);
+           // Gestisci errore di upload parziale
+         }
+       }
     }
 
-    // Gestisci i valori di imballaggio aggiornati
-    if (req.body.tipoImballaggio && req.body.tipoImballaggio !== prodotto.tipoImballaggio) {
-      const defaults = getPackagingDefaults(req.body.tipoImballaggio);
-      
-      // Aggiorna con i valori predefiniti solo se non sono stati esplicitamente forniti
-      if (!req.body.pezziPerCartone) req.body.pezziPerCartone = defaults.pezziPerCartone;
-      if (!req.body.cartoniPerEpal) req.body.cartoniPerEpal = defaults.cartoniPerEpal;
-      if (!req.body.pezziPerEpal) req.body.pezziPerEpal = defaults.pezziPerEpal;
+    // Assegna l'array aggiornato al prodotto
+    prodotto.immagini = currentImages;
+
+
+    // 3. Aggiorna Altri Campi del Prodotto
+    const updateData = { ...req.body };
+    delete updateData.immaginiToRemove; // Rimuovi campo non pertinente allo schema
+    delete updateData.immagini; // Rimuovi campo immagini (gestito separatamente sopra)
+
+
+    // Gestisci valori di imballaggio aggiornati
+    if (updateData.tipoImballaggio && updateData.tipoImballaggio !== prodotto.tipoImballaggio) {
+      const defaults = getPackagingDefaults(updateData.tipoImballaggio);
+      if (updateData.pezziPerCartone === undefined || updateData.pezziPerCartone === null || updateData.pezziPerCartone === '') updateData.pezziPerCartone = defaults.pezziPerCartone;
+      if (updateData.cartoniPerEpal === undefined || updateData.cartoniPerEpal === null || updateData.cartoniPerEpal === '') updateData.cartoniPerEpal = defaults.cartoniPerEpal;
+      if (updateData.pezziPerEpal === undefined || updateData.pezziPerEpal === null || updateData.pezziPerEpal === '') updateData.pezziPerEpal = defaults.pezziPerEpal;
     }
 
-    // Verifica che la categoria sia valida
-    if (req.body.categoria && !['Domestico', 'Industriale'].includes(req.body.categoria)) {
+    // Validazione categoria
+    if (updateData.categoria && !['Domestico', 'Industriale'].includes(updateData.categoria)) {
       return res.status(400).json({ message: 'Categoria non valida. Deve essere "Domestico" o "Industriale"' });
     }
-    
-    // Rimuovi il campo immaginiToRemove che non è nel modello
-    delete req.body.immaginiToRemove;
-    
-    // Converti i valori numerici
-    if (req.body.pezziPerCartone) req.body.pezziPerCartone = Number(req.body.pezziPerCartone);
-    if (req.body.cartoniPerEpal) req.body.cartoniPerEpal = Number(req.body.cartoniPerEpal);
-    if (req.body.pezziPerEpal) req.body.pezziPerEpal = Number(req.body.pezziPerEpal);
-    if (req.body.prezzo) req.body.prezzo = Number(req.body.prezzo);
 
-    // Aggiorna gli altri campi del prodotto
-    Object.keys(req.body).forEach(key => {
-      prodotto[key] = req.body[key];
+    // Conversione tipi numerici per i campi aggiornati
+    if (updateData.pezziPerCartone !== undefined) updateData.pezziPerCartone = updateData.pezziPerCartone ? Number(updateData.pezziPerCartone) : null;
+    if (updateData.cartoniPerEpal !== undefined) updateData.cartoniPerEpal = updateData.cartoniPerEpal ? Number(updateData.cartoniPerEpal) : null;
+    if (updateData.pezziPerEpal !== undefined) updateData.pezziPerEpal = updateData.pezziPerEpal ? Number(updateData.pezziPerEpal) : null;
+    if (updateData.prezzo !== undefined) updateData.prezzo = updateData.prezzo ? Number(updateData.prezzo) : null;
+
+
+    // Applica gli aggiornamenti al documento Mongoose
+    Object.keys(updateData).forEach(key => {
+       // Evita di sovrascrivere _id o altri campi protetti se necessario
+       if (prodotto[key] !== undefined && key !== '_id') {
+         prodotto[key] = updateData[key];
+       }
     });
-    
+
+    // 4. Salva il prodotto aggiornato
     await prodotto.save();
 
-    // Restituisci il prodotto aggiornato
-    const baseUrl = `${req.protocol}://${req.get('host')}/uploads/`;
-    const prodottoObj = prodotto.toObject();
-    const prodottoRisposta = {
-      ...prodottoObj,
-      immagini: prodotto.immagini.map(img => baseUrl + path.basename(img))
-    };
+    console.log(`Product updated successfully: ${prodotto._id}`);
+    res.json(prodotto); // Restituisci il prodotto aggiornato
 
-    res.json(prodottoRisposta);
   } catch (error) {
-    console.error('Errore durante l\'aggiornamento del prodotto:', error);
-    res.status(400).json({ message: error.message });
+    console.error(`Errore durante l'aggiornamento del prodotto ${req.params.id}:`, error);
+    // console.error('Request Body:', req.body); // Log per debug
+    res.status(400).json({ message: `Errore durante l'aggiornamento del prodotto: ${error.message}` });
   }
 };
 
+
+// Cancella un prodotto
 // Cancella un prodotto
 exports.deleteProdotto = async (req, res) => {
   try {
@@ -212,20 +268,30 @@ exports.deleteProdotto = async (req, res) => {
       return res.status(404).json({ message: 'Prodotto non trovato' });
     }
 
-    // Elimina fisicamente tutte le immagini del prodotto
-    prodotto.immagini.forEach(img => {
-      // Usa path.resolve per ottenere un percorso assoluto
-      const fullPath = path.resolve(img);
-      fs.unlink(fullPath, err => {
-        if (err) console.error('Errore durante l\'eliminazione dell\'immagine:', err);
-      });
-    });
+    // 1. Elimina Immagini da Cloudinary
+    if (prodotto.immagini && prodotto.immagini.length > 0) {
+      const publicIdsToDelete = prodotto.immagini.map(img => img.publicId);
+      console.log(`Deleting ${publicIdsToDelete.length} images from Cloudinary for product ${prodotto._id}...`);
+      try {
+        // Usa delete_resources per efficienza
+        await cloudinary.api.delete_resources(publicIdsToDelete, { resource_type: 'image' });
+        console.log(`Cloudinary images deleted for product ${prodotto._id}`);
+      } catch (cloudinaryError) {
+        console.error(`Errore durante l'eliminazione delle immagini da Cloudinary per il prodotto ${prodotto._id}:`, cloudinaryError);
+        // Decidi se procedere comunque con l'eliminazione dal DB o restituire errore
+        // Qui procediamo, ma logghiamo l'errore
+      }
+    }
 
+    // 2. Elimina Prodotto dal Database
     await ProdottoCatalogo.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Prodotto cancellato' });
+
+    console.log(`Product deleted successfully: ${req.params.id}`);
+    res.json({ message: 'Prodotto cancellato con successo' });
+
   } catch (error) {
-    console.error('Errore durante l\'eliminazione del prodotto:', error);
-    res.status(500).json({ message: error.message });
+    console.error(`Errore durante l'eliminazione del prodotto ${req.params.id}:`, error);
+    res.status(500).json({ message: `Errore durante l'eliminazione del prodotto: ${error.message}` });
   }
 };
 
@@ -233,31 +299,19 @@ exports.deleteProdotto = async (req, res) => {
 exports.getProdottiByCategoria = async (req, res) => {
   try {
     const { categoria } = req.params;
-    
     if (!['Domestico', 'Industriale'].includes(categoria)) {
       return res.status(400).json({ message: 'Categoria non valida' });
     }
-    
-    // Escludi i prodotti "dummy" che iniziano con "_sottocategoria_"
-    const prodotti = await ProdottoCatalogo.find({ 
+
+    const prodotti = await ProdottoCatalogo.find({
       categoria,
-      nome: { $not: { $regex: /^_sottocategoria_/ } }
+      nome: { $not: { $regex: /^_sottocategoria_/ } } // Escludi dummy
     });
-    
-    // Aggiungi l'URL base per le immagini
-    const baseUrl = `${req.protocol}://${req.get('host')}/uploads/`;
-    const prodottiConUrlImmagini = prodotti.map(prodotto => {
-      const prodottoObj = prodotto.toObject();
-      return {
-        ...prodottoObj,
-        immagini: prodotto.immagini.map(img => baseUrl + path.basename(img))
-      };
-    });
-    
-    res.json(prodottiConUrlImmagini);
+
+    res.json(prodotti); // I dati delle immagini sono già inclusi
   } catch (error) {
-    console.error('Errore nel recupero dei prodotti per categoria:', error);
-    res.status(500).json({ message: error.message });
+    console.error(`Errore nel recupero prodotti per categoria ${req.params.categoria}:`, error);
+    res.status(500).json({ message: `Errore nel recupero prodotti per categoria: ${error.message}` });
   }
 };
 
@@ -265,32 +319,23 @@ exports.getProdottiByCategoria = async (req, res) => {
 exports.getProdottiBySottocategoria = async (req, res) => {
   try {
     const { categoria, sottocategoria } = req.params;
-    
     if (!['Domestico', 'Industriale'].includes(categoria)) {
       return res.status(400).json({ message: 'Categoria non valida' });
     }
-    
-    // Escludi i prodotti "dummy" che iniziano con "_sottocategoria_"
+    if (!sottocategoria) {
+       return res.status(400).json({ message: 'Sottocategoria mancante' });
+    }
+
     const prodotti = await ProdottoCatalogo.find({
       categoria,
       sottocategoria,
-      nome: { $not: { $regex: /^_sottocategoria_/ } }
+      nome: { $not: { $regex: /^_sottocategoria_/ } } // Escludi dummy
     });
-    
-    // Aggiungi l'URL base per le immagini
-    const baseUrl = `${req.protocol}://${req.get('host')}/uploads/`;
-    const prodottiConUrlImmagini = prodotti.map(prodotto => {
-      const prodottoObj = prodotto.toObject();
-      return {
-        ...prodottoObj,
-        immagini: prodotto.immagini.map(img => baseUrl + path.basename(img))
-      };
-    });
-    
-    res.json(prodottiConUrlImmagini);
+
+    res.json(prodotti); // I dati delle immagini sono già inclusi
   } catch (error) {
-    console.error('Errore nel recupero dei prodotti per sottocategoria:', error);
-    res.status(500).json({ message: error.message });
+    console.error(`Errore nel recupero prodotti per sottocategoria ${req.params.categoria}/${req.params.sottocategoria}:`, error);
+    res.status(500).json({ message: `Errore nel recupero prodotti per sottocategoria: ${error.message}` });
   }
 };
 
