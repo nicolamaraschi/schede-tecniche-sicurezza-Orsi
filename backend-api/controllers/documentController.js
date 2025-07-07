@@ -1,6 +1,7 @@
 const Document = require('../models/document');
 const Product = require('../models/product');
 const { uploadToCloudinary } = require('../utils/cloudinaryUpload');
+const cloudinary = require('../config/cloudinary');
 
 // Carica un nuovo documento
 exports.uploadDocument = async (req, res) => {
@@ -9,6 +10,12 @@ exports.uploadDocument = async (req, res) => {
     
     if (!req.file) {
       return res.status(400).json({ message: 'Nessun file caricato' });
+    }
+
+    console.log('Buffer size before Cloudinary upload:', req.file.buffer.length);
+
+    if (!req.file.buffer || req.file.buffer.length === 0) {
+      return res.status(400).json({ message: 'Il file caricato è vuoto o corrotto.' });
     }
 
     // Verifica se il prodotto esiste in base al nome
