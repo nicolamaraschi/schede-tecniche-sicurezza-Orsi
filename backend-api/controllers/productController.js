@@ -4,13 +4,23 @@ const cloudinary = require('cloudinary').v2; // Importa l'SDK di Cloudinary v2
 
 // Crea un nuovo prodotto
 exports.createProduct = async (req, res) => {
+  console.log('Received request to create product:', req.body); // Log the incoming request body
   try {
     const { name, code } = req.body; // Modificato per includere code
+    
+    // Basic validation
+    if (!name || !code) {
+      console.error('Validation Error: Name or code is missing.');
+      return res.status(400).json({ message: 'Product name and code are required.' });
+    }
+
     const newProduct = new Product({ name, code }); // Usato code
     await newProduct.save();
+    console.log('Product created successfully:', newProduct); // Log successful creation
     res.status(201).json(newProduct);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error creating product:', error); // Log the full error object
+    res.status(500).json({ message: error.message, details: error }); // Include full error in response
   }
 };
 
