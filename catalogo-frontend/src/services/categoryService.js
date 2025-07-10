@@ -18,8 +18,8 @@ const categoryService = {
   // Get all categories
   getAllCategories: async () => {
     try {
-      console.log('Fetching categories from: /gestoreProdotti/categorie');
-      const result = await api.get('/gestoreProdotti/categorie');
+      console.log('Fetching categories from: /prodottiCatalogo/categorie');
+      const result = await api.get('/prodottiCatalogo/categorie');
       console.log('Categories fetched:', result);
       return result;
     } catch (error) {
@@ -32,7 +32,7 @@ const categoryService = {
   getCategoryById: async (categoryId) => {
     try {
       console.log(`Fetching category with ID: ${categoryId}`);
-      const result = await api.get(`/gestoreProdotti/categorie/${categoryId}`);
+      const result = await api.get(`/prodottiCatalogo/categorie/${categoryId}`);
       console.log('Category fetched:', result);
       return result;
     } catch (error) {
