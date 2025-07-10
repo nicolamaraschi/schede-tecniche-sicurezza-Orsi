@@ -229,21 +229,18 @@ export const createProduct = async (token, newProductName, newProductCode, image
   // Usa il token fornito o ottienilo automaticamente
   const authToken = token || getAuthToken();
   
-  const formData = new FormData();
-  formData.append('name', newProductName);
-  formData.append('code', newProductCode);
-  
-  // Aggiungi le immagini al FormData, se ci sono
-  images.forEach(image => {
-    formData.append('images', image);
-  });
+  const productData = {
+    name: newProductName,
+    code: newProductCode,
+  };
 
   const response = await fetch(`${API_BASE_URL}/products`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${authToken}`,
+      'Content-Type': 'application/json',
     },
-    body: formData,
+    body: JSON.stringify(productData),
   });
 
   if (!response.ok) {
