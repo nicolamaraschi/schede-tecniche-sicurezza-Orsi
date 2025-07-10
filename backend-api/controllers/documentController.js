@@ -28,7 +28,8 @@ exports.uploadDocument = async (req, res) => {
     const uploadResult = await uploadToCloudinary(
       req.file.buffer, 
       'documents', 
-      'raw' // Per i PDF
+      'raw',
+      documentCode // Aggiungi questo
     );
 
     // Crea un nuovo documento utilizzando l'URL di Cloudinary

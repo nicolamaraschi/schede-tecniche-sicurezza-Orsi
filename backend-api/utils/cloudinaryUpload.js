@@ -8,13 +8,19 @@ const streamifier = require('streamifier');
  * @param {string} resource_type - Tipo di risorsa ('image' o 'raw' per i PDF)
  * @returns {Promise} Promise con il risultato dell'upload
  */
-const uploadToCloudinary = (fileBuffer, folder, resource_type = 'image') => {
+const uploadToCloudinary = (fileBuffer, folder, resource_type = 'image', public_id = null) => {
   return new Promise((resolve, reject) => {
+    const options = {
+      folder: folder,
+      resource_type: resource_type
+    };
+
+    if (public_id) {
+      options.public_id = public_id;
+    }
+
     const uploadStream = cloudinary.uploader.upload_stream(
-      { 
-        folder: folder,
-        resource_type: resource_type
-      },
+      options,
       (error, result) => {
         if (error) return reject(error);
         resolve(result);
