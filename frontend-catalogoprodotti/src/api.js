@@ -176,6 +176,7 @@ export const updateProdotto = async (id, prodotto, immagini) => {
 };
 
 
+
 export const deleteProdotto = async (id) => {
   try {
     const token = getAuthToken();
