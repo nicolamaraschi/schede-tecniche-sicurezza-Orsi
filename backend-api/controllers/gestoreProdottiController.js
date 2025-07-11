@@ -7,19 +7,17 @@ const mongoose = require('mongoose');
 // Crea un prodotto
 exports.createProduct = async (req, res) => {
     try {
-      console.log('Request Body:', req.body);
-      console.log('Uploaded Files:', req.files);
+      const imageUrls = [];
+      const imageIds = [];
   
-      // Array per salvare gli URL Cloudinary
-      let cloudinaryUrls = [];
-      let cloudinaryIds = [];
-  
-      // Se ci sono file caricati, caricali su Cloudinary
+      // Carica i file su Cloudinary se presenti
       if (req.files && req.files.length > 0) {
         for (const file of req.files) {
+          // Usa il buffer del file dalla memoria
           const result = await uploadToCloudinary(file.buffer, 'products');
-          cloudinaryUrls.push(result.secure_url);
-          cloudinaryIds.push(result.public_id);
+          // Salva l'URL sicuro e completo
+          imageUrls.push(result.secure_url);
+          imageIds.push(result.public_id);
         }
       }
   
@@ -27,19 +25,15 @@ exports.createProduct = async (req, res) => {
         name: req.body.name,
         description: req.body.description,
         category: req.body.category,
-        subcategory: {
-          id: req.body.subcategory?.id,
-          name: req.body.subcategory?.name
-        },
-        // Salva gli URL Cloudinary
-        images: cloudinaryUrls,
-        cloudinaryIds: cloudinaryIds // Salva gli ID per gestire le eliminazioni
+        subcategory: req.body.subcategory,
+        images: imageUrls, // Salva gli URL puliti di Cloudinary
+        cloudinaryIds: imageIds
       });
   
       await product.save();
       res.status(201).json(product);
     } catch (error) {
-      console.error('Error saving product:', error);
+      console.error('Error creating product:', error);
       res.status(400).json({ message: error.message });
     }
   };
