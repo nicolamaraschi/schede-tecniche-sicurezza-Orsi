@@ -457,7 +457,7 @@ const ProductEdit = () => {
                               className={`image-item ${imagesToRemove.includes(img) ? 'marked-for-removal' : ''}`}
                             >
                               <img 
-                                src={`http://localhost:5002/${img}`} 
+                                src={img} 
                                 alt={`${selectedProduct.name} - ${index}`} 
                               />
                               <button
