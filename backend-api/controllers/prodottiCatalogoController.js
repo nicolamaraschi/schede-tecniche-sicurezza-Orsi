@@ -49,10 +49,7 @@ exports.createProdotto = async (req, res) => {
             'product_images',  // Cartella su Cloudinary
             'image'            // Tipo di risorsa
           );
-          immaginiCloudinary.push({
-            url: result.secure_url,
-            publicId: result.public_id
-          });
+          immaginiCloudinary.push(result.secure_url);
           console.log(`Uploaded ${file.originalname} to ${result.public_id}`);
         } catch (uploadError) {
           console.error(`Failed to upload ${file.originalname}:`, uploadError);
