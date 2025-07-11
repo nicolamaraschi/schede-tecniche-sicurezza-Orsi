@@ -41,6 +41,10 @@ exports.uploadDocument = async (req, res) => {
       cloudinaryId: uploadResult.public_id // Salva l'ID per poterlo eliminare in seguito
     });
     
+    // AGGIORNAMENTO: Salva l'URL dell'immagine anche nel modello del prodotto
+    product.imageUrl = uploadResult.secure_url;
+    await product.save();
+    
     await newDocument.save();
     res.status(201).json({ 
       message: 'Document uploaded successfully', 
