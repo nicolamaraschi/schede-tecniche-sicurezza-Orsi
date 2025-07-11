@@ -49,12 +49,15 @@ const ProductList = () => {
               <td>{product.name}</td>
               <td>{product.description}</td>
               <td>
-                {product.imageUrl ? (
-                  <img 
-                    src={product.imageUrl} 
-                    alt={product.name} 
-                    style={{ width: '50px', height: '50px', objectFit: 'cover' }} 
-                  />
+                {product.images && product.images.length > 0 ? (
+                  product.images.map((imgUrl, index) => (
+                    <img 
+                      key={index} 
+                      src={imgUrl} 
+                      alt={product.name} 
+                      style={{ width: '50px', height: '50px', marginRight: '5px', objectFit: 'cover' }} 
+                    />
+                  ))
                 ) : (
                   <p>Nessuna immagine</p>
                 )}
