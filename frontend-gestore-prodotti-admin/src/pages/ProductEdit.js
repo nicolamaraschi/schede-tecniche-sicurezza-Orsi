@@ -328,7 +328,7 @@ const ProductEdit = () => {
                     <td className="product-image-cell">
                       {product.images && product.images.length > 0 ? (
                         <img
-                          src={`http://localhost:5002/${product.images[0]}`}
+                          src={product.images[0]}
                           alt={product.name}
                           className="product-thumbnail"
                         />
