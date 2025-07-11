@@ -28,8 +28,8 @@ exports.createProduct = async (req, res) => {
 // Funzione per ottenere tutti i prodotti
 exports.getProducts = async (req, res) => {
   try {
-    // Ottieni tutti i prodotti senza filtri
-    const products = await Product.find({}, 'name code'); // Restituisce solo i campi 'name' e 'code'
+    // Ottieni tutti i prodotti senza filtri, includendo tutti i campi
+    const products = await Product.find({}); // Rimosso il filtro per restituire tutti i campi
     res.json(products);
   } catch (error) {
     res.status(500).json({ message: error.message });
