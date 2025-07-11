@@ -1,4 +1,4 @@
-// frontend-catalogoprodotti/src/pages/ViewProducts.js
+// frontend-catalogo-admin/src/pages/ViewProducts.js
 import React, { useEffect, useState } from 'react';
 import { getAllProdotti, deleteProdotto, getSubcategoriesByCategory } from '../api';
 import './ViewProducts.css';

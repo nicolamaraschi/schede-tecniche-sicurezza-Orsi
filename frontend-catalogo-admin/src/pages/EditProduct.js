@@ -1,4 +1,4 @@
-// frontend-catalogoprodotti/src/pages/EditProduct.js
+// frontend-catalogo-admin/src/pages/EditProduct.js
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Modal, Button, Form, Row, Col, Table, Alert, Container } from 'react-bootstrap';

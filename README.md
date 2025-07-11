@@ -1,15 +1,15 @@
-cd frontendgestoreprodotti
+cd frontend-gestore-prodotti-admin
 vercel --prod
 cd ..
 
-cd catalogo-frontend
+cd frontend-catalogo-utente
 vercel --prod
 cd ..
 
-cd frontend_schedetechiche
+cd frontend-schede-tecniche-admin
 vercel --prod
 cd ..
 
-cd frontend-catalogoprodotti
+cd frontend-catalogo-admin
 vercel --prod
 cd ..

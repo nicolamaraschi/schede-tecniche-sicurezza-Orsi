@@ -4,10 +4,10 @@
     "scripts": {
       "start": "concurrently \"npm run start:backend\" \"npm run start:schede-tecniche\" \"npm run start:catalogo-prodotti\" \"npm run start:gestore-prodotti\" \"npm run start:frontend-catalogo\"",
       "start:backend": "cd backend-api && npm start",
-      "start:schede-tecniche": "cd frontend_schedetechiche && npm start",
-      "start:catalogo-prodotti": "cd catalogo-frontend && PORT=3006 npm start",
-      "start:gestore-prodotti": "cd frontendgestoreprodotti && npm start",
-      "start:frontend-catalogo": "cd frontend-catalogoprodotti && PORT=3007 npm start"
+      "start:schede-tecniche": "cd frontend-schede-tecniche-admin && npm start",
+      "start:catalogo-prodotti": "cd frontend-catalogo-utente && PORT=3006 npm start",
+      "start:gestore-prodotti": "cd frontend-gestore-prodotti-admin && npm start",
+      "start:frontend-catalogo": "cd frontend-catalogo-admin && PORT=3007 npm start"
     },
     "devDependencies": {
       "concurrently": "^8.2.2"
