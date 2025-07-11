@@ -1,4 +1,4 @@
-// frontend-catalogoprodotti/src/pages/AddProduct.js
+// frontend-catalogo-admin/src/pages/AddProduct.js
 import React, { useState, useEffect } from 'react';
 import { createProdotto, getSubcategoriesByCategory } from '../api';
 import { Form, Button, Container, Row, Col, Card, Alert } from 'react-bootstrap';

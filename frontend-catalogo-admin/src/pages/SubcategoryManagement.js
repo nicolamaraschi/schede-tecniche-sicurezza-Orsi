@@ -1,4 +1,4 @@
-// frontend-catalogoprodotti/src/pages/SubcategoryManagement.js
+// frontend-catalogo-admin/src/pages/SubcategoryManagement.js
 import React, { useState, useEffect } from 'react';
 import { Container, Card, Row, Col, Form, Button, ListGroup, Modal, Alert } from 'react-bootstrap';
 import axios from 'axios';
