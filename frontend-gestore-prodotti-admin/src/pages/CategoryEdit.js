@@ -1,50 +1,44 @@
 // src/pages/CategoryEdit.js
 import React, { useEffect, useState } from 'react';
-import { fetchCategories, updateCategory, deleteCategory } from '../api';
+import { useParams, useNavigate } from 'react-router-dom';
+import { fetchCategoryById, updateCategory } from '../api';
 import { useAuth } from '../contexts/AuthContext';
-import { FaEdit, FaTrash, FaSave, FaUndo, FaSearch, FaFolder, FaLayerGroup, FaPlus, FaMinus, FaSortAlphaDown, FaTimes } from 'react-icons/fa';
+import { FaSave, FaUndo, FaPlus, FaMinus, FaLayerGroup } from 'react-icons/fa';
 import './CategoryEdit.css';
 
 const CategoryEdit = () => {
-  // Stati per la gestione delle categorie
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [notification, setNotification] = useState({ show: false, message: '', type: '' });
-  
-  // Stati per la modifica delle sottocategorie
-  const [subcategories, setSubcategories] = useState([]);
-  const [newSubcategoryName, setNewSubcategoryName] = useState('');
-  
-  // Stati per filtri e ricerca
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortDirection, setSortDirection] = useState('asc');
-
+  const { id } = useParams();
+  const navigate = useNavigate();
   const { checkTokenExpiration } = useAuth();
 
-  // Carica le categorie all'avvio
+  const [categoryName, setCategoryName] = useState('');
+  const [subcategories, setSubcategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [notification, setNotification] = useState({ show: false, message: '', type: '' });
+  const [newSubcategoryName, setNewSubcategoryName] = useState('');
+
+
   useEffect(() => {
-    const loadCategories = async () => {
+    const loadCategory = async () => {
       try {
         setLoading(true);
-        const data = await fetchCategories();
-        setCategories(data);
+        const data = await fetchCategoryById(id);
+        setCategoryName(data.name);
+        setSubcategories(data.subcategories || []);
       } catch (error) {
         if (checkTokenExpiration) {
           checkTokenExpiration(error);
         }
-        showNotification('Errore durante il caricamento delle categorie', 'danger');
-        console.error('Error fetching categories:', error);
+        showNotification('Errore durante il caricamento della categoria', 'danger');
+        console.error('Error fetching category:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    loadCategories();
-  }, [checkTokenExpiration]);
+    loadCategory();
+  }, [id, checkTokenExpiration]);
 
-  // Mostra notifica
   const showNotification = (message, type = 'success') => {
     setNotification({ show: true, message, type });
     setTimeout(() => {
@@ -52,56 +46,29 @@ const CategoryEdit = () => {
     }, 5000);
   };
 
-  // Apre il modal per modificare una categoria
-  const handleEditClick = (category) => {
-    setSelectedCategory(category);
-    // Clona le sottocategorie per poterle modificare senza alterare l'originale
-    setSubcategories(category.subcategories.map(sub => ({ ...sub })));
-    setShowModal(true);
-  };
-
-  // Chiude il modal
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setSelectedCategory(null);
-    setSubcategories([]);
-    setNewSubcategoryName('');
-  };
-
-  // Gestisce l'aggiornamento della categoria
   const handleUpdateCategory = async (e) => {
     e.preventDefault();
-    
-    const formData = new FormData(e.target);
-    const categoryName = formData.get('categoryName').trim();
-    
-    if (!categoryName) {
+
+    if (!categoryName.trim()) {
       showNotification('Il nome della categoria è obbligatorio', 'danger');
       return;
     }
-    
-    // Verifica che tutte le sottocategorie abbiano un nome
+
     const invalidSubcategories = subcategories.filter(sub => !sub.name || !sub.name.trim());
     if (invalidSubcategories.length > 0) {
       showNotification('Tutte le sottocategorie devono avere un nome', 'danger');
       return;
     }
-    
+
     try {
-      const updatedCategory = {
-        ...selectedCategory,
+      const updatedCategoryData = {
         name: categoryName,
-        subcategories: subcategories
+        subcategories: subcategories.map(({ name }) => ({ name })), // Invia solo il nome
       };
-      
-      await updateCategory(selectedCategory._id, updatedCategory);
-      
-      // Aggiorna la lista delle categorie
-      const updatedCategories = await fetchCategories();
-      setCategories(updatedCategories);
-      
+
+      await updateCategory(id, updatedCategoryData);
       showNotification('Categoria aggiornata con successo');
-      handleCloseModal();
+      setTimeout(() => navigate('/categories'), 2000); // Ritorna alla lista dopo 2 sec
     } catch (error) {
       if (checkTokenExpiration) {
         checkTokenExpiration(error);
@@ -111,290 +78,141 @@ const CategoryEdit = () => {
     }
   };
 
-  // Gestisce l'eliminazione di una categoria
-  const handleDeleteCategory = async (categoryId, categoryName) => {
-    if (window.confirm(`Sei sicuro di voler eliminare la categoria "${categoryName}"? Questa operazione non può essere annullata.`)) {
-      try {
-        await deleteCategory(categoryId);
-        
-        // Aggiorna la lista delle categorie
-        setCategories(categories.filter(cat => cat._id !== categoryId));
-        
-        showNotification('Categoria eliminata con successo');
-      } catch (error) {
-        if (checkTokenExpiration) {
-          checkTokenExpiration(error);
-        }
-        showNotification('Errore durante l\'eliminazione della categoria', 'danger');
-        console.error('Error deleting category:', error);
-      }
-    }
-  };
-
-  // Aggiunge una nuova sottocategoria
   const handleAddSubcategory = () => {
     if (!newSubcategoryName.trim()) {
-      showNotification('Inserisci un nome per la sottocategoria', 'danger');
-      return;
+        showNotification('Inserisci un nome per la sottocategoria', 'warning');
+        return;
     }
-    
-    // Aggiungi la nuova sottocategoria
     setSubcategories([...subcategories, { name: newSubcategoryName.trim() }]);
     setNewSubcategoryName('');
+    showNotification('Sottocategoria aggiunta localmente. Salva per confermare.', 'info');
   };
 
-  // Rimuove una sottocategoria
   const handleRemoveSubcategory = (index) => {
-    const updatedSubcategories = [...subcategories];
-    updatedSubcategories.splice(index, 1);
-    setSubcategories(updatedSubcategories);
+    if (window.confirm('Sei sicuro di voler rimuovere questa sottocategoria? L\'azione sarà definitiva solo dopo aver salvato le modifiche.')) {
+      const updatedSubcategories = [...subcategories];
+      updatedSubcategories.splice(index, 1);
+      setSubcategories(updatedSubcategories);
+      showNotification('Sottocategoria rimossa localmente. Salva per confermare.', 'warning');
+    }
   };
 
-  // Aggiorna il nome di una sottocategoria
   const handleSubcategoryNameChange = (index, newName) => {
     const updatedSubcategories = [...subcategories];
     updatedSubcategories[index].name = newName;
     setSubcategories(updatedSubcategories);
   };
 
-  // Inverte la direzione di ordinamento
-  const toggleSortDirection = () => {
-    setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-  };
-
-  // Filtra e ordina le categorie
-  const getFilteredAndSortedCategories = () => {
-    return [...categories]
-      .filter(category => 
-        category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        category.subcategories.some(sub => 
-          sub.name.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-      )
-      .sort((a, b) => {
-        const comparison = a.name.localeCompare(b.name);
-        return sortDirection === 'asc' ? comparison : -comparison;
-      });
-  };
-
-  // Mostra stato di caricamento
   if (loading) {
     return (
       <div className="loading-container">
         <div className="spinner-border text-primary" role="status">
           <span className="visually-hidden">Caricamento...</span>
         </div>
-        <p>Caricamento delle categorie...</p>
+        <p>Caricamento dati categoria...</p>
       </div>
     );
   }
 
   return (
-    <div className="enhanced-category-edit-container">
+    <div className="category-edit-form-container">
       <div className="page-header">
-        <h2>Gestione Categorie</h2>
-        <p>Modifica e aggiorna le categorie e le sottocategorie dei prodotti</p>
+        <h2>Modifica Categoria</h2>
+        <p>Aggiorna il nome della categoria e gestisci le sue sottocategorie.</p>
       </div>
-      
-      {/* Mostra notifiche */}
+
       {notification.show && (
         <div className={`alert alert-${notification.type} alert-dismissible fade show`}>
           {notification.message}
-          <button 
-            type="button" 
-            className="btn-close" 
+          <button
+            type="button"
+            className="btn-close"
             onClick={() => setNotification({ show: false, message: '', type: '' })}
           ></button>
         </div>
       )}
-      
-      {/* Barra di ricerca e filtri */}
-      <div className="filters-bar">
-        <div className="search-box">
-          <FaSearch className="search-icon" />
+
+      <form onSubmit={handleUpdateCategory} className="edit-form">
+        <div className="form-group">
+          <label htmlFor="categoryName">Nome Categoria:</label>
           <input
             type="text"
-            placeholder="Cerca categorie o sottocategorie..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
+            id="categoryName"
+            name="categoryName"
+            className="form-control"
+            value={categoryName}
+            onChange={(e) => setCategoryName(e.target.value)}
+            required
           />
-          {searchTerm && (
-            <button 
-              className="clear-search" 
-              onClick={() => setSearchTerm('')}
-              title="Cancella ricerca"
-            >
-              <FaTimes />
-            </button>
-          )}
         </div>
-        
-        <div className="sort-controls">
-          <button
-            className="btn btn-outline-secondary btn-sm"
-            onClick={toggleSortDirection}
-            title={`Ordine ${sortDirection === 'asc' ? 'crescente' : 'decrescente'}`}
-          >
-            <FaSortAlphaDown /> Ordine: {sortDirection === 'asc' ? 'A-Z' : 'Z-A'}
+
+        <div className="subcategories-section">
+          <h4>
+            <FaLayerGroup className="me-2" />
+            Gestione Sottocategorie
+          </h4>
+
+          <div className="subcategories-manager">
+            {subcategories.length > 0 ? (
+              <div className="current-subcategories">
+                <h5>Sottocategorie esistenti:</h5>
+                <ul className="subcategories-edit-list">
+                  {subcategories.map((sub, index) => (
+                    <li key={sub._id || index} className="subcategory-edit-item">
+                      <input
+                        type="text"
+                        className="form-control subcategory-input"
+                        value={sub.name}
+                        onChange={(e) => handleSubcategoryNameChange(index, e.target.value)}
+                        placeholder="Nome sottocategoria"
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-danger btn-sm"
+                        onClick={() => handleRemoveSubcategory(index)}
+                        title="Rimuovi sottocategoria"
+                      >
+                        <FaMinus />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <p className="no-subcategories">Nessuna sottocategoria presente</p>
+            )}
+
+            <div className="add-subcategory">
+              <h5>Aggiungi nuova sottocategoria:</h5>
+              <div className="input-group">
+                <input
+                  type="text"
+                  className="form-control"
+                  value={newSubcategoryName}
+                  onChange={(e) => setNewSubcategoryName(e.target.value)}
+                  placeholder="Nome nuova sottocategoria"
+                />
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleAddSubcategory}
+                >
+                  <FaPlus className="me-1" /> Aggiungi
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="form-actions">
+          <button type="submit" className="btn btn-primary">
+            <FaSave className="me-1" /> Salva Modifiche
+          </button>
+          <button type="button" className="btn btn-secondary" onClick={() => navigate('/categories')}>
+            <FaUndo className="me-1" /> Annulla
           </button>
         </div>
-      </div>
-      
-      {/* Lista delle categorie */}
-      <div className="categories-container">
-        {getFilteredAndSortedCategories().length === 0 ? (
-          <div className="no-categories">
-            {searchTerm ? (
-              <p>Nessuna categoria corrisponde ai criteri di ricerca</p>
-            ) : (
-              <p>Nessuna categoria disponibile</p>
-            )}
-          </div>
-        ) : (
-          <div className="categories-grid">
-            {getFilteredAndSortedCategories().map(category => (
-              <div key={category._id} className="category-card">
-                <div className="category-header">
-                  <div className="category-title">
-                    <FaFolder className="category-icon" />
-                    <h4>{category.name}</h4>
-                  </div>
-                  <div className="category-actions">
-                    <button
-                      className="btn btn-primary btn-sm"
-                      onClick={() => handleEditClick(category)}
-                      title="Modifica categoria"
-                    >
-                      <FaEdit className="me-1" /> Modifica
-                    </button>
-                    <button
-                      className="btn btn-danger btn-sm ms-2"
-                      onClick={() => handleDeleteCategory(category._id, category.name)}
-                      title="Elimina categoria"
-                    >
-                      <FaTrash className="me-1" /> Elimina
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="category-body">
-                  <h5>
-                    <FaLayerGroup className="subcategory-icon" /> 
-                    Sottocategorie ({category.subcategories.length})
-                  </h5>
-                  {category.subcategories.length > 0 ? (
-                    <ul className="subcategories-list">
-                      {category.subcategories.map((sub, index) => (
-                        <li key={index} className="subcategory-item">
-                          {sub.name}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="no-subcategories">Nessuna sottocategoria disponibile</p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Modal di modifica */}
-      {showModal && selectedCategory && (
-        <div className="edit-modal-backdrop">
-          <div className="edit-modal">
-            <div className="modal-header">
-              <h3>Modifica Categoria</h3>
-              <button className="btn-close" onClick={handleCloseModal}></button>
-            </div>
-            
-            <div className="modal-body">
-              <form onSubmit={handleUpdateCategory}>
-                <div className="form-group">
-                  <label htmlFor="categoryName">Nome Categoria:</label>
-                  <input
-                    type="text"
-                    id="categoryName"
-                    name="categoryName"
-                    className="form-control"
-                    defaultValue={selectedCategory.name}
-                    required
-                  />
-                </div>
-                
-                <div className="subcategories-section">
-                  <h4>
-                    <FaLayerGroup className="me-2" /> 
-                    Gestione Sottocategorie
-                  </h4>
-                  
-                  <div className="subcategories-manager">
-                    {subcategories.length > 0 ? (
-                      <div className="current-subcategories">
-                        <h5>Sottocategorie esistenti:</h5>
-                        <ul className="subcategories-edit-list">
-                          {subcategories.map((sub, index) => (
-                            <li key={index} className="subcategory-edit-item">
-                              <input
-                                type="text"
-                                className="form-control subcategory-input"
-                                value={sub.name}
-                                onChange={(e) => handleSubcategoryNameChange(index, e.target.value)}
-                                placeholder="Nome sottocategoria"
-                              />
-                              <button
-                                type="button"
-                                className="btn btn-danger btn-sm"
-                                onClick={() => handleRemoveSubcategory(index)}
-                                title="Rimuovi sottocategoria"
-                              >
-                                <FaMinus />
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ) : (
-                      <p className="no-subcategories">Nessuna sottocategoria presente</p>
-                    )}
-                    
-                    <div className="add-subcategory">
-                      <h5>Aggiungi nuova sottocategoria:</h5>
-                      <div className="input-group">
-                        <input
-                          type="text"
-                          className="form-control"
-                          value={newSubcategoryName}
-                          onChange={(e) => setNewSubcategoryName(e.target.value)}
-                          placeholder="Nome nuova sottocategoria"
-                        />
-                        <button
-                          type="button"
-                          className="btn btn-primary"
-                          onClick={handleAddSubcategory}
-                        >
-                          <FaPlus className="me-1" /> Aggiungi
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="form-actions">
-                  <button type="submit" className="btn btn-primary">
-                    <FaSave className="me-1" /> Salva Modifiche
-                  </button>
-                  <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>
-                    <FaUndo className="me-1" /> Annulla
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
+      </form>
     </div>
   );
 };

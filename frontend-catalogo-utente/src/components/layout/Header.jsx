@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useLanguage } from '../../context/LanguageContext';
 import './Header.css';
 
 const Header = ({ onMenuClick }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
+  const { language, changeLanguage } = useLanguage();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -27,7 +29,7 @@ const Header = ({ onMenuClick }) => {
           
           <div className="logo">
             <Link to="/">
-              <h1>EG Store</h1>
+              <img src="/logo.png" alt="Orsi Logo" className="header-logo" />
             </Link>
           </div>
           
@@ -50,6 +52,16 @@ const Header = ({ onMenuClick }) => {
               </li>
             </ul>
           </nav>
+
+          <div className="language-selector">
+            <select value={language} onChange={(e) => changeLanguage(e.target.value)}>
+              <option value="it">IT</option>
+              <option value="en">EN</option>
+              <option value="fr">FR</option>
+              <option value="es">ES</option>
+              <option value="de">DE</option>
+            </select>
+          </div>
         </div>
       </div>
     </header>

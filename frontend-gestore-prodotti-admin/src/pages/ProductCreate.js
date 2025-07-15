@@ -84,8 +84,8 @@ const ProductCreate = () => {
       return false;
     }
     
-    if (!subcategory) {
-      setErrorMessage('La sottocategoria è obbligatoria');
+    if (category && subcategories.length > 0 && !subcategory) {
+      setErrorMessage('Devi selezionare una sottocategoria');
       return false;
     }
     

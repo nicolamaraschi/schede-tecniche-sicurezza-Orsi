@@ -36,24 +36,19 @@ const Navbar = () => {
                   <Link className="nav-link" to="/products/create">➕ Crea Prodotto</Link>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/products/edit">✏️ Modifica Prodotto</Link>
-                </li>
-                <li className="nav-item">
-                  <Link className="nav-link" to="/categories">📂 Lista Categorie</Link>
+                  <Link className="nav-link" to="/categories">🗂️ Lista Categorie</Link>
                 </li>
                 <li className="nav-item">
                   <Link className="nav-link" to="/categories/create">🆕 Crea Categoria</Link>
                 </li>
-                <li className="nav-item">
-                  <Link className="nav-link" to="/categories/edit">🖊️ Modifica Categoria</Link>
-                </li>
+                
               </ul>
               <ul className="navbar-nav">
                 <li className="nav-item">
                   <span className="nav-link">👤 {username}</span>
                 </li>
                 <li className="nav-item">
-                  <a href="#" className="nav-link" onClick={handleLogout}>🚪 Logout</a>
+                  <button className="nav-link btn btn-link" onClick={handleLogout}>🚪 Logout</button>
                 </li>
               </ul>
             </>

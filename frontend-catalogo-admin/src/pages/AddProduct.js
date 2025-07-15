@@ -4,9 +4,8 @@ import { createProdotto, getSubcategoriesByCategory } from '../api';
 import { Form, Button, Container, Row, Col, Card, Alert } from 'react-bootstrap';
 
 const AddProduct = () => {
-  // Stato per il form
   const [formData, setFormData] = useState({
-    nome: '',
+    nome: { it: '', en: '', fr: '', es: '', de: '' },
     codice: '',
     tipo: '',
     prezzo: '',
@@ -17,22 +16,16 @@ const AddProduct = () => {
     pezziPerCartone: '',
     cartoniPerEpal: '',
     pezziPerEpal: '',
-    descrizione: ''
+    descrizione: { it: '', en: '', fr: '', es: '', de: '' }
   });
   
-  // Stato per le sottocategorie
   const [subcategories, setSubcategories] = useState([]);
-  
-  // Stato per le immagini
   const [immagini, setImmagini] = useState([]);
   const [previewImages, setPreviewImages] = useState([]);
-  
-  // Stati per il feedback
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   
-  // Opzioni per i dropdown
   const tipiProdotto = [
     'BULK',
     'BARATTOLO',
@@ -43,10 +36,7 @@ const AddProduct = () => {
   ];
   
   const unitaMisura = ['€/KG', '€/PZ'];
-  
-  // Categorie principali (solo Domestico e Industriale)
   const categoriePrincipali = ['Domestico', 'Industriale'];
-  
   const tipiImballaggio = [
     'Barattolo 1kg',
     'BigBag 600kg',
@@ -74,7 +64,6 @@ const AddProduct = () => {
     'Cartone 400tabs'
   ];
   
-  // Valori predefiniti per i tipi di imballaggio
   const packagingDefaults = {
     'Barattolo 1kg': { pezziPerCartone: 6, cartoniPerEpal: 40, pezziPerEpal: 240 },
     'BigBag 600kg': { pezziPerCartone: 1, cartoniPerEpal: 1, pezziPerEpal: 1 },
@@ -102,7 +91,6 @@ const AddProduct = () => {
     'Cartone 400tabs': { pezziPerCartone: 1, cartoniPerEpal: 60, pezziPerEpal: 60 }
   };
   
-  // Aggiorna le sottocategorie quando cambia la categoria
   useEffect(() => {
     const fetchSubcategories = async () => {
       if (formData.categoria) {
@@ -124,7 +112,6 @@ const AddProduct = () => {
     fetchSubcategories();
   }, [formData.categoria]);
   
-  // Aggiorna automaticamente pezziPerEpal quando cambiano pezziPerCartone o cartoniPerEpal
   useEffect(() => {
     if (formData.pezziPerCartone && formData.cartoniPerEpal) {
       const pezziPerEpal = parseInt(formData.pezziPerCartone) * parseInt(formData.cartoniPerEpal);
@@ -135,11 +122,20 @@ const AddProduct = () => {
     }
   }, [formData.pezziPerCartone, formData.cartoniPerEpal]);
   
-  // Gestione input form
+  const handleLanguageChange = (e, field, lang) => {
+    const { value } = e.target;
+    setFormData(prev => ({
+        ...prev,
+        [field]: {
+            ...prev[field],
+            [lang]: value
+        }
+    }));
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     
-    // Se cambia tipo imballaggio, aggiorna i valori predefiniti
     if (name === 'tipoImballaggio' && packagingDefaults[value]) {
       const defaults = packagingDefaults[value];
       setFormData({
@@ -157,33 +153,33 @@ const AddProduct = () => {
     }
   };
   
-  // Gestione selezione immagini
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
     setImmagini(files);
     
-    // Crea URL per le anteprime
     const previews = files.map(file => URL.createObjectURL(file));
     setPreviewImages(previews);
   };
   
-  // Invio del form
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (formData.categoria && subcategories.length > 0 && !formData.sottocategoria) {
+      setErrorMessage('Per favore, seleziona una sottocategoria.');
+      return;
+    }
+
     setIsLoading(true);
     setErrorMessage('');
     setSuccessMessage('');
     
     try {
-      // Prepara i dati del prodotto
       const prodottoData = { ...formData };
       
-      // Invia la richiesta al server
       await createProdotto(prodottoData, immagini);
       
-      // Reset del form
       setFormData({
-        nome: '',
+        nome: { it: '', en: '', fr: '', es: '', de: '' },
         codice: '',
         tipo: '',
         prezzo: '',
@@ -194,15 +190,13 @@ const AddProduct = () => {
         pezziPerCartone: '',
         cartoniPerEpal: '',
         pezziPerEpal: '',
-        descrizione: ''
+        descrizione: { it: '', en: '', fr: '', es: '', de: '' }
       });
       setImmagini([]);
       setPreviewImages([]);
       
-      // Mostra messaggio di successo
       setSuccessMessage('Prodotto aggiunto con successo!');
       
-      // Nascondi messaggio dopo 3 secondi
       setTimeout(() => {
         setSuccessMessage('');
       }, 3000);
@@ -214,7 +208,6 @@ const AddProduct = () => {
     }
   };
   
-  // Pulizia delle URL delle anteprime quando il componente si smonta
   useEffect(() => {
     return () => {
       previewImages.forEach(URL.revokeObjectURL);
@@ -237,18 +230,21 @@ const AddProduct = () => {
         <Card.Body>
           <Form onSubmit={handleSubmit}>
             <Row>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Nome Prodotto *</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="nome"
-                    value={formData.nome}
-                    onChange={handleChange}
-                    required
-                  />
-                </Form.Group>
-              </Col>
+                {Object.keys(formData.nome).map(lang => (
+                    <Col md={6} key={lang}>
+                        <Form.Group className="mb-3">
+                        <Form.Label>{`Nome Prodotto (${lang.toUpperCase()}) *`}</Form.Label>
+                        <Form.Control
+                            type="text"
+                            value={formData.nome[lang]}
+                            onChange={(e) => handleLanguageChange(e, 'nome', lang)}
+                            required
+                        />
+                        </Form.Group>
+                    </Col>
+                ))}
+            </Row>
+            <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label>Codice Prodotto *</Form.Label>
@@ -301,12 +297,13 @@ const AddProduct = () => {
             <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Sottocategoria</Form.Label>
+                  <Form.Label>Sottocategoria *</Form.Label>
                   <Form.Select
                     name="sottocategoria"
                     value={formData.sottocategoria}
                     onChange={handleChange}
                     disabled={!formData.categoria || subcategories.length === 0}
+                    required={formData.categoria && subcategories.length > 0}
                   >
                     <option value="">Seleziona sottocategoria</option>
                     {subcategories.map((subcat) => (
@@ -411,16 +408,21 @@ const AddProduct = () => {
               </Col>
             </Row>
             
-            <Form.Group className="mb-3">
-              <Form.Label>Descrizione</Form.Label>
-              <Form.Control
-                as="textarea"
-                name="descrizione"
-                value={formData.descrizione}
-                onChange={handleChange}
-                rows="3"
-              />
-            </Form.Group>
+            <Row>
+                {Object.keys(formData.descrizione).map(lang => (
+                    <Col md={6} key={lang}>
+                        <Form.Group className="mb-3">
+                        <Form.Label>{`Descrizione (${lang.toUpperCase()})`}</Form.Label>
+                        <Form.Control
+                            as="textarea"
+                            rows={3}
+                            value={formData.descrizione[lang]}
+                            onChange={(e) => handleLanguageChange(e, 'descrizione', lang)}
+                        />
+                        </Form.Group>
+                    </Col>
+                ))}
+            </Row>
             
             <Form.Group className="mb-3">
               <Form.Label>Immagini Prodotto *</Form.Label>

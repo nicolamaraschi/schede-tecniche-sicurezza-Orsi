@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { fetchCategories, deleteCategory } from '../api';
 import { Link } from 'react-router-dom';
@@ -7,10 +8,10 @@ const CategoryList = () => {
   const [categories, setCategories] = useState([]);
 
   useEffect(() => {
-    fetchCategoriesList();
+    fetchCategoryList();
   }, []);
 
-  const fetchCategoriesList = async () => {
+  const fetchCategoryList = async () => {
     try {
       const data = await fetchCategories();
       setCategories(data);
@@ -22,7 +23,7 @@ const CategoryList = () => {
   const handleDelete = async (id) => {
     try {
       await deleteCategory(id);
-      fetchCategoriesList();
+      fetchCategoryList();
     } catch (error) {
       console.error(error);
     }
@@ -35,7 +36,7 @@ const CategoryList = () => {
       <table className="table table-striped">
         <thead>
           <tr>
-            <th>Categoria</th>
+            <th>Nome</th>
             <th>Sottocategorie</th>
             <th>Azioni</th>
           </tr>
@@ -50,6 +51,7 @@ const CategoryList = () => {
                 ))}
               </td>
               <td>
+                <Link to={`/categories/edit/${category._id}`} className="btn btn-warning mr-2">Modifica</Link>
                 <button onClick={() => handleDelete(category._id)} className="btn btn-danger">Elimina</button>
               </td>
             </tr>

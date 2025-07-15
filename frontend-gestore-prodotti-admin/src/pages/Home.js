@@ -83,7 +83,6 @@ const Home = () => {
       links: [
         { to: '/categories', text: 'Lista Categorie', icon: <FaLayerGroup /> },
         { to: '/categories/create', text: 'Aggiungi Categoria', icon: <FaPlus /> },
-        { to: '/categories/edit', text: 'Modifica Categorie', icon: <FaEdit /> }
       ]
     },
     {

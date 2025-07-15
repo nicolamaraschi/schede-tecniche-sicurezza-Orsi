@@ -41,6 +41,11 @@
   transform: scale(1.05);
 }
 
+.header-logo {
+  max-height: 50px; /* Adjust as needed */
+  width: auto;
+}
+
 .site-nav ul {
   display: flex;
   gap: var(--spacing-lg);
@@ -83,6 +88,23 @@
   background-color: var(--text-color);
   border-radius: 2px;
   transition: all var(--transition-fast);
+}
+
+.language-selector {
+  margin-left: auto;
+}
+
+.language-selector select {
+  background-color: transparent;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 5px;
+  color: #333;
+  cursor: pointer;
+}
+
+.language-selector select:hover {
+  border-color: #888;
 }
 
 @media (min-width: 768px) {
