@@ -5,7 +5,7 @@ import { Form, Button, Container, Row, Col, Card, Alert } from 'react-bootstrap'
 
 const AddProduct = () => {
   const [formData, setFormData] = useState({
-    nome: { it: '', en: '', fr: '', es: '', de: '' },
+    nome: '',
     codice: '',
     tipo: '',
     prezzo: '',
@@ -16,7 +16,7 @@ const AddProduct = () => {
     pezziPerCartone: '',
     cartoniPerEpal: '',
     pezziPerEpal: '',
-    descrizione: { it: '', en: '', fr: '', es: '', de: '' }
+    descrizione: ''
   });
   
   const [subcategories, setSubcategories] = useState([]);
@@ -122,17 +122,6 @@ const AddProduct = () => {
     }
   }, [formData.pezziPerCartone, formData.cartoniPerEpal]);
   
-  const handleLanguageChange = (e, field, lang) => {
-    const { value } = e.target;
-    setFormData(prev => ({
-        ...prev,
-        [field]: {
-            ...prev[field],
-            [lang]: value
-        }
-    }));
-  };
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     
@@ -179,7 +168,7 @@ const AddProduct = () => {
       await createProdotto(prodottoData, immagini);
       
       setFormData({
-        nome: { it: '', en: '', fr: '', es: '', de: '' },
+        nome: '',
         codice: '',
         tipo: '',
         prezzo: '',
@@ -190,7 +179,7 @@ const AddProduct = () => {
         pezziPerCartone: '',
         cartoniPerEpal: '',
         pezziPerEpal: '',
-        descrizione: { it: '', en: '', fr: '', es: '', de: '' }
+        descrizione: ''
       });
       setImmagini([]);
       setPreviewImages([]);
@@ -230,19 +219,18 @@ const AddProduct = () => {
         <Card.Body>
           <Form onSubmit={handleSubmit}>
             <Row>
-                {Object.keys(formData.nome).map(lang => (
-                    <Col md={6} key={lang}>
-                        <Form.Group className="mb-3">
-                        <Form.Label>{`Nome Prodotto (${lang.toUpperCase()}) *`}</Form.Label>
-                        <Form.Control
-                            type="text"
-                            value={formData.nome[lang]}
-                            onChange={(e) => handleLanguageChange(e, 'nome', lang)}
-                            required
-                        />
-                        </Form.Group>
-                    </Col>
-                ))}
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Nome Prodotto *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="nome"
+                    value={formData.nome}
+                    onChange={handleChange}
+                    required
+                  />
+                </Form.Group>
+              </Col>
             </Row>
             <Row>
               <Col md={6}>
@@ -409,19 +397,18 @@ const AddProduct = () => {
             </Row>
             
             <Row>
-                {Object.keys(formData.descrizione).map(lang => (
-                    <Col md={6} key={lang}>
-                        <Form.Group className="mb-3">
-                        <Form.Label>{`Descrizione (${lang.toUpperCase()})`}</Form.Label>
-                        <Form.Control
-                            as="textarea"
-                            rows={3}
-                            value={formData.descrizione[lang]}
-                            onChange={(e) => handleLanguageChange(e, 'descrizione', lang)}
-                        />
-                        </Form.Group>
-                    </Col>
-                ))}
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Descrizione</Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    rows={3}
+                    name="descrizione"
+                    value={formData.descrizione}
+                    onChange={handleChange}
+                  />
+                </Form.Group>
+              </Col>
             </Row>
             
             <Form.Group className="mb-3">
