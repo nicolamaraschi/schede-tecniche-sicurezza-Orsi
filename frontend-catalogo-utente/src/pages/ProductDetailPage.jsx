@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import productService from '../services/productService';
+import { useLanguage } from '../context/LanguageContext';
 import ProductDetail from '../components/products/ProductDetail';
 import Loader from '../components/common/Loader';
 import './ProductDetailPage.css';
@@ -8,6 +9,7 @@ import './ProductDetailPage.css';
 const ProductDetailPage = () => {
   const { productId } = useParams();
   const navigate = useNavigate();
+  const { language } = useLanguage();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -16,7 +18,7 @@ const ProductDetailPage = () => {
     const fetchProduct = async () => {
       try {
         setLoading(true);
-        const data = await productService.getProductById(productId);
+        const data = await productService.getProductById(productId, language);
         setProduct(data);
         setLoading(false);
       } catch (err) {
@@ -27,7 +29,7 @@ const ProductDetailPage = () => {
     };
     
     fetchProduct();
-  }, [productId]);
+  }, [productId, language]);
 
   const handleGoBack = () => {
     navigate(-1); // Go back to the previous page

@@ -1,3 +1,5 @@
+/* ===== CATALOGO PRODOTTI - CSS MIGLIORATO ===== */
+
 .catalog-page {
   padding: var(--spacing-lg) 0;
 }
@@ -35,6 +37,258 @@
   flex: 1;
 }
 
+/* ===== GRIGLIA PRODOTTI - SOLUZIONE PRINCIPALE ===== */
+
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+/* ===== CARD PRODOTTO - ALTEZZA UNIFORME ===== */
+
+.product-card {
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  height: 100%; /* Importante: forza tutte le card ad essere della stessa altezza */
+}
+
+.product-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+/* ===== CONTAINER IMMAGINE - DIMENSIONI FISSE ===== */
+
+.product-image-container {
+  position: relative;
+  width: 100%;
+  height: 220px; /* Altezza fissa per tutte le immagini */
+  overflow: hidden;
+  background: #f8f9fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.product-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Mantiene proporzioni e riempie il container */
+  object-position: center;
+  transition: transform 0.3s ease;
+}
+
+.product-card:hover .product-image {
+  transform: scale(1.05);
+}
+
+/* ===== CONTENUTO CARD - LAYOUT FLESSIBILE ===== */
+
+.product-content {
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1; /* Occupa tutto lo spazio disponibile */
+  justify-content: space-between;
+}
+
+.product-info {
+  flex-grow: 1;
+  margin-bottom: var(--spacing-sm);
+}
+
+.product-title {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: var(--spacing-xs);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* Limita a 2 righe */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 2.8em; /* Spazio per 2 righe */
+}
+
+.product-code {
+  font-size: var(--font-size-sm);
+  color: var(--text-light);
+  margin-bottom: var(--spacing-xs);
+  font-family: 'Courier New', monospace;
+}
+
+.product-description {
+  font-size: var(--font-size-sm);
+  color: var(--text-light);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3; /* Limita a 3 righe */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 4.5em; /* Spazio per 3 righe */
+}
+
+/* ===== FOOTER CARD - SEMPRE IN FONDO ===== */
+
+.product-footer {
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto; /* Spinge il footer in fondo */
+}
+
+.product-price {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+.product-actions {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.product-btn {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: none;
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.product-btn-primary {
+  background: var(--primary-color);
+  color: white;
+}
+
+.product-btn-primary:hover {
+  background: var(--primary-dark);
+}
+
+.product-btn-secondary {
+  background: transparent;
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+.product-btn-secondary:hover {
+  background: var(--background-light);
+}
+
+/* ===== PLACEHOLDER PER IMMAGINI MANCANTI ===== */
+
+.product-image-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-light);
+  font-size: var(--font-size-sm);
+  text-align: center;
+  position: relative;
+}
+
+.product-image-placeholder::before {
+  content: "📷";
+  font-size: 2rem;
+  margin-bottom: var(--spacing-xs);
+  display: block;
+}
+
+/* ===== BADGE E ETICHETTE ===== */
+
+.product-badge {
+  position: absolute;
+  top: var(--spacing-sm);
+  right: var(--spacing-sm);
+  background: var(--primary-color);
+  color: white;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  z-index: 2;
+}
+
+.product-badge.new {
+  background: var(--success-color);
+}
+
+.product-badge.sale {
+  background: var(--error-color);
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+
+@media (max-width: 480px) {
+  .products-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+  }
+  
+  .product-image-container {
+    height: 180px;
+  }
+  
+  .product-content {
+    padding: var(--spacing-sm);
+  }
+  
+  .product-title {
+    font-size: var(--font-size-sm);
+  }
+  
+  .product-footer {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    align-items: stretch;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .product-image-container {
+    height: 200px;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .products-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1025px) {
+  .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  }
+}
+
+/* ===== LAYOUT PRINCIPALE - MIGLIORATO ===== */
+
 @media (min-width: 768px) {
   .catalog-layout {
     flex-direction: row;
@@ -45,10 +299,12 @@
     width: 250px;
     position: sticky;
     top: 100px;
+    align-self: flex-start;
   }
   
   .catalog-content {
     flex: 1;
+    min-width: 0; /* Importante per il flexbox */
   }
 }
 
@@ -56,4 +312,56 @@
   .catalog-sidebar {
     width: 280px;
   }
+}
+
+/* ===== STATI DI CARICAMENTO ===== */
+
+.products-loading {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+.product-skeleton {
+  height: 400px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: var(--border-radius);
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ===== STATO VUOTO ===== */
+
+.products-empty {
+  text-align: center;
+  padding: var(--spacing-xl);
+  color: var(--text-light);
+}
+
+.products-empty-icon {
+  font-size: 4rem;
+  margin-bottom: var(--spacing-md);
+}
+
+.products-empty-title {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  margin-bottom: var(--spacing-sm);
+  color: var(--text-color);
+}
+
+.products-empty-description {
+  font-size: var(--font-size-md);
+  max-width: 400px;
+  margin: 0 auto;
 }

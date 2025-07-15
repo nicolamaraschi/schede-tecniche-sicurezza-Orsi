@@ -1,14 +1,17 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import ProductList from '../components/products/ProductList';
 import CategoryMenu from '../components/products/CategoryMenu';
 import ProductFilter from '../components/products/ProductFilter';
+import { useLanguage } from '../context/LanguageContext';
+import productService from '../services/productService';
+import categoryService from '../services/categoryService';
 import './CategoryPage.css';
 
 const CategoryPage = () => {
   const navigate = useNavigate();
   const { categoryId, subcategoryId } = useParams();
+  const { language } = useLanguage();
   const [products, setProducts] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,61 +21,37 @@ const CategoryPage = () => {
     sort: 'name-asc'
   });
   
-  // Funzione stabile per gestire i cambiamenti nei filtri
   const handleFilterChange = useCallback((newFilters) => {
     setFilters(prevFilters => {
-      // Verifica che i nuovi filtri siano effettivamente diversi
       const hasChanges = Object.keys(newFilters).some(
         key => prevFilters[key] !== newFilters[key]
       );
       
-      // Se non ci sono cambiamenti, restituisci lo stato precedente invariato
       if (!hasChanges) return prevFilters;
       
-      // Altrimenti, aggiorna i filtri
       return { ...prevFilters, ...newFilters };
     });
   }, []);
 
-  // Carica i prodotti e le sottocategorie
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        let productsEndpoint;
-        let subcategoriesEndpoint;
+        let productsData;
         
-        // Determina gli endpoint in base ai parametri URL
         if (subcategoryId && categoryId) {
-          // Codifica correttamente i parametri nell'URL
-          const encodedCategory = encodeURIComponent(categoryId);
-          const encodedSubcategory = encodeURIComponent(subcategoryId);
-          
-          productsEndpoint = `https://orsi-production.up.railway.app/api/prodottiCatalogo/categoria/${encodedCategory}/sottocategoria/${encodedSubcategory}`;
-          subcategoriesEndpoint = `https://orsi-production.up.railway.app/api/prodottiCatalogo/categoria/${encodedCategory}/sottocategorie`;
+          productsData = await productService.getProductsBySubcategory(categoryId, subcategoryId, language);
+          const subcategoriesData = await categoryService.getSubcategoriesByCategory(categoryId);
+          setSubcategories(subcategoriesData || []);
         } else if (categoryId) {
-          const encodedCategory = encodeURIComponent(categoryId);
-          productsEndpoint = `https://orsi-production.up.railway.app/api/prodottiCatalogo/categoria/${encodedCategory}`;
-          subcategoriesEndpoint = `https://orsi-production.up.railway.app/api/prodottiCatalogo/categoria/${encodedCategory}/sottocategorie`;
+          productsData = await productService.getProductsByCategory(categoryId, language);
+          const subcategoriesData = await categoryService.getSubcategoriesByCategory(categoryId);
+          setSubcategories(subcategoriesData || []);
         } else {
-          productsEndpoint = 'https://orsi-production.up.railway.app/api/prodottiCatalogo/prodotti';
+          productsData = await productService.getAllProducts(language);
         }
         
-        console.log("Fetching products from:", productsEndpoint);
-        
-        // Carica prodotti
-        const productsResponse = await axios.get(productsEndpoint);
-        console.log("Products response:", productsResponse.data);
-        setProducts(productsResponse.data || []);
-        
-        // Carica sottocategorie se necessario
-        if (subcategoriesEndpoint) {
-          console.log("Fetching subcategories from:", subcategoriesEndpoint);
-          const subcategoriesResponse = await axios.get(subcategoriesEndpoint);
-          console.log("Subcategories response:", subcategoriesResponse.data);
-          setSubcategories(subcategoriesResponse.data || []);
-        }
-        
+        setProducts(productsData || []);
         setLoading(false);
       } catch (err) {
         console.error('Error fetching category data:', err);
@@ -82,39 +61,30 @@ const CategoryPage = () => {
     };
     
     fetchData();
-  }, [categoryId, subcategoryId]);
+  }, [categoryId, subcategoryId, language]);
 
-  // Applicazione dei filtri di ricerca e ordinamento
   const filteredProducts = useMemo(() => {
-    console.log("Filtering products, total:", products?.length || 0, products);
-    
     if (!Array.isArray(products) || products.length === 0) {
       return [];
     }
     
-    // Filtra solo per ricerca testuale
     const filtered = products
       .filter(product => {
-        // Skip prodotti nulli o undefined
         if (!product) return false;
         
-        // Filtra solo per testo di ricerca, se presente
         if (filters.search && typeof filters.search === 'string' && filters.search.trim() !== '') {
           const searchTerm = filters.search.toLowerCase();
           const productName = typeof product.nome === 'string' ? product.nome.toLowerCase() : '';
           const productCode = typeof product.codice === 'string' ? product.codice.toLowerCase() : '';
           
-          // Cerca sia nel nome che nel codice
           return productName.includes(searchTerm) || productCode.includes(searchTerm);
         }
         
-        // Se non c'è filtro di ricerca, includi il prodotto
         return true;
       })
       .sort((a, b) => {
         if (!a || !b) return 0;
         
-        // Ordina in base al criterio selezionato
         switch (filters.sort) {
           case 'name-asc':
             return (a.nome || '').localeCompare(b.nome || '');
@@ -129,11 +99,9 @@ const CategoryPage = () => {
         }
       });
     
-    console.log("Filtered products:", filtered.length, filtered);
     return filtered;
   }, [products, filters.search, filters.sort]);
 
-  // Gestisci errori fatali
   if (error && !loading) {
     return (
       <div className="category-page error-page">
@@ -151,15 +119,6 @@ const CategoryPage = () => {
     );
   }
 
-  console.log("Rendering CategoryPage with:", {
-    categoryId,
-    subcategoryId,
-    productsCount: filteredProducts.length,
-    subcategoriesCount: subcategories.length,
-    loading
-  });
-
-  // Funzione per codificare in modo sicuro i parametri nell'URL
   const encodeUrlParam = (param) => {
     return encodeURIComponent(param);
   };

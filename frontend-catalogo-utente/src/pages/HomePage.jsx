@@ -58,9 +58,9 @@ const HomePage = () => {
       <section className="hero-section">
         <div className="container">
           <div className="hero-content">
-            <h1 className="animate-slide-from-left">Prodotti Professionali per la Pulizia</h1>
+            <h1 className="animate-slide-from-left">Prodotti detergenti domestici e professionali</h1>
             <p className="animate-slide-from-left delay-100">
-              Scopri la nostra gamma completa di soluzioni per ogni esigenza di pulizia e igiene
+              Orsi è un'azienda presente dal 1907
             </p>
             <Link to="/catalogo" className="cta-button animate-slide-from-left delay-200">
               Esplora il Catalogo

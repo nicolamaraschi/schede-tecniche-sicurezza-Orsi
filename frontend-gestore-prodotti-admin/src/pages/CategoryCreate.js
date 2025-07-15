@@ -1,7 +1,7 @@
 // src/pages/CategoryCreate.js
 import React, { useState, useEffect } from 'react';
 import { createCategory, fetchCategories, addSubcategory } from '../api';
-import { useNavigate } from 'react-router-dom';
+
 import { useAuth } from '../contexts/AuthContext';
 import './CategoryCreate.css'; // Utilizzando il file CSS esistente
 import { FaPlus, FaFolder, FaFolderPlus, FaListAlt, FaSave, FaUndo, FaLayerGroup } from 'react-icons/fa';
@@ -22,7 +22,7 @@ const CategoryCreate = () => {
   const [activeTab, setActiveTab] = useState('category');
   const [showCategoryDetails, setShowCategoryDetails] = useState(null);
   
-  const navigate = useNavigate();
+  const [notification, setNotification] = useState({ show: false, message: '', type: '' });
   const { checkTokenExpiration } = useAuth();
 
   // Carica le categorie esistenti

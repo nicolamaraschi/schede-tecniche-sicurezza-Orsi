@@ -6,9 +6,9 @@ import Home from './pages/Home';
 import ProductList from './pages/ProductList';
 import ProductCreate from './pages/ProductCreate';
 import ProductEdit from './pages/ProductEdit';
-import CategoryList from './pages/CategoryList';
 import CategoryCreate from './pages/CategoryCreate';
 import CategoryEdit from './pages/CategoryEdit';
+import CategoryList from './pages/CategoryList';
 import Login from './pages/Login';
 import { AuthProvider } from './contexts/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
@@ -34,7 +34,7 @@ const App = () => {
               <Route path="/products/edit" element={<ProductEdit />} />
               <Route path="/categories" element={<CategoryList />} />
               <Route path="/categories/create" element={<CategoryCreate />} />
-              <Route path="/categories/edit" element={<CategoryEdit />} />
+              <Route path="/categories/edit/:id" element={<CategoryEdit />} />
             </Route>
           </Routes>
         </div>
