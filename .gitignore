@@ -35,3 +35,4 @@ yarn-error.log*
 
 # Ignora tutti i file nella cartella uploads
 **/uploads/*
+\n# Ignore environment files\nbackend-api/.env

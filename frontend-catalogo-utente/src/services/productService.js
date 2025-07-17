@@ -4,7 +4,7 @@ const productService = {
   // Get all products in the catalog
   getAllProducts: async (lang = 'it') => {
     try {
-      const response = await api.get(`/prodottiCatalogo/prodotti?lang=${lang}`);
+      const response = await api.get(`/public/catalogo/prodotti?lang=${lang}`);
       return response;
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -15,7 +15,7 @@ const productService = {
 
   getProductById: async (productId, lang = 'it') => {
     try {
-      const response = await api.get(`/prodottiCatalogo/prodotti/${productId}?lang=${lang}`);
+      const response = await api.get(`/public/catalogo/prodotti/${productId}?lang=${lang}`);
       console.log("Prodotto ricevuto:", response);
       return response;
     } catch (error) {
@@ -27,7 +27,7 @@ const productService = {
   // Get products by category from the catalog endpoints
   getProductsByCategory: async (category, lang = 'it') => {
     try {
-      return await api.get(`/prodottiCatalogo/categoria/${category}?lang=${lang}`);
+      return await api.get(`/public/catalogo/categoria/${category}?lang=${lang}`);
     } catch (error) {
       console.error(`Error fetching products for category ${category}:`, error);
       throw error;
@@ -38,7 +38,7 @@ const productService = {
   // Get products by subcategory from the catalog endpoints
   getProductsBySubcategory: async (category, subcategory, lang = 'it') => {
     try {
-      return await api.get(`/prodottiCatalogo/categoria/${category}/sottocategoria/${subcategory}?lang=${lang}`);
+      return await api.get(`/public/catalogo/categoria/${category}/sottocategoria/${subcategory}?lang=${lang}`);
     } catch (error) {
       console.error(`Error fetching products for subcategory ${subcategory}:`, error);
       throw error;
