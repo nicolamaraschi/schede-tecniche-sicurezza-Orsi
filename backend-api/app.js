@@ -9,6 +9,7 @@ const documentRoutes = require('./routes/documents');
 const productRoutes = require('./routes/products');
 const gestoreProdottiRoutes = require('./routes/gestoreProdotti');
 const prodottoCatalogoRoutes = require('./routes/prodottiCatalogo');
+const publicCatalogoRoutes = require('./routes/publicCatalogo');
 
 // Carica le variabili d'ambiente
 dotenv.config();
@@ -40,6 +41,7 @@ app.use('/api/documents', documentRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/gestoreProdotti', gestoreProdottiRoutes);
 app.use('/api/prodottiCatalogo', prodottoCatalogoRoutes);
+app.use('/api/public/catalogo', publicCatalogoRoutes);
 
 // Gestione degli errori 404
 app.use((req, res) => {

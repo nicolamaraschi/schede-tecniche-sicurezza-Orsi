@@ -2,7 +2,13 @@
 const mongoose = require('mongoose');
 
 const prodottoCatalogoSchema = new mongoose.Schema({
-  nome: { type: String, required: true },
+  nome: {
+    it: { type: String, required: true },
+    en: { type: String },
+    fr: { type: String },
+    es: { type: String },
+    de: { type: String }
+  },
   codice: { type: String, required: true, unique: true },
   tipo: { type: String, required: true },
   prezzo: { type: Number, required: true },
@@ -54,7 +60,13 @@ const prodottoCatalogoSchema = new mongoose.Schema({
   pezziPerCartone: { type: Number, required: true },
   cartoniPerEpal: { type: Number, required: true },
   pezziPerEpal: { type: Number, required: true },
-  descrizione: { type: String },
+  descrizione: {
+    it: { type: String },
+    en: { type: String },
+    fr: { type: String },
+    es: { type: String },
+    de: { type: String }
+  },
   immagini: [{ type: String }]
 });
 

@@ -1,12 +1,14 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import productService from '../services/productService';
 import categoryService from '../services/categoryService';
+import { useLanguage } from './LanguageContext';
 
 // Create context
 const CatalogContext = createContext();
 
 // Create provider component
 export const CatalogProvider = ({ children }) => {
+  const { language } = useLanguage();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState({});
@@ -28,7 +30,7 @@ export const CatalogProvider = ({ children }) => {
         
         // Fetch products and categories in parallel
         const [productsData, categoriesData, subcategoriesData] = await Promise.all([
-          productService.getAllProducts(),
+          productService.getAllProducts(language),
           categoryService.getAllCategories(),
           categoryService.getAllSubcategories()
         ]);
@@ -45,7 +47,7 @@ export const CatalogProvider = ({ children }) => {
     };
     
     fetchInitialData();
-  }, []);
+  }, [language]);
 
   // Fetch products by category or subcategory when filters change
   useEffect(() => {
@@ -59,10 +61,11 @@ export const CatalogProvider = ({ children }) => {
         if (filters.subcategory) {
           data = await productService.getProductsBySubcategory(
             filters.category, 
-            filters.subcategory
+            filters.subcategory,
+            language
           );
         } else {
-          data = await productService.getProductsByCategory(filters.category);
+          data = await productService.getProductsByCategory(filters.category, language);
         }
         
         setProducts(data);
@@ -117,7 +120,7 @@ export const CatalogProvider = ({ children }) => {
   const getProductById = async (productId) => {
     try {
       setLoading(true);
-      const data = await productService.getProductById(productId);
+      const data = await productService.getProductById(productId, language);
       setLoading(false);
       return data;
     } catch (err) {
