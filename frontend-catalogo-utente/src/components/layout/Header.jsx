@@ -6,7 +6,7 @@ import './Header.css';
 const Header = ({ onMenuClick }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
-  const { language, changeLanguage } = useLanguage();
+  const { language, changeLanguage, t } = useLanguage(); // Ottieni la funzione di traduzione
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,7 +21,7 @@ const Header = ({ onMenuClick }) => {
     <header className={`site-header ${isScrolled ? 'scrolled' : ''}`}>
       <div className="container">
         <div className="header-content">
-          <button className="menu-toggle" onClick={onMenuClick} aria-label="Toggle menu">
+          <button className="menu-toggle" onClick={onMenuClick} aria-label={t('toggle_menu')}>
             <span></span>
             <span></span>
             <span></span>
@@ -37,17 +37,17 @@ const Header = ({ onMenuClick }) => {
             <ul>
               <li>
                 <Link to="/" className={location.pathname === "/" ? "active" : ""}>
-                  Home
+                  {t('home')}
                 </Link>
               </li>
               <li>
                 <Link to="/catalogo" className={location.pathname.includes("/catalogo") ? "active" : ""}>
-                  Catalogo
+                  {t('catalog')}
                 </Link>
               </li>
               <li>
                 <Link to="/contatti" className={location.pathname === "/contatti" ? "active" : ""}>
-                  Contatti
+                  {t('contacts')}
                 </Link>
               </li>
             </ul>

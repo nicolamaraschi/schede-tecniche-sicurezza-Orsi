@@ -1,52 +1,84 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const OpenAI = require('openai');
 
-// Inizializza il client di Gemini con la chiave API dall'ambiente
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+const openai = new OpenAI({
+  apiKey: ''
+});
 
 const TARGET_LANGUAGES = ['en', 'fr', 'es', 'de'];
 
 /**
- * Traduce un testo dall'italiano in più lingue utilizzando Gemini.
+ * Traduce un testo dall'italiano in più lingue utilizzando OpenAI GPT-3.5-turbo.
  * @param {string} text - Il testo in italiano da tradurre.
  * @returns {Promise<Object>} - Un oggetto con le traduzioni, inclusa quella originale in italiano.
  * Es: { it: 'Ciao', en: 'Hello', fr: 'Bonjour', ... }
  */
 async function translateText(text) {
-  // Se il testo è vuoto o non è una stringa, restituisce un oggetto con tutte le lingue vuote
+  console.log(`[TranslationService] Attempting to translate: "${text}" using OpenAI`);
+
   if (!text || typeof text !== 'string' || text.trim() === '') {
     const emptyTranslations = { it: text || '' };
     TARGET_LANGUAGES.forEach(lang => {
       emptyTranslations[lang] = '';
     });
+    console.log(`[TranslationService] Empty or invalid text, returning fallback:`, emptyTranslations);
     return emptyTranslations;
   }
 
-  const prompt = `Traduci il seguente testo italiano in queste lingue: ${TARGET_LANGUAGES.join(', ')}.
-Il testo da tradurre è: "${text}".
-Restituisci il risultato come un oggetto JSON valido con le seguenti chiavi: ${TARGET_LANGUAGES.map(lang => `"${lang}"`).join(', ')}.
-Non includere markdown o altre formattazioni, solo l'oggetto JSON.`;
+  const openaiApiKey = process.env.OPENAI_API_KEY;
+  console.log(`[TranslationService] OPENAI_API_KEY value: ${openaiApiKey ? '*****' + openaiApiKey.slice(-4) : 'NOT SET'}`); // Log solo le ultime 4 cifre per sicurezza
+  if (!openaiApiKey) {
+    console.error('[TranslationService] OPENAI_API_KEY is not set.');
+    const fallbackTranslations = { it: text };
+    TARGET_LANGUAGES.forEach(lang => {
+      fallbackTranslations[lang] = '';
+    });
+    return fallbackTranslations;
+  }
+
+  const prompt = `Translate the following Italian text into these languages: ${TARGET_LANGUAGES.join(', ')}.\nReturn the result as a valid JSON object with the following keys: ${TARGET_LANGUAGES.map(lang => `"${lang}"`).join(', ')}.\nDo not include markdown or any other formatting, only the JSON object.\nItalian text to translate: "${text}"`;
 
   try {
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    // Pulizia della risposta per estrarre solo il JSON
-    const jsonString = response.text().replace(/```json|```/g, '').trim();
-    
-    const translated = JSON.parse(jsonString);
+    const chatCompletion = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo', // Using gpt-3.5-turbo as requested
+      messages: [
+        { role: 'system', content: 'You are a helpful assistant for translations. Always respond with a JSON object.' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0,
+      response_format: { type: "json_object" },
+    });
 
-    // Aggiunge la versione italiana originale all'oggetto
-    return {
+    const jsonString = chatCompletion.choices[0].message.content.trim();
+    console.log(`[TranslationService] Raw OpenAI response text: ${jsonString}`);
+    
+    let translated = JSON.parse(jsonString);
+
+    // Ensure translations are flat strings, handling potential nested objects from OpenAI
+    const cleanedTranslations = {};
+    for (const lang of TARGET_LANGUAGES) {
+      if (translated[lang]) {
+        if (typeof translated[lang] === 'object' && translated[lang].translation) {
+          cleanedTranslations[lang] = translated[lang].translation;
+        } else if (typeof translated[lang] === 'string') {
+          cleanedTranslations[lang] = translated[lang];
+        }
+      }
+    }
+    translated = cleanedTranslations;
+
+    const finalTranslations = {
       it: text,
       ...translated,
     };
+    console.log(`[TranslationService] Successfully translated:`, finalTranslations);
+    return finalTranslations;
   } catch (error) {
-    console.error('Errore durante la traduzione con Gemini:', error);
-    // In caso di errore, ritorna un oggetto con il testo originale e stringhe vuote per le altre lingue
+    console.error('[TranslationService] Error during translation with OpenAI:', error);
     const fallbackTranslations = { it: text };
     TARGET_LANGUAGES.forEach(lang => {
-      fallbackTranslations[lang] = ''; // O potresti mettere un messaggio di errore
+      fallbackTranslations[lang] = '';
     });
+    console.log(`[TranslationService] Returning fallback due to error:`, fallbackTranslations);
     return fallbackTranslations;
   }
 }

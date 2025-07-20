@@ -31,8 +31,8 @@ export const CatalogProvider = ({ children }) => {
         // Fetch products and categories in parallel
         const [productsData, categoriesData, subcategoriesData] = await Promise.all([
           productService.getAllProducts(language),
-          categoryService.getAllCategories(),
-          categoryService.getAllSubcategories()
+          categoryService.getAllCategories(language),
+          categoryService.getAllSubcategories(language)
         ]);
         
         setProducts(productsData);
@@ -134,7 +134,7 @@ export const CatalogProvider = ({ children }) => {
   // Get a category by ID
   const getCategoryById = async (categoryId) => {
     try {
-      const data = await categoryService.getCategoryById(categoryId);
+      const data = await categoryService.getCategoryById(categoryId, language);
       return data;
     } catch (err) {
       console.error(`Error fetching category with ID ${categoryId}:`, err);
@@ -145,7 +145,7 @@ export const CatalogProvider = ({ children }) => {
   // Get subcategories for a category
   const getSubcategoriesByCategory = async (category) => {
     try {
-      const data = await categoryService.getSubcategoriesByCategory(category);
+      const data = await categoryService.getSubcategoriesByCategory(category, language);
       // Update subcategories state
       setSubcategories(prev => ({
         ...prev,

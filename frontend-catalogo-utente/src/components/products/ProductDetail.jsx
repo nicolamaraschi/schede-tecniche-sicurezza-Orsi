@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '../../context/LanguageContext'; // Import useLanguage
 import './ProductDetail.css';
 
 const ProductDetail = ({ product }) => {
   const [activeImage, setActiveImage] = useState(0);
+  const { t } = useLanguage(); // Use the translation hook
   
   if (!product) {
-    return <div className="product-detail-loading">Caricamento...</div>;
+    return <div className="product-detail-loading">{t('loading')}</div>;
   }
   
   const { 
@@ -37,7 +39,7 @@ const ProductDetail = ({ product }) => {
             />
           ) : (
             <div className="image-placeholder">
-              <span>Immagine non disponibile</span>
+              <span>{t('image_not_available')}</span>
             </div>
           )}
         </div>
@@ -50,7 +52,7 @@ const ProductDetail = ({ product }) => {
                 className={`thumbnail ${index === activeImage ? 'active' : ''}`}
                 onClick={() => setActiveImage(index)}
               >
-                <img src={img} alt={`${nome} - immagine ${index + 1}`} />
+                <img src={img} alt={`${nome} - ${t('image')} ${index + 1}`} />
               </div>
             ))}
           </div>
@@ -71,7 +73,7 @@ const ProductDetail = ({ product }) => {
         )}
         
         <h1 className="product-title">{nome}</h1>
-        {codice && <div className="product-code">Codice: {codice}</div>}
+        {codice && <div className="product-code">{t('code')}: {codice}</div>}
         <div className="product-type">{tipo}</div>
         
         <div className="product-price">
@@ -81,28 +83,28 @@ const ProductDetail = ({ product }) => {
         
         {tipoImballaggio && (
           <div className="product-packaging">
-            <h3>Informazioni di Imballaggio</h3>
+            <h3>{t('packaging_information')}</h3>
             <table className="packaging-table">
               <tbody>
                 <tr>
-                  <td>Tipo Imballaggio:</td>
+                  <td>{t('packaging_type')}:</td>
                   <td><strong>{tipoImballaggio}</strong></td>
                 </tr>
                 {pezziPerCartone && (
                   <tr>
-                    <td>Pezzi per Cartone:</td>
+                    <td>{t('pieces_per_carton')}:</td>
                     <td><strong>{pezziPerCartone}</strong></td>
                   </tr>
                 )}
                 {cartoniPerEpal && (
                   <tr>
-                    <td>Cartoni per Epal:</td>
+                    <td>{t('cartons_per_epal')}:</td>
                     <td><strong>{cartoniPerEpal}</strong></td>
                   </tr>
                 )}
                 {pezziPerEpal && (
                   <tr>
-                    <td>Totale Pezzi per Epal:</td>
+                    <td>{t('total_pieces_per_epal')}:</td>
                     <td><strong>{pezziPerEpal}</strong></td>
                   </tr>
                 )}
@@ -112,13 +114,13 @@ const ProductDetail = ({ product }) => {
         )}
         
         <div className="product-description">
-          <h3>Descrizione</h3>
-          <p>{descrizione || 'Nessuna descrizione disponibile per questo prodotto.'}</p>
+          <h3>{t('description')}</h3>
+          <p>{descrizione || t('no_description_available')}</p>
         </div>
         
         <div className="product-actions">
           <button className="contact-button">
-            Richiedi Informazioni
+            {t('request_information')}
           </button>
         </div>
       </div>

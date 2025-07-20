@@ -9,7 +9,7 @@ import './ProductDetailPage.css';
 const ProductDetailPage = () => {
   const { productId } = useParams();
   const navigate = useNavigate();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage(); // Destructure t from useLanguage
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -50,10 +50,10 @@ const ProductDetailPage = () => {
       <div className="product-detail-page">
         <div className="container">
           <div className="error-message">
-            <h2>Si è verificato un errore</h2>
-            <p>{error.message || 'Impossibile caricare i dettagli del prodotto.'}</p>
+            <h2>{t('error_occurred')}</h2>
+            <p>{error.message || t('error_loading_product_details')}</p>
             <button className="back-button" onClick={handleGoBack}>
-              Torna Indietro
+              {t('go_back')}
             </button>
           </div>
         </div>
@@ -66,10 +66,10 @@ const ProductDetailPage = () => {
       <div className="product-detail-page">
         <div className="container">
           <div className="not-found-message">
-            <h2>Prodotto non trovato</h2>
-            <p>Il prodotto richiesto non è disponibile o è stato rimosso.</p>
+            <h2>{t('product_not_found')}</h2>
+            <p>{t('product_not_available_or_removed')}</p>
             <button className="back-button" onClick={handleGoBack}>
-              Torna Indietro
+              {t('go_back')}
             </button>
           </div>
         </div>
@@ -81,8 +81,8 @@ const ProductDetailPage = () => {
     <div className="product-detail-page">
       <div className="container">
         <div className="breadcrumb">
-          <Link to="/">Home</Link> / 
-          <Link to="/catalogo">Catalogo</Link> / 
+          <Link to="/">{t('home')}</Link> / 
+          <Link to="/catalogo">{t('catalog')}</Link> / 
           <span>{product.nome}</span>
         </div>
         

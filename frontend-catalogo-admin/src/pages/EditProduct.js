@@ -245,10 +245,10 @@ const EditProduct = () => {
       // Prepara i dati per l'aggiornamento
       const updateData = {
         ...formData,
-        immaginiToRemove: imagesToRemove
+        // immaginiToRemove will be passed as a separate argument
       };
 
-      await updateProdotto(selectedProduct._id, updateData, newImages);
+      await updateProdotto(selectedProduct._id, updateData, newImages, imagesToRemove);
       
       // Aggiorna la lista dei prodotti
       const updatedProducts = await getAllProdotti();

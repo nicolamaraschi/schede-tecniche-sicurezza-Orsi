@@ -16,10 +16,10 @@ const categoryService = {
   },
 
   // Get all categories
-  getAllCategories: async () => {
+  getAllCategories: async (lang = 'it') => {
     try {
       console.log('Fetching categories from: /public/catalogo/categorie');
-      const result = await api.get('/public/catalogo/categorie');
+      const result = await api.get(`/public/catalogo/categorie?lang=${lang}`);
       console.log('Categories fetched:', result);
       return result;
     } catch (error) {
@@ -29,10 +29,10 @@ const categoryService = {
   },
 
   // Get a single category by ID
-  getCategoryById: async (categoryId) => {
+  getCategoryById: async (categoryId, lang = 'it') => {
     try {
       console.log(`Fetching category with ID: ${categoryId}`);
-      const result = await api.get(`/public/catalogo/categorie/${categoryId}`);
+      const result = await api.get(`/public/catalogo/categorie/${categoryId}?lang=${lang}`);
       console.log('Category fetched:', result);
       return result;
     } catch (error) {
@@ -42,10 +42,10 @@ const categoryService = {
   },
   
   // Get all subcategories in the catalog
-  getAllSubcategories: async () => {
+  getAllSubcategories: async (lang = 'it') => {
     try {
       console.log('Fetching all subcategories');
-      const result = await api.get('/public/catalogo/sottocategorie');
+      const result = await api.get(`/public/catalogo/sottocategorie?lang=${lang}`);
       console.log('Subcategories fetched:', result);
       return result;
     } catch (error) {
@@ -55,9 +55,9 @@ const categoryService = {
   },
   
   // Get subcategories for a specific category
-  getSubcategoriesByCategory: async (category) => {
+  getSubcategoriesByCategory: async (category, lang = 'it') => {
     try {
-      return await api.get(`/public/catalogo/categoria/${category}/sottocategorie`);
+      return await api.get(`/public/catalogo/categoria/${category}/sottocategorie?lang=${lang}`);
     } catch (error) {
       console.error(`Error fetching subcategories for category ${category}:`, error);
       throw error;

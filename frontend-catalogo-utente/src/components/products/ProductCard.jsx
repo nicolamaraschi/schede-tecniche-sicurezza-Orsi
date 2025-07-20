@@ -1,8 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '../../context/LanguageContext'; // Importa useLanguage
 import './ProductCard.css';
 
 const ProductCard = ({ product }) => {
+  const { t } = useLanguage(); // Ottieni la funzione di traduzione
   console.log("ProductCard rendering with product:", product);
   
   if (!product) {
@@ -10,7 +12,7 @@ const ProductCard = ({ product }) => {
     return (
       <div className="product-card product-card-empty">
         <div className="product-info">
-          <h3 className="product-title">Prodotto non disponibile</h3>
+          <h3 className="product-title">{t('product_not_available')}</h3>
         </div>
       </div>
     );
@@ -44,25 +46,25 @@ const ProductCard = ({ product }) => {
   return (
     <div className="product-card">
       <div className="product-image">
-        <img src={mainImage} alt={nome || 'Prodotto'} />
+        <img src={mainImage} alt={nome || t('product_without_name')} />
         <div className="product-overlay">
           <Link to={`/prodotto/${_id}`} className="view-product">
-            Visualizza
+            {t('view')}
           </Link>
         </div>
       </div>
       <div className="product-info">
-        <div className="product-category-tag">{categoria || 'Categoria non specificata'}</div>
+        <div className="product-category-tag">{categoria || t('category_not_specified')}</div>
         {sottocategoria && (
           <div className="product-subcategory-tag">{sottocategoria}</div>
         )}
-        <h3 className="product-title">{nome || 'Prodotto senza nome'}</h3>
-        {codice && <div className="product-code">Cod: {codice}</div>}
-        <p className="product-type">{tipo || 'Tipo non specificato'}</p>
+        <h3 className="product-title">{nome || t('product_without_name')}</h3>
+        {codice && <div className="product-code">{t('code_short')} {codice}</div>}
+        <p className="product-type">{tipo || t('type_not_specified')}</p>
         {tipoImballaggio && <p className="product-packaging">{tipoImballaggio}</p>}
         <div className="product-price">
           <span className="price">{formattedPrice} €</span>
-          <span className="unit">{unita || 'PZ'}</span>
+          <span className="unit">{unita || t('unit_pz')}</span>
         </div>
       </div>
     </div>

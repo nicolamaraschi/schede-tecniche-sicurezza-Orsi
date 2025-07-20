@@ -51,7 +51,7 @@ export const getAllCategories = async () => {
   try {
     const token = getAuthToken();
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
-    const response = await fetch(SUBCATEGORIES_URL, { headers });
+    const response = await fetch(`${API_BASE}/prodottiCatalogo/categorie`, { headers }); // Nuovo endpoint
 
     if (response.status === 401) throw { response: { status: 401 } };
     if (!response.ok) throw new Error('Errore durante il recupero delle categorie');
@@ -92,7 +92,7 @@ export const addSubcategory = async (categoria, sottocategoria) => {
     const response = await fetch(`${CATEGORIES_URL}/${categoria}/sottocategorie`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ sottocategoria }),
+      body: JSON.stringify({ sottocategoria }), // Invia la sottocategoria come stringa
     });
 
     if (response.status === 401) throw { response: { status: 401 } };
@@ -149,11 +149,22 @@ export const getProdottoById = async (id) => {
 };
 
 
-export const updateProdotto = async (id, prodotto, immagini) => {
+export const updateProdotto = async (id, prodotto, immagini, immaginiToRemove) => {
   try {
     const formData = new FormData();
-    for (const key in prodotto) formData.append(key, prodotto[key]);
+
+    // Append product data
+    for (const key in prodotto) {
+      // Skip immaginiToRemove here, as it will be handled separately
+      if (key === 'immaginiToRemove') continue;
+      formData.append(key, prodotto[key]);
+    }
+
+    // Append new images
     immagini.forEach((file) => formData.append('immagini', file));
+
+    // Append images to remove, each as a separate field
+    immaginiToRemove.forEach((url) => formData.append('immaginiToRemove', url));
 
     const token = getAuthToken();
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
@@ -174,6 +185,7 @@ export const updateProdotto = async (id, prodotto, immagini) => {
     throw error;
   }
 };
+
 
 
 

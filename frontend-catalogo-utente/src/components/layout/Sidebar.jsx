@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { useLanguage } from '../../context/LanguageContext'; // Importa useLanguage
 import './Sidebar.css';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
+  const { t } = useLanguage(); // Ottieni la funzione di traduzione
   const [categories] = useState(['Domestico', 'Industriale']); // Categorie fisse
   const [subcategories, setSubcategories] = useState({});
   const [activeCategory, setActiveCategory] = useState(null);
@@ -86,21 +88,21 @@ const Sidebar = ({ isOpen, onClose }) => {
       <div className="sidebar-overlay" onClick={onClose}></div>
       <div className="sidebar-content">
         <div className="sidebar-header">
-          <h2>Menu</h2>
-          <button className="close-button" onClick={onClose} aria-label="Chiudi menu">×</button>
+          <h2>{t('menu')}</h2>
+          <button className="close-button" onClick={onClose} aria-label={t('close_menu')}>×</button>
         </div>
         
         <nav className="sidebar-nav">
           <ul className="nav-list">
             <li key="home" className={location.pathname === "/" ? "active" : ""}>
-              <Link to="/" onClick={onClose}>Home</Link>
+              <Link to="/" onClick={onClose}>{t('home')}</Link>
             </li>
             <li key="catalog" className={location.pathname.includes("/catalogo") && !location.pathname.includes("/categoria") ? "active" : ""}>
-              <Link to="/catalogo" onClick={onClose}>Catalogo</Link>
+              <Link to="/catalogo" onClick={onClose}>{t('catalog')}</Link>
             </li>
           </ul>
           
-          <h3 className="sidebar-section-title">Categorie</h3>
+          <h3 className="sidebar-section-title">{t('categories')}</h3>
           <ul className="category-list">
             {!isLoading && categories.map(category => {
               const isActive = category === activeCategory;
@@ -119,7 +121,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                       <button 
                         className={`toggle-button ${isExpanded ? 'expanded' : ''}`}
                         onClick={(e) => toggleCategory(category, e)}
-                        aria-label={isExpanded ? 'Nascondi sottocategorie' : 'Mostra sottocategorie'}
+                        aria-label={isExpanded ? t('hide_subcategories') : t('show_subcategories')}
                         type="button"
                       >
                         <span className="toggle-icon"></span>
@@ -149,10 +151,10 @@ const Sidebar = ({ isOpen, onClose }) => {
             })}
           </ul>
           
-          <h3 className="sidebar-section-title">Pagine</h3>
+          <h3 className="sidebar-section-title">{t('pages')}</h3>
           <ul className="nav-list">
             <li key="contacts" className={location.pathname === "/contatti" ? "active" : ""}>
-              <Link to="/contatti" onClick={onClose}>Contatti</Link>
+              <Link to="/contatti" onClick={onClose}>{t('contacts')}</Link>
             </li>
           </ul>
         </nav>

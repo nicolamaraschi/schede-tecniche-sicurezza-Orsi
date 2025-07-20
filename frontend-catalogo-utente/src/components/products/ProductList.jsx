@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import ProductCard from './ProductCard';
 import Loader from '../common/Loader';
+import { useLanguage } from '../../context/LanguageContext'; // Importa useLanguage
 import './ProductList.css';
 
 const ProductList = ({ products, loading, error }) => {
+  const { t } = useLanguage(); // Ottieni la funzione di traduzione
   const [visibleProducts, setVisibleProducts] = useState([]);
   
   useEffect(() => {
@@ -29,7 +31,7 @@ const ProductList = ({ products, loading, error }) => {
     console.error("ProductList error:", error);
     return (
       <div className="error-message">
-        <p>Si è verificato un errore durante il caricamento dei prodotti.</p>
+        <p>{t('error_loading_products')}</p>
         <p>{error.message}</p>
       </div>
     );
@@ -39,7 +41,7 @@ const ProductList = ({ products, loading, error }) => {
     console.log("No products to display");
     return (
       <div className="no-products">
-        <p>Nessun prodotto trovato.</p>
+        <p>{t('no_products_found')}</p>
       </div>
     );
   }

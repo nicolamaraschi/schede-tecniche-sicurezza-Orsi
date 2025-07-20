@@ -1,14 +1,17 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import ProductList from '../components/products/ProductList';
 import CategoryMenu from '../components/products/CategoryMenu';
 import ProductFilter from '../components/products/ProductFilter';
+import { useLanguage } from '../context/LanguageContext'; // Importa useLanguage
+import productService from '../services/productService'; // Importa productService come default
+import categoryService from '../services/categoryService'; // Importa categoryService come default
 import './CategoryPage.css';
 
 const CategoryPage = () => {
   const navigate = useNavigate();
   const { categoryId, subcategoryId } = useParams();
+  const { language, t } = useLanguage(); // Ottieni la lingua corrente e la funzione di traduzione
   const [products, setProducts] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,39 +42,21 @@ const CategoryPage = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        let productsEndpoint;
-        let subcategoriesEndpoint;
+        let productsData;
+        let subcategoriesData = [];
         
-        // Determina gli endpoint in base ai parametri URL
         if (subcategoryId && categoryId) {
-          // Codifica correttamente i parametri nell'URL
-          const encodedCategory = encodeURIComponent(categoryId);
-          const encodedSubcategory = encodeURIComponent(subcategoryId);
-          
-          productsEndpoint = `https://orsi-production.up.railway.app/api/prodottiCatalogo/categoria/${encodedCategory}/sottocategoria/${encodedSubcategory}`;
-          subcategoriesEndpoint = `https://orsi-production.up.railway.app/api/prodottiCatalogo/categoria/${encodedCategory}/sottocategorie`;
+          productsData = await productService.getProductsBySubcategory(categoryId, subcategoryId, language);
+          subcategoriesData = await categoryService.getSubcategoriesByCategory(categoryId, language);
         } else if (categoryId) {
-          const encodedCategory = encodeURIComponent(categoryId);
-          productsEndpoint = `https://orsi-production.up.railway.app/api/prodottiCatalogo/categoria/${encodedCategory}`;
-          subcategoriesEndpoint = `https://orsi-production.up.railway.app/api/prodottiCatalogo/categoria/${encodedCategory}/sottocategorie`;
+          productsData = await productService.getProductsByCategory(categoryId, language);
+          subcategoriesData = await categoryService.getSubcategoriesByCategory(categoryId, language);
         } else {
-          productsEndpoint = 'https://orsi-production.up.railway.app/api/prodottiCatalogo/prodotti';
+          productsData = await productService.getAllProducts(language);
         }
         
-        console.log("Fetching products from:", productsEndpoint);
-        
-        // Carica prodotti
-        const productsResponse = await axios.get(productsEndpoint);
-        console.log("Products response:", productsResponse.data);
-        setProducts(productsResponse.data || []);
-        
-        // Carica sottocategorie se necessario
-        if (subcategoriesEndpoint) {
-          console.log("Fetching subcategories from:", subcategoriesEndpoint);
-          const subcategoriesResponse = await axios.get(subcategoriesEndpoint);
-          console.log("Subcategories response:", subcategoriesResponse.data);
-          setSubcategories(subcategoriesResponse.data || []);
-        }
+        setProducts(productsData || []);
+        setSubcategories(subcategoriesData || []);
         
         setLoading(false);
       } catch (err) {
@@ -82,7 +67,7 @@ const CategoryPage = () => {
     };
     
     fetchData();
-  }, [categoryId, subcategoryId]);
+  }, [categoryId, subcategoryId, language]);
 
   // Applicazione dei filtri di ricerca e ordinamento
   const filteredProducts = useMemo(() => {
@@ -138,13 +123,13 @@ const CategoryPage = () => {
     return (
       <div className="category-page error-page">
         <div className="container">
-          <h2>Si è verificato un errore</h2>
-          <p>{error.message || 'Errore durante il caricamento dei dati.'}</p>
+          <h2>{t('error_occurred')}</h2>
+          <p>{error.message || t('error_loading_data')}</p>
           <button 
             onClick={() => navigate('/catalogo')} 
             className="button button-primary"
           >
-            Torna al catalogo
+            {t('back_to_catalog')}
           </button>
         </div>
       </div>
@@ -168,8 +153,8 @@ const CategoryPage = () => {
     <div className="category-page">
       <div className="container">
         <div className="breadcrumb">
-          <Link to="/">Home</Link> / 
-          <Link to="/catalogo">Catalogo</Link>
+          <Link to="/">{t('home')}</Link> / 
+          <Link to="/catalogo">{t('catalog')}</Link>
           {categoryId && (
             <>
               {' / '}
@@ -190,7 +175,7 @@ const CategoryPage = () => {
               ? subcategoryId
               : categoryId 
                 ? categoryId
-                : 'Tutti i Prodotti'}
+                : t('all_products')}
           </h1>
           
           {categoryId && subcategories && subcategories.length > 0 && !subcategoryId && (

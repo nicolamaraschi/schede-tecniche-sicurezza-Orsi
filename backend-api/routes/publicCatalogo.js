@@ -6,7 +6,9 @@ const {
   getPublicCategories,
   getPublicCategoryById,
   getPublicAllSubcategories,
-  getPublicSubcategoriesByCategory
+  getPublicSubcategoriesByCategory,
+  getPublicProdottiBySottocategoria,
+  getPublicProdottiByCategoria
 } = require('../controllers/prodottiCatalogoController');
 
 const router = express.Router();
@@ -20,5 +22,7 @@ router.get('/categorie', getPublicCategories);
 router.get('/categorie/:categoryId', getPublicCategoryById);
 router.get('/sottocategorie', getPublicAllSubcategories);
 router.get('/categoria/:categoria/sottocategorie', getPublicSubcategoriesByCategory);
+router.get('/categoria/:categoria', getPublicProdottiByCategoria);
+router.get('/categoria/:categoria/sottocategoria/:sottocategoria', getPublicProdottiBySottocategoria);
 
 module.exports = router;

@@ -74,10 +74,20 @@ exports.createProdotto = async (req, res) => {
       if (prodottoData.pezziPerEpal === undefined || prodottoData.pezziPerEpal === null || prodottoData.pezziPerEpal === '') prodottoData.pezziPerEpal = defaults.pezziPerEpal;
     }
 
-    // Validazione categoria
-    if (!prodottoData.categoria || !['Domestico', 'Industriale'].includes(prodottoData.categoria)) {
-      // Se fallisce qui, le immagini già caricate rimarranno su Cloudinary.
-      // Considera una logica di cleanup se necessario.
+    // Traduci categoria e sottocategoria
+    console.log(`[createProdotto] Original categoria: ${prodottoData.categoria}, sottocategoria: ${prodottoData.sottocategoria}`);
+    const [translatedCategoria, translatedSottocategoria] = await Promise.all([
+      translateText(prodottoData.categoria),
+      prodottoData.sottocategoria ? translateText(prodottoData.sottocategoria) : Promise.resolve(null)
+    ]);
+    console.log(`[createProdotto] Translated categoria:`, translatedCategoria);
+    console.log(`[createProdotto] Translated sottocategoria:`, translatedSottocategoria);
+
+    prodottoData.categoria = translatedCategoria;
+    prodottoData.sottocategoria = translatedSottocategoria;
+
+    // Validazione categoria (sulla versione italiana)
+    if (!prodottoData.categoria.it || !['Domestico', 'Industriale'].includes(prodottoData.categoria.it)) {
       return res.status(400).json({ message: 'Categoria non valida o mancante. Deve essere "Domestico" o "Industriale".' });
     }
 
@@ -88,10 +98,13 @@ exports.createProdotto = async (req, res) => {
     prodottoData.prezzo = prodottoData.prezzo ? Number(prodottoData.prezzo) : null;
 
     // Traduci nome e descrizione
+    console.log(`[createProdotto] Original nome: ${prodottoData.nome}, descrizione: ${prodottoData.descrizione}`);
     const [translatedNome, translatedDescrizione] = await Promise.all([
       translateText(prodottoData.nome),
       translateText(prodottoData.descrizione)
     ]);
+    console.log(`[createProdotto] Translated nome:`, translatedNome);
+    console.log(`[createProdotto] Translated descrizione:`, translatedDescrizione);
 
     prodottoData.nome = translatedNome;
     prodottoData.descrizione = translatedDescrizione;
@@ -128,10 +141,10 @@ exports.getAllProdotti = async (req, res) => {
     const filter = {};
     // Filtro per categoria
     if (req.query.categoria && ['Domestico', 'Industriale'].includes(req.query.categoria)) {
-      filter.categoria = req.query.categoria;
+      filter['categoria.it'] = req.query.categoria; // Filtra sulla versione italiana
     }
     // Escludi prodotti "dummy" per sottocategorie
-    filter.nome = { $not: { $regex: /^_sottocategoria_/ } };
+    filter['nome.it'] = { $not: { $regex: /^_sottocategoria_/ } };
 
     const prodotti = await ProdottoCatalogo.find(filter);
 
@@ -141,6 +154,8 @@ exports.getAllProdotti = async (req, res) => {
         ...prodotto,
         nome: prodotto.nome.it,
         descrizione: prodotto.descrizione.it,
+        categoria: prodotto.categoria && typeof prodotto.categoria === 'object' && prodotto.categoria.it ? prodotto.categoria.it : 'N/A', // Restituisci solo la versione italiana o N/A
+        sottocategoria: prodotto.sottocategoria && typeof prodotto.sottocategoria === 'object' && prodotto.sottocategoria.it ? prodotto.sottocategoria.it : 'N/A', // Restituisci solo la versione italiana o N/A
       };
     });
 
@@ -163,6 +178,8 @@ exports.getProdottoById = async (req, res) => {
     const prodottoPerAdmin = prodotto.toObject();
     prodottoPerAdmin.nome = prodottoPerAdmin.nome.it;
     prodottoPerAdmin.descrizione = prodottoPerAdmin.descrizione.it;
+    prodottoPerAdmin.categoria = prodottoPerAdmin.categoria && typeof prodottoPerAdmin.categoria === 'object' && prodottoPerAdmin.categoria.it ? prodottoPerAdmin.categoria.it : 'N/A'; // Restituisci solo la versione italiana o N/A
+    prodottoPerAdmin.sottocategoria = prodottoPerAdmin.sottocategoria && typeof prodottoPerAdmin.sottocategoria === 'object' && prodottoPerAdmin.sottocategoria.it ? prodottoPerAdmin.sottocategoria.it : 'N/A'; // Restituisci solo la versione italiana o N/A
 
     res.json(prodottoPerAdmin);
   } catch (error) {
@@ -244,24 +261,48 @@ exports.updateProdotto = async (req, res) => {
       if (updateData.pezziPerEpal === undefined || updateData.pezziPerEpal === null || updateData.pezziPerEpal === '') updateData.pezziPerEpal = defaults.pezziPerEpal;
     }
 
-    // Validazione categoria
-    if (updateData.categoria && !['Domestico', 'Industriale'].includes(updateData.categoria)) {
-      return res.status(400).json({ message: 'Categoria non valida. Deve essere "Domestico" o "Industriale"' });
+    // Se la categoria viene aggiornata, traducila e validala
+    if (Object.prototype.hasOwnProperty.call(updateData, 'categoria')) {
+      console.log(`[updateProdotto] Original categoria for update: ${updateData.categoria}`);
+      const translatedCategoria = await translateText(updateData.categoria);
+      console.log(`[updateProdotto] Translated categoria for update:`, translatedCategoria);
+      Object.assign(prodotto.categoria, translatedCategoria);
+      delete updateData.categoria; // Rimuovi da updateData per evitare sovrascrittura diretta
+      if (!translatedCategoria.it || !['Domestico', 'Industriale'].includes(translatedCategoria.it)) {
+        return res.status(400).json({ message: 'Categoria non valida. Deve essere "Domestico" o "Industriale"' });
+      }
+    }
+
+    // Se la sottocategoria viene aggiornata, traducila
+    if (Object.prototype.hasOwnProperty.call(updateData, 'sottocategoria')) {
+      console.log(`[updateProdotto] Original sottocategoria for update: ${updateData.sottocategoria}`);
+      const translatedSottocategoria = await translateText(updateData.sottocategoria);
+      console.log(`[updateProdotto] Translated sottocategoria for update:`, translatedSottocategoria);
+      Object.assign(prodotto.sottocategoria, translatedSottocategoria);
+      delete updateData.sottocategoria; // Rimuovi da updateData per evitare sovrascrittura diretta
     }
 
     // Conversione tipi numerici per i campi aggiornati
-    if (updateData.pezziPerCartone !== undefined) updateData.pezziPerCartone = updateData.pezziPerCartone ? Number(updateData.pezziPerCartone) : null;
-    if (updateData.cartoniPerEpal !== undefined) updateData.cartoniPerEpal = updateData.cartoniPerEpal ? Number(updateData.cartoniPerEpal) : null;
-    if (updateData.pezziPerEpal !== undefined) updateData.pezziPerEpal = updateData.pezziPerEpal ? Number(updateData.pezziPerEpal) : null;
-    if (updateData.prezzo !== undefined) updateData.prezzo = updateData.prezzo ? Number(updateData.prezzo) : null;
+    if (updateData.pezziPerCartone !== undefined) updateData.pezziPerCartone = Number(updateData.pezziPerCartone) || null;
+    if (updateData.cartoniPerEpal !== undefined) updateData.cartoniPerEpal = Number(updateData.cartoniPerEpal) || null;
+    if (updateData.pezziPerEpal !== undefined) updateData.pezziPerEpal = Number(updateData.pezziPerEpal) || null;
+    if (updateData.prezzo !== undefined) updateData.prezzo = Number(updateData.prezzo) || null;
 
 
     // Se il nome o la descrizione vengono aggiornati, traducili
     if (updateData.nome) {
-      updateData.nome = await translateText(updateData.nome);
+      console.log(`[updateProdotto] Original nome for update: ${updateData.nome}`);
+      const translatedNome = await translateText(updateData.nome);
+      console.log(`[updateProdotto] Translated nome for update:`, translatedNome);
+      Object.assign(prodotto.nome, translatedNome);
+      delete updateData.nome;
     }
     if (updateData.descrizione) {
-      updateData.descrizione = await translateText(updateData.descrizione);
+      console.log(`[updateProdotto] Original descrizione for update: ${updateData.descrizione}`);
+      const translatedDescrizione = await translateText(updateData.descrizione);
+      console.log(`[updateProdotto] Translated descrizione for update:`, translatedDescrizione);
+      Object.assign(prodotto.descrizione, translatedDescrizione);
+      delete updateData.descrizione;
     }
 
     // Applica gli aggiornamenti al documento Mongoose
@@ -304,7 +345,7 @@ exports.deleteProdotto = async (req, res) => {
         await cloudinary.api.delete_resources(publicIdsToDelete, { resource_type: 'image' });
         console.log(`Cloudinary images deleted for product ${prodotto._id}`);
       } catch (cloudinaryError) {
-        console.error(`Errore durante l'eliminazione delle immagini da Cloudinary per il prodotto ${prodotto._id}:`, cloudinaryError);
+        console.error(`Errore durante l\'eliminazione delle immagini da Cloudinary per il prodotto ${prodotto._id}:`, cloudinaryError);
         // Decidi se procedere comunque con l'eliminazione dal DB o restituire errore
         // Qui procediamo, ma logghiamo l'errore
       }
@@ -331,8 +372,8 @@ exports.getProdottiByCategoria = async (req, res) => {
     }
 
     const prodotti = await ProdottoCatalogo.find({
-      categoria,
-      nome: { $not: { $regex: /^_sottocategoria_/ } } // Escludi dummy
+      'categoria.it': categoria, // Filtra sulla versione italiana
+      'nome.it': { $not: { $regex: /^_sottocategoria_/ } } // Escludi dummy
     });
 
     const prodottiPerAdmin = prodotti.map(p => {
@@ -341,6 +382,8 @@ exports.getProdottiByCategoria = async (req, res) => {
         ...prodotto,
         nome: prodotto.nome.it,
         descrizione: prodotto.descrizione.it,
+        categoria: prodotto.categoria && typeof prodotto.categoria === 'object' && prodotto.categoria.it ? prodotto.categoria.it : 'N/A', // Restituisci solo la versione italiana o N/A
+        sottocategoria: prodotto.sottocategoria && typeof prodotto.sottocategoria === 'object' && prodotto.sottocategoria.it ? prodotto.sottocategoria.it : 'N/A', // Restituisci solo la versione italiana o N/A
       };
     });
 
@@ -363,9 +406,9 @@ exports.getProdottiBySottocategoria = async (req, res) => {
     }
 
     const prodotti = await ProdottoCatalogo.find({
-      categoria,
-      sottocategoria,
-      nome: { $not: { $regex: /^_sottocategoria_/ } } // Escludi dummy
+      'categoria.it': categoria, // Filtra sulla versione italiana
+      'sottocategoria.it': sottocategoria, // Filtra sulla versione italiana
+      'nome.it': { $not: { $regex: /^_sottocategoria_/ } } // Escludi dummy
     });
 
     const prodottiPerAdmin = prodotti.map(p => {
@@ -374,6 +417,8 @@ exports.getProdottiBySottocategoria = async (req, res) => {
         ...prodotto,
         nome: prodotto.nome.it,
         descrizione: prodotto.descrizione.it,
+        categoria: prodotto.categoria && typeof prodotto.categoria === 'object' && prodotto.categoria.it ? prodotto.categoria.it : 'N/A', // Restituisci solo la versione italiana o N/A
+        sottocategoria: prodotto.sottocategoria && typeof prodotto.sottocategoria === 'object' && prodotto.sottocategoria.it ? prodotto.sottocategoria.it : 'N/A', // Restituisci solo la versione italiana o N/A
       };
     });
 
@@ -381,6 +426,17 @@ exports.getProdottiBySottocategoria = async (req, res) => {
   } catch (error) {
     console.error(`Errore nel recupero prodotti per sottocategoria ${req.params.categoria}/${req.params.sottocategoria}:`, error);
     res.status(500).json({ message: `Errore nel recupero prodotti per sottocategoria: ${error.message}` });
+  }
+};
+
+// Funzione per ottenere tutte le categorie per l'admin (solo nomi italiani)
+exports.getAdminCategories = async (req, res) => {
+  try {
+    const categorie = await ProdottoCatalogo.distinct('categoria.it', { 'nome.it': { $not: { $regex: /^_sottocategoria_/ } } });
+    res.json(categorie);
+  } catch (error) {
+    console.error('Errore nel recupero delle categorie per admin:', error);
+    res.status(500).json({ message: `Errore nel recupero delle categorie: ${error.message}` });
   }
 };
 
@@ -392,7 +448,7 @@ exports.getAllSottocategorie = async (req, res) => {
     // Ottieni i prodotti per trovare tutte le sottocategorie uniche
     const prodotti = await ProdottoCatalogo.find(
       // Includi solo i documenti con nome che inizia con "_sottocategoria_" per ottenere solo le sottocategorie
-      { nome: { $regex: /^_sottocategoria_/ } }, 
+      { 'nome.it': { $regex: /^_sottocategoria_/ } }, 
       'categoria sottocategoria'
     );
     
@@ -404,8 +460,12 @@ exports.getAllSottocategorie = async (req, res) => {
     
     // Aggiungi le sottocategorie alle rispettive categorie
     prodotti.forEach(prodotto => {
-      if (prodotto.sottocategoria && !sottocategorie[prodotto.categoria].includes(prodotto.sottocategoria)) {
-        sottocategorie[prodotto.categoria].push(prodotto.sottocategoria);
+      // Ensure we're working with the Italian version for admin display
+      const categoriaIt = prodotto.categoria.it;
+      const sottocategoriaIt = prodotto.sottocategoria ? prodotto.sottocategoria.it : null;
+
+      if (sottocategoriaIt && !sottocategorie[categoriaIt].includes(sottocategoriaIt)) {
+        sottocategorie[categoriaIt].push(sottocategoriaIt);
       }
     });
     
@@ -427,15 +487,15 @@ exports.getSottocategorieByCategoria = async (req, res) => {
     
     // Ottieni tutti i prodotti della categoria con nome che inizia con "_sottocategoria_"
     const prodotti = await ProdottoCatalogo.find(
-      { 
-        categoria, 
-        nome: { $regex: /^_sottocategoria_/ } 
-      }, 
+      {
+        'categoria.it': categoria, // Match on the Italian version
+        'nome.it': { $regex: /^_sottocategoria_/ }
+      },
       'sottocategoria'
     );
-    
-    // Crea un array di sottocategorie uniche
-    const sottocategorie = [...new Set(prodotti.map(prodotto => prodotto.sottocategoria))].filter(Boolean);
+
+    // Extract the Italian version of subcategories
+    const sottocategorie = [...new Set(prodotti.map(prodotto => prodotto.sottocategoria ? prodotto.sottocategoria.it : null))].filter(Boolean);
     
     res.status(200).json(sottocategorie);
   } catch (error) {
@@ -447,65 +507,71 @@ exports.getSottocategorieByCategoria = async (req, res) => {
 // Aggiungi una nuova sottocategoria
 exports.addSottocategoria = async (req, res) => {
   try {
-    const { categoria } = req.params;
-    const { sottocategoria } = req.body;
-    
-    if (!['Domestico', 'Industriale'].includes(categoria)) {
+    const { categoria: categoriaParam } = req.params; // Rename to avoid conflict
+    const { sottocategoria: sottocategoriaBody } = req.body;
+
+    // Translate category and subcategory
+    const [translatedCategoria, translatedSottocategoria] = await Promise.all([
+      translateText(categoriaParam),
+      translateText(sottocategoriaBody)
+    ]);
+
+    // Validazione categoria (sulla versione italiana)
+    if (!translatedCategoria.it || !['Domestico', 'Industriale'].includes(translatedCategoria.it)) {
       return res.status(400).json({ message: 'Categoria non valida' });
     }
-    
-    if (!sottocategoria) {
+
+    if (!sottocategoriaBody) {
       return res.status(400).json({ message: 'Il nome della sottocategoria è richiesto' });
     }
-    
-    // Verifica se la sottocategoria esiste già per questa categoria
-    const esistente = await ProdottoCatalogo.findOne({ 
-      categoria, 
-      sottocategoria,
-      nome: { $regex: /^_sottocategoria_/ } 
+
+    // Check for existing subcategory using the Italian version
+    const esistente = await ProdottoCatalogo.findOne({
+      'categoria.it': translatedCategoria.it,
+      'sottocategoria.it': translatedSottocategoria.it,
+      'nome.it': { $regex: /^_sottocategoria_/ }
     });
-    
+
     if (esistente) {
       return res.status(400).json({ message: 'Questa sottocategoria esiste già per questa categoria' });
     }
-    
+
     // Crea un prodotto "dummy" con questa sottocategoria per mantenere una traccia
     // ma lo contrassegnamo in modo che possa essere facilmente filtrato nelle query
     const dummyProdotto = new ProdottoCatalogo({
-      nome: `_sottocategoria_${sottocategoria}`,
+      nome: { it: `_sottocategoria_${translatedSottocategoria.it}` }, // Use Italian for dummy name
       codice: `_sottocategoria_${Date.now()}`,
       tipo: 'DUMMY',
       prezzo: 0,
       unita: '€/PZ',
-      categoria,
-      sottocategoria,
+      categoria: translatedCategoria, // Save translated object
+      sottocategoria: translatedSottocategoria, // Save translated object
       tipoImballaggio: 'Barattolo 1kg',
       pezziPerCartone: 1,
       cartoniPerEpal: 1,
       pezziPerEpal: 1,
-      descrizione: `Prodotto dummy per la sottocategoria ${sottocategoria}`,
+      descrizione: { it: `Prodotto dummy per la sottocategoria ${translatedSottocategoria.it}` }, // Use Italian for description
       immagini: []
     });
-    
+
     await dummyProdotto.save();
-    
+
     // Ottieni tutte le sottocategorie aggiornate per questa categoria
     // Ottieni tutti i prodotti della categoria
     const prodotti = await ProdottoCatalogo.find(
-      { 
-        categoria, 
-        nome: { $regex: /^_sottocategoria_/ } 
-      }, 
+      {
+        'categoria.it': translatedCategoria.it,
+        'nome.it': { $regex: /^_sottocategoria_/ }
+      },
       'sottocategoria'
     );
-    
-    // Crea un array di sottocategorie uniche
-    const sottocategorieAggiornate = [...new Set(prodotti.map(prodotto => prodotto.sottocategoria))].filter(Boolean);
+
+    const sottocategorieAggiornate = [...new Set(prodotti.map(prodotto => prodotto.sottocategoria ? prodotto.sottocategoria.it : null))].filter(Boolean);
     
     res.status(201).json(sottocategorieAggiornate);
   } catch (error) {
     console.error('Errore nell\'aggiunta della sottocategoria:', error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: error.message, details: error });
   }
 };
 
@@ -520,9 +586,9 @@ exports.deleteSottocategoria = async (req, res) => {
     
     // Trova tutti i prodotti "dummy" per questa sottocategoria
     const prodottiDummy = await ProdottoCatalogo.find({
-      categoria, 
-      sottocategoria,
-      nome: { $regex: /^_sottocategoria_/ }
+      'categoria.it': categoria,
+      'sottocategoria.it': sottocategoria,
+      'nome.it': { $regex: /^_sottocategoria_/ }
     });
     
     if (prodottiDummy.length === 0) {
@@ -530,18 +596,18 @@ exports.deleteSottocategoria = async (req, res) => {
     }
     
     // Elimina tutti i prodotti "dummy" per questa sottocategoria
-    await ProdottoCatalogo.deleteMany({ 
-      categoria, 
-      sottocategoria,
-      nome: { $regex: /^_sottocategoria_/ }
+    await ProdottoCatalogo.deleteMany({
+      'categoria.it': categoria,
+      'sottocategoria.it': sottocategoria,
+      'nome.it': { $regex: /^_sottocategoria_/ }
     });
     
     // Aggiorna tutti i prodotti reali per rimuovere la sottocategoria
     const risultatoAggiornamento = await ProdottoCatalogo.updateMany(
-      { 
-        categoria, 
-        sottocategoria,
-        nome: { $not: { $regex: /^_sottocategoria_/ } }
+      {
+        'categoria.it': categoria,
+        'sottocategoria.it': sottocategoria,
+        'nome.it': { $not: { $regex: /^_sottocategoria_/ } }
       },
       { $set: { sottocategoria: null } }
     );
@@ -570,11 +636,13 @@ exports.updateSottocategoria = async (req, res) => {
       return res.status(400).json({ message: 'Il nuovo nome della sottocategoria è richiesto' });
     }
     
+    const translatedNuovoNome = await translateText(nuovoNome);
+
     // Verifica se la sottocategoria esiste
-    const prodottiDummy = await ProdottoCatalogo.find({ 
-      categoria, 
-      sottocategoria,
-      nome: { $regex: /^_sottocategoria_/ }
+    const prodottiDummy = await ProdottoCatalogo.find({
+      'categoria.it': categoria,
+      'sottocategoria.it': sottocategoria,
+      'nome.it': { $regex: /^_sottocategoria_/ }
     });
     
     if (prodottiDummy.length === 0) {
@@ -582,10 +650,10 @@ exports.updateSottocategoria = async (req, res) => {
     }
     
     // Verifica se il nuovo nome della sottocategoria è già in uso
-    const esistente = await ProdottoCatalogo.findOne({ 
-      categoria, 
-      sottocategoria: nuovoNome,
-      nome: { $regex: /^_sottocategoria_/ }
+    const esistente = await ProdottoCatalogo.findOne({
+      'categoria.it': categoria,
+      'sottocategoria.it': translatedNuovoNome.it,
+      'nome.it': { $regex: /^_sottocategoria_/ }
     });
     
     if (esistente) {
@@ -594,28 +662,28 @@ exports.updateSottocategoria = async (req, res) => {
     
     // Aggiorna i prodotti "dummy" con il nuovo nome della sottocategoria
     await ProdottoCatalogo.updateMany(
-      { 
-        categoria, 
-        sottocategoria,
-        nome: { $regex: /^_sottocategoria_/ }
+      {
+        'categoria.it': categoria,
+        'sottocategoria.it': sottocategoria,
+        'nome.it': { $regex: /^_sottocategoria_/ }
       },
-      { 
-        $set: { 
-          sottocategoria: nuovoNome,
-          nome: `_sottocategoria_${nuovoNome}`,
-          descrizione: `Prodotto dummy per la sottocategoria ${nuovoNome}`
-        } 
+      {
+        $set: {
+          sottocategoria: translatedNuovoNome, // Save translated object
+          nome: { it: `_sottocategoria_${translatedNuovoNome.it}` },
+          descrizione: { it: `Prodotto dummy per la sottocategoria ${translatedNuovoNome.it}` }
+        }
       }
     );
     
     // Aggiorna tutti i prodotti reali con il nuovo nome della sottocategoria
     const risultatoAggiornamento = await ProdottoCatalogo.updateMany(
-      { 
-        categoria, 
-        sottocategoria,
-        nome: { $not: { $regex: /^_sottocategoria_/ } }
+      {
+        'categoria.it': categoria,
+        'sottocategoria.it': sottocategoria,
+        'nome.it': { $not: { $regex: /^_sottocategoria_/ } }
       },
-      { $set: { sottocategoria: nuovoNome } }
+      { $set: { sottocategoria: translatedNuovoNome } } // Save translated object
     );
     
     res.status(200).json({ 
@@ -638,7 +706,7 @@ exports.getPublicProdotti = async (req, res) => {
       return res.status(400).json({ message: 'Lingua non supportata.' });
     }
 
-    const prodotti = await ProdottoCatalogo.find({ nome: { $not: { $regex: /^_sottocategoria_/ } } });
+    const prodotti = await ProdottoCatalogo.find({ 'nome.it': { $not: { $regex: /^_sottocategoria_/ } } });
 
     const translatedProdotti = prodotti.map(p => {
       const prodotto = p.toObject();
@@ -646,6 +714,8 @@ exports.getPublicProdotti = async (req, res) => {
         ...prodotto,
         nome: prodotto.nome[lang] || prodotto.nome.it,
         descrizione: prodotto.descrizione[lang] || prodotto.descrizione.it,
+        categoria: prodotto.categoria[lang] || prodotto.categoria.it, // Traduci categoria
+        sottocategoria: prodotto.sottocategoria ? (prodotto.sottocategoria[lang] || prodotto.sottocategoria.it) : null, // Traduci sottocategoria
       };
     });
 
@@ -675,6 +745,8 @@ exports.getPublicProdottoById = async (req, res) => {
     const translatedProdotto = prodotto.toObject();
     translatedProdotto.nome = translatedProdotto.nome[lang] || translatedProdotto.nome.it;
     translatedProdotto.descrizione = translatedProdotto.descrizione[lang] || translatedProdotto.descrizione.it;
+    translatedProdotto.categoria = translatedProdotto.categoria[lang] || translatedProdotto.categoria.it; // Traduci categoria
+    translatedProdotto.sottocategoria = translatedProdotto.sottocategoria ? (translatedProdotto.sottocategoria[lang] || translatedProdotto.sottocategoria.it) : null; // Traduci sottocategoria
 
     res.json(translatedProdotto);
   } catch (error) {
@@ -686,8 +758,30 @@ exports.getPublicProdottoById = async (req, res) => {
 // Funzione per il pubblico per ottenere tutte le categorie
 exports.getPublicCategories = async (req, res) => {
   try {
-    const categorie = await ProdottoCatalogo.distinct('categoria', { nome: { $not: { $regex: /^_sottocategoria_/ } } });
-    res.json(categorie);
+    const lang = req.query.lang || 'it'; // Default a italiano
+    const validLangs = ['it', 'en', 'fr', 'es', 'de'];
+
+    if (!validLangs.includes(lang)) {
+      return res.status(400).json({ message: 'Lingua non supportata.' });
+    }
+
+    const categorieRaw = await ProdottoCatalogo.distinct('categoria', { 'nome.it': { $not: { $regex: /^_sottocategoria_/ } } });
+    
+    // Mappa le categorie per restituire la traduzione corretta
+    const categorieTradotte = categorieRaw.map(cat => {
+      // Assumiamo che `cat` sia l'oggetto multilingua salvato nel DB
+      // Se `distinct` restituisce solo la stringa italiana, dobbiamo recuperare l'oggetto completo
+      // Per ora, assumiamo che `distinct` possa restituire l'oggetto completo o che `categoria` sia già un oggetto
+      // Se `distinct` restituisce solo la stringa, questa logica dovrà essere rivista.
+      // Per semplicità, assumiamo che `distinct` restituisca la stringa italiana e che il modello sia stato aggiornato per salvare l'oggetto completo.
+      // Quindi, dobbiamo recuperare l'oggetto completo per tradurlo.
+      // Questo è un punto critico che potrebbe richiedere una query aggiuntiva o una modifica al modo in cui le categorie sono gestite.
+      // Per ora, restituisco la categoria così com'è, ma se `distinct` restituisce solo la stringa, non sarà tradotta.
+      // Una soluzione migliore sarebbe avere una collezione separata per le categorie.
+      return cat[lang] || cat.it || cat; // Tenta di tradurre, altrimenti restituisci l'italiano o l'originale
+    });
+
+    res.json(categorieTradotte);
   } catch (error) {
     console.error('Errore nel recupero delle categorie pubbliche:', error);
     res.status(500).json({ message: `Errore nel recupero delle categorie: ${error.message}` });
@@ -698,13 +792,26 @@ exports.getPublicCategories = async (req, res) => {
 exports.getPublicCategoryById = async (req, res) => {
   try {
     const { categoryId } = req.params;
+    const lang = req.query.lang || 'it'; // Default a italiano
+    const validLangs = ['it', 'en', 'fr', 'es', 'de'];
+
+    if (!validLangs.includes(lang)) {
+      return res.status(400).json({ message: 'Lingua non supportata.' });
+    }
+
     // Per le categorie, non abbiamo un ID univoco come per i prodotti, ma un nome.
     // Questa funzione potrebbe essere usata per validare l'esistenza di una categoria.
-    const exists = await ProdottoCatalogo.exists({ categoria: categoryId });
-    if (!exists) {
+    // Dobbiamo trovare una categoria che abbia il categoryId nella lingua richiesta.
+    const categoriaDoc = await ProdottoCatalogo.findOne({
+      [`categoria.${lang}`]: categoryId,
+      'nome.it': { $not: { $regex: /^_sottocategoria_/ } }
+    });
+
+    if (!categoriaDoc) {
       return res.status(404).json({ message: 'Categoria non trovata' });
     }
-    res.json({ category: categoryId });
+
+    res.json({ category: categoriaDoc.categoria[lang] || categoriaDoc.categoria.it });
   } catch (error) {
     console.error(`Errore nel recupero della categoria pubblica ${req.params.categoryId}:`, error);
     res.status(500).json({ message: `Errore nel recupero della categoria: ${error.message}` });
@@ -714,19 +821,29 @@ exports.getPublicCategoryById = async (req, res) => {
 // Funzione per il pubblico per ottenere tutte le sottocategorie
 exports.getPublicAllSubcategories = async (req, res) => {
   try {
+    const lang = req.query.lang || 'it'; // Default a italiano
+    const validLangs = ['it', 'en', 'fr', 'es', 'de'];
+
+    if (!validLangs.includes(lang)) {
+      return res.status(400).json({ message: 'Lingua non supportata.' });
+    }
+
     const sottocategorie = {
       'Domestico': [],
       'Industriale': []
     };
 
     const prodotti = await ProdottoCatalogo.find(
-      { nome: { $regex: /^_sottocategoria_/ } },
+      { 'nome.it': { $regex: /^_sottocategoria_/ } },
       'categoria sottocategoria'
     );
 
     prodotti.forEach(prodotto => {
-      if (prodotto.sottocategoria && !sottocategorie[prodotto.categoria].includes(prodotto.sottocategoria)) {
-        sottocategorie[prodotto.categoria].push(prodotto.sottocategoria);
+      const categoriaIt = prodotto.categoria.it; // Usiamo la versione italiana per raggruppare
+      const sottocategoriaTradotta = prodotto.sottocategoria ? (prodotto.sottocategoria[lang] || prodotto.sottocategoria.it) : null;
+
+      if (sottocategoriaTradotta && !sottocategorie[categoriaIt].includes(sottocategoriaTradotta)) {
+        sottocategorie[categoriaIt].push(sottocategoriaTradotta);
       }
     });
 
@@ -741,6 +858,12 @@ exports.getPublicAllSubcategories = async (req, res) => {
 exports.getPublicSubcategoriesByCategory = async (req, res) => {
   try {
     const { categoria } = req.params;
+    const lang = req.query.lang || 'it'; // Default a italiano
+    const validLangs = ['it', 'en', 'fr', 'es', 'de'];
+
+    if (!validLangs.includes(lang)) {
+      return res.status(400).json({ message: 'Lingua non supportata.' });
+    }
 
     if (!['Domestico', 'Industriale'].includes(categoria)) {
       return res.status(400).json({ message: 'Categoria non valida' });
@@ -748,17 +871,98 @@ exports.getPublicSubcategoriesByCategory = async (req, res) => {
 
     const prodotti = await ProdottoCatalogo.find(
       {
-        categoria,
-        nome: { $regex: /^_sottocategoria_/ }
+        'categoria.it': categoria, // Filtra sulla versione italiana della categoria
+        'nome.it': { $regex: /^_sottocategoria_/ }
       },
       'sottocategoria'
     );
 
-    const sottocategorie = [...new Set(prodotti.map(prodotto => prodotto.sottocategoria))].filter(Boolean);
+    const sottocategorie = [...new Set(prodotti.map(prodotto => prodotto.sottocategoria ? (prodotto.sottocategoria[lang] || prodotto.sottocategoria.it) : null))].filter(Boolean);
 
     res.status(200).json(sottocategorie);
   } catch (error) {
     console.error('Errore nel recupero delle sottocategorie pubbliche per categoria:', error);
     res.status(500).json({ message: error.message });
+  }
+};
+
+// Nuova funzione per il pubblico per ottenere prodotti per categoria
+exports.getPublicProdottiByCategoria = async (req, res) => {
+  try {
+    const { categoria } = req.params;
+    const lang = req.query.lang || 'it'; // Default a italiano
+    const validLangs = ['it', 'en', 'fr', 'es', 'de'];
+
+    if (!validLangs.includes(lang)) {
+      return res.status(400).json({ message: 'Lingua non supportata.' });
+    }
+
+    if (!['Domestico', 'Industriale'].includes(categoria)) {
+      return res.status(400).json({ message: 'Categoria non valida' });
+    }
+
+    const prodotti = await ProdottoCatalogo.find({
+      'categoria.it': categoria, // Filtra sulla versione italiana
+      'nome.it': { $not: { $regex: /^_sottocategoria_/ } } // Escludi dummy
+    });
+
+    const translatedProdotti = prodotti.map(p => {
+      const prodotto = p.toObject();
+      return {
+        ...prodotto,
+        nome: prodotto.nome[lang] || prodotto.nome.it,
+        descrizione: prodotto.descrizione[lang] || prodotto.descrizione.it,
+        categoria: prodotto.categoria[lang] || prodotto.categoria.it, // Traduci categoria
+        sottocategoria: prodotto.sottocategoria ? (prodotto.sottocategoria[lang] || prodotto.sottocategoria.it) : null, // Traduci sottocategoria
+      };
+    });
+
+    res.json(translatedProdotti);
+  } catch (error) {
+    console.error(`Errore nel recupero prodotti pubblici per categoria ${req.params.categoria}:`, error);
+    res.status(500).json({ message: `Errore nel recupero prodotti pubblici per categoria: ${error.message}` });
+  }
+};
+
+// Nuova funzione per il pubblico per ottenere prodotti per sottocategoria
+exports.getPublicProdottiBySottocategoria = async (req, res) => {
+  try {
+    const { categoria, sottocategoria } = req.params;
+    const lang = req.query.lang || 'it'; // Default a italiano
+    const validLangs = ['it', 'en', 'fr', 'es', 'de'];
+
+    if (!validLangs.includes(lang)) {
+      return res.status(400).json({ message: 'Lingua non supportata.' });
+    }
+
+    if (!['Domestico', 'Industriale'].includes(categoria)) {
+      return res.status(400).json({ message: 'Categoria non valida' });
+    }
+
+    if (!sottocategoria) {
+      return res.status(400).json({ message: 'Sottocategoria mancante' });
+    }
+
+    const prodotti = await ProdottoCatalogo.find({
+      'categoria.it': categoria, // Filtra sulla versione italiana della categoria
+      'sottocategoria.it': sottocategoria, // Filtra sulla versione italiana della sottocategoria
+      'nome.it': { $not: { $regex: /^_sottocategoria_/ } } // Escludi dummy
+    });
+
+    const translatedProdotti = prodotti.map(p => {
+      const prodotto = p.toObject();
+      return {
+        ...prodotto,
+        nome: prodotto.nome[lang] || prodotto.nome.it,
+        descrizione: prodotto.descrizione[lang] || prodotto.descrizione.it,
+        categoria: prodotto.categoria[lang] || prodotto.categoria.it, // Traduci categoria
+        sottocategoria: prodotto.sottocategoria ? (prodotto.sottocategoria[lang] || prodotto.sottocategoria.it) : null, // Traduci sottocategoria
+      };
+    });
+
+    res.json(translatedProdotti);
+  } catch (error) {
+    console.error(`Errore nel recupero prodotti pubblici per sottocategoria ${req.params.categoria}/${req.params.sottocategoria}:`, error);
+    res.status(500).json({ message: `Errore nel recupero prodotti pubblici per sottocategoria: ${error.message}` });
   }
 };

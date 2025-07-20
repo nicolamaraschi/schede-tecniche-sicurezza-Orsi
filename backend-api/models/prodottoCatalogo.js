@@ -15,16 +15,21 @@ const prodottoCatalogoSchema = new mongoose.Schema({
   unita: { type: String, required: true },  // €/PZ o €/KG
   
   // Categoria di prodotto (Domestico o Industriale)
-  categoria: { 
-    type: String, 
-    required: true,
-    enum: ['Domestico', 'Industriale'] 
+  categoria: {
+    it: { type: String, required: true },
+    en: { type: String },
+    fr: { type: String },
+    es: { type: String },
+    de: { type: String }
   },
   
   // Sottocategoria del prodotto
   sottocategoria: {
-    type: String,
-    required: false
+    it: { type: String },
+    en: { type: String },
+    fr: { type: String },
+    es: { type: String },
+    de: { type: String }
   },
   
   tipoImballaggio: {

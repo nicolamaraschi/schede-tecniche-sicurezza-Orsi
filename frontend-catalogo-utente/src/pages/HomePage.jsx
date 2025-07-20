@@ -4,9 +4,11 @@ import axios from 'axios';
 import ProductCard from '../components/products/ProductCard';
 import { FaHome, FaIndustry } from 'react-icons/fa';
 import { MdVerified, MdLocalShipping, MdSupportAgent, MdEco } from 'react-icons/md';
+import { useTranslation } from 'react-i18next';
 import './HomePage.css';
 
 const HomePage = () => {
+  const { t } = useTranslation();
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [categories] = useState([
     { id: 'Domestico', name: 'Domestico', icon: <FaHome size={32} /> },
@@ -63,7 +65,7 @@ const HomePage = () => {
               Orsi è un'azienda presente dal 1907
             </p>
             <Link to="/catalogo" className="cta-button animate-slide-from-left delay-200">
-              Esplora il Catalogo
+              {t('explore_catalog')}
             </Link>
           </div>
         </div>
