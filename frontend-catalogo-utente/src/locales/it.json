@@ -68,5 +68,22 @@
   "closed": "Chiuso",
   "homepage_title": "Prodotti detergenti domestici e professionali",
   "homepage_subtitle": "Orsi è un'azienda presente dal 1907",
-  "explore_catalog": "Esplora il Catalogo"
+  "explore_catalog": "Esplora il Catalogo",
+  "featured_products": "Prodotti in Evidenza",
+  "view_all": "Vedi Tutti",
+  "loading_products": "Caricamento prodotti in corso...",
+  "error_loading_products_message": "Si è verificato un errore durante il caricamento dei prodotti.",
+  "no_products_available": "Nessun prodotto disponibile al momento.",
+  "explore_by_category": "Esplora per Categoria",
+  "subcategories_count": "sottocategorie",
+  "guaranteed_quality": "Qualità Garantita",
+  "guaranteed_quality_description": "Tutti i nostri prodotti sono sottoposti a rigorosi controlli di qualità",
+  "fast_delivery": "Consegna Veloce",
+  "fast_delivery_description": "Consegniamo in tutta Italia in tempi rapidi",
+  "technical_support": "Supporto Tecnico",
+  "technical_support_description": "I nostri esperti sono sempre disponibili per consigliarti",
+  "eco_friendly": "Eco-Sostenibile",
+  "eco_friendly_description": "Prodotti rispettosi dell'ambiente e delle persone",
+  "domestic": "Domestico",
+  "industrial": "Industriale"
 }

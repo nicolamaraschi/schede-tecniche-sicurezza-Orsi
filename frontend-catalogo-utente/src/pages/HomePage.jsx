@@ -4,15 +4,15 @@ import axios from 'axios';
 import ProductCard from '../components/products/ProductCard';
 import { FaHome, FaIndustry } from 'react-icons/fa';
 import { MdVerified, MdLocalShipping, MdSupportAgent, MdEco } from 'react-icons/md';
-import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../context/LanguageContext';
 import './HomePage.css';
 
 const HomePage = () => {
-  const { t } = useTranslation();
+  const { t } = useLanguage();
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [categories] = useState([
-    { id: 'Domestico', name: 'Domestico', icon: <FaHome size={32} /> },
-    { id: 'Industriale', name: 'Industriale', icon: <FaIndustry size={32} /> }
+    { id: 'Domestico', name: t('domestic'), icon: <FaHome size={32} /> },
+    { id: 'Industriale', name: t('industrial'), icon: <FaIndustry size={32} /> }
   ]);
   const [subcategories, setSubcategories] = useState({});
   const [loading, setLoading] = useState(true);
@@ -60,9 +60,9 @@ const HomePage = () => {
       <section className="hero-section">
         <div className="container">
           <div className="hero-content">
-            <h1 className="animate-slide-from-left">Prodotti detergenti domestici e professionali</h1>
+            <h1 className="animate-slide-from-left">{t('homepage_title')}</h1>
             <p className="animate-slide-from-left delay-100">
-              Orsi è un'azienda presente dal 1907
+              {t('homepage_subtitle')}
             </p>
             <Link to="/catalogo" className="cta-button animate-slide-from-left delay-200">
               {t('explore_catalog')}
@@ -75,21 +75,21 @@ const HomePage = () => {
       <section className="featured-section">
         <div className="container">
           <div className="section-header">
-            <h2>Prodotti in Evidenza</h2>
-            <Link to="/catalogo" className="view-all">Vedi Tutti</Link>
+            <h2>{t('featured_products')}</h2>
+            <Link to="/catalogo" className="view-all">{t('view_all')}</Link>
           </div>
           
           {loading ? (
             <div className="loading-container">
-              <p>Caricamento prodotti in corso...</p>
+              <p>{t('loading_products')}</p>
             </div>
           ) : error ? (
             <div className="error-message">
-              <p>Si è verificato un errore durante il caricamento dei prodotti.</p>
+              <p>{t('error_loading_products_message')}</p>
             </div>
           ) : featuredProducts.length === 0 ? (
             <div className="no-products">
-              <p>Nessun prodotto disponibile al momento.</p>
+              <p>{t('no_products_available')}</p>
             </div>
           ) : (
             <div className="featured-products">
@@ -107,7 +107,7 @@ const HomePage = () => {
       <section className="categories-section">
         <div className="container">
           <div className="section-header">
-            <h2>Esplora per Categoria</h2>
+            <h2>{t('explore_by_category')}</h2>
           </div>
           
           <div className="categories-grid">
@@ -122,7 +122,7 @@ const HomePage = () => {
                 </div>
                 <h3>{category.name}</h3>
                 <span className="category-count">
-                  {subcategories[category.id]?.length || 0} sottocategorie
+                  {subcategories[category.id]?.length || 0} {t('subcategories_count')}
                 </span>
               </Link>
             ))}
@@ -138,32 +138,32 @@ const HomePage = () => {
               <div className="benefit-icon">
                 <MdVerified size={40} color="#3f51b5" />
               </div>
-              <h3>Qualità Garantita</h3>
-              <p>Tutti i nostri prodotti sono sottoposti a rigorosi controlli di qualità</p>
+              <h3>{t('guaranteed_quality')}</h3>
+              <p>{t('guaranteed_quality_description')}</p>
             </div>
             
             <div className="benefit-card">
               <div className="benefit-icon">
                 <MdLocalShipping size={40} color="#3f51b5" />
               </div>
-              <h3>Consegna Veloce</h3>
-              <p>Consegniamo in tutta Italia in tempi rapidi</p>
+              <h3>{t('fast_delivery')}</h3>
+              <p>{t('fast_delivery_description')}</p>
             </div>
             
             <div className="benefit-card">
               <div className="benefit-icon">
                 <MdSupportAgent size={40} color="#3f51b5" />
               </div>
-              <h3>Supporto Tecnico</h3>
-              <p>I nostri esperti sono sempre disponibili per consigliarti</p>
+              <h3>{t('technical_support')}</h3>
+              <p>{t('technical_support_description')}</p>
             </div>
             
             <div className="benefit-card">
               <div className="benefit-icon">
                 <MdEco size={40} color="#3f51b5" />
               </div>
-              <h3>Eco-Sostenibile</h3>
-              <p>Prodotti rispettosi dell'ambiente e delle persone</p>
+              <h3>{t('eco_friendly')}</h3>
+              <p>{t('eco_friendly_description')}</p>
             </div>
           </div>
         </div>

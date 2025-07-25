@@ -68,5 +68,22 @@
   "closed": "Geschlossen",
   "homepage_title": "Haushalts- und professionelle Reinigungsprodukte",
   "homepage_subtitle": "Orsi ist ein Unternehmen, das seit 1907 besteht",
-  "explore_catalog": "Katalog erkunden"
+  "explore_catalog": "Katalog erkunden",
+  "featured_products": "Vorgestellte Produkte",
+  "view_all": "Alle ansehen",
+  "loading_products": "Produkte werden geladen...",
+  "error_loading_products_message": "Beim Laden der Produkte ist ein Fehler aufgetreten.",
+  "no_products_available": "Derzeit keine Produkte verfügbar.",
+  "explore_by_category": "Nach Kategorie durchsuchen",
+  "subcategories_count": "Unterkategorien",
+  "guaranteed_quality": "Garantierte Qualität",
+  "guaranteed_quality_description": "Alle unsere Produkte unterliegen strengen Qualitätskontrollen",
+  "fast_delivery": "Schnelle Lieferung",
+  "fast_delivery_description": "Wir liefern schnell in ganz Italien",
+  "technical_support": "Technischer Support",
+  "technical_support_description": "Unsere Experten stehen Ihnen jederzeit zur Verfügung",
+  "eco_friendly": "Umweltfreundlich",
+  "eco_friendly_description": "Produkte, die die Umwelt und die Menschen respektieren",
+  "domestic": "Haushalt",
+  "industrial": "Industriell"
 }

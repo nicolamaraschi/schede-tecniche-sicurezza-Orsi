@@ -696,6 +696,43 @@ exports.updateSottocategoria = async (req, res) => {
   }
 };
 
+// Funzione per tradurre una sottocategoria esistente
+exports.translateSottocategoria = async (req, res) => {
+  try {
+    const { categoria, sottocategoria } = req.params;
+
+    if (!['Domestico', 'Industriale'].includes(categoria)) {
+      return res.status(400).json({ message: 'Categoria non valida' });
+    }
+
+    // Traduci il nome della sottocategoria fornito
+    const translatedSottocategoria = await translateText(sottocategoria);
+
+    // Aggiorna tutti i prodotti (reali e dummy) che hanno questa sottocategoria in italiano
+    const risultatoAggiornamento = await ProdottoCatalogo.updateMany(
+      {
+        'categoria.it': categoria,
+        'sottocategoria.it': sottocategoria
+      },
+      { $set: { sottocategoria: translatedSottocategoria } }
+    );
+
+    if (risultatoAggiornamento.matchedCount === 0) {
+      return res.status(404).json({ message: 'Nessun prodotto trovato per questa sottocategoria.' });
+    }
+
+    res.status(200).json({
+      message: 'Traduzione della sottocategoria applicata con successo.',
+      prodottiAggiornati: risultatoAggiornamento.modifiedCount
+    });
+
+  } catch (error) {
+    console.error('Errore nella traduzione della sottocategoria:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
 // Funzione per il pubblico con selezione della lingua
 exports.getPublicProdotti = async (req, res) => {
   try {

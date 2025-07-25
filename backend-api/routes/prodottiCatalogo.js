@@ -14,7 +14,8 @@ const {
   addSottocategoria,
   updateSottocategoria,
   deleteSottocategoria,
-  getAdminCategories
+  getAdminCategories,
+  translateSottocategoria
 } = require('../controllers/prodottiCatalogoController');
 
 const router = express.Router();
@@ -35,6 +36,7 @@ router.get('/sottocategorie', getAllSottocategorie);
 router.get('/categoria/:categoria/sottocategorie', getSottocategorieByCategoria);
 router.post('/categoria/:categoria/sottocategorie', addSottocategoria);
 router.put('/categoria/:categoria/sottocategoria/:sottocategoria', updateSottocategoria);
+router.post('/sottocategorie/:categoria/:sottocategoria/translate', translateSottocategoria);
 router.delete('/categoria/:categoria/sottocategoria/:sottocategoria', deleteSottocategoria);
 
 // Nuova rotta per ottenere tutte le categorie per l'admin
