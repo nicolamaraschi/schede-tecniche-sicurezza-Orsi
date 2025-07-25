@@ -1003,3 +1003,63 @@ exports.getPublicProdottiBySottocategoria = async (req, res) => {
     res.status(500).json({ message: `Errore nel recupero prodotti pubblici per sottocategoria: ${error.message}` });
   }
 };
+
+// Traduce tutte le sottocategorie esistenti
+exports.translateAllSottocategorie = async (req, res) => {
+  try {
+    console.log('Avvio del processo di traduzione massiva per le sottocategorie.');
+
+    // 1. Ottieni tutti i nomi unici delle sottocategorie in italiano
+    const uniqueSottocategorie = await ProdottoCatalogo.distinct('sottocategoria.it');
+    const sottocategorieDaTradurre = uniqueSottocategorie.filter(s => s); // Rimuovi valori null o vuoti
+
+    if (sottocategorieDaTradurre.length === 0) {
+      console.log('Nessuna sottocategoria da tradurre trovata.');
+      return res.status(200).json({ message: 'Nessuna sottocategoria da tradurre.' });
+    }
+
+    console.log(`Trovate ${sottocategorieDaTradurre.length} sottocategorie uniche da tradurre:`, sottocategorieDaTradurre);
+
+    const report = {
+      success: [],
+      failures: []
+    };
+
+    // 2. Itera su ogni sottocategoria e traducila
+    for (const nomeSottocategoria of sottocategorieDaTradurre) {
+      try {
+        console.log(`Traduzione di: "${nomeSottocategoria}"...`);
+        const translatedSottocategoria = await translateText(nomeSottocategoria);
+        
+        // 3. Aggiorna tutti i documenti che contengono questa sottocategoria
+        const updateResult = await ProdottoCatalogo.updateMany(
+          { 'sottocategoria.it': nomeSottocategoria },
+          { $set: { sottocategoria: translatedSottocategoria } }
+        );
+
+        console.log(`"${nomeSottocategoria}" tradotta con successo. Prodotti aggiornati: ${updateResult.modifiedCount}`);
+        report.success.push({
+          sottocategoria: nomeSottocategoria,
+          prodotti_aggiornati: updateResult.modifiedCount
+        });
+
+      } catch (error) {
+        console.error(`Errore durante la traduzione di "${nomeSottocategoria}":`, error);
+        report.failures.push({
+          sottocategoria: nomeSottocategoria,
+          errore: error.message
+        });
+      }
+    }
+
+    console.log('Processo di traduzione massiva completato.');
+    res.status(200).json({
+      message: 'Processo di traduzione massiva completato.',
+      report
+    });
+
+  } catch (error) {
+    console.error('Errore grave durante il processo di traduzione massiva:', error);
+    res.status(500).json({ message: 'Errore grave durante il processo di traduzione massiva.', error: error.message });
+  }
+};
